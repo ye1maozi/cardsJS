@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新功能测试</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2a5298;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+        
+        .test-section h2 {
+            color: #2a5298;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #2a5298;
+            padding-bottom: 5px;
+        }
+        
+        .status {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .status-item {
+            background: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #2a5298;
+        }
+        
+        .status-item strong {
+            color: #2a5298;
+        }
+        
+        button {
+            background: #2a5298;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #1e3c72;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 8px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .casting-bar {
+            position: relative;
+            width: 100%;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .casting-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #ff8e8e);
+            transition: width 0.1s ease;
+            border-radius: 15px;
+        }
+        
+        .casting-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+        
+        .status-effects {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin: 10px 0;
+        }
+        
+        .effect {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .effect.poison {
+            background: #8b4513;
+        }
+        
+        .effect.slow {
+            background: #4169e1;
+        }
+        
+        .effect.stealth {
+            background: #2f4f4f;
+        }
+        
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .info { color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>新功能测试 - 角色属性系统 & 吟唱系统</h1>
+        
+        <div class="test-section">
+            <h2>角色属性系统测试</h2>
+            <div class="status">
+                <div class="status-item">
+                    <strong>玩家生命:</strong> <span id="playerHealth">30</span>
+                </div>
+                <div class="status-item">
+                    <strong>玩家能量:</strong> <span id="playerEnergy">1</span>
+                </div>
+                <div class="status-item">
+                    <strong>玩家强度:</strong> <span id="playerStrength">0</span>
+                </div>
+                <div class="status-item">
+                    <strong>玩家敏捷:</strong> <span id="playerAgility">0</span>
+                </div>
+                <div class="status-item">
+                    <strong>玩家精神:</strong> <span id="playerSpirit">0</span>
+                </div>
+            </div>
+            <button onclick="testCharacterStats()">测试角色属性</button>
+            <button onclick="testHealthRegen()">测试生命恢复</button>
+            <button onclick="testEnergyRegen()">测试能量恢复</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>吟唱系统测试</h2>
+            <div id="castingBarContainer"></div>
+            <button onclick="testCasting()">测试吟唱</button>
+            <button onclick="testCastingInterrupt()">测试吟唱中断</button>
+            <button onclick="clearCasting()">清除吟唱</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>状态效果系统测试</h2>
+            <div id="statusEffectsContainer" class="status-effects"></div>
+            <button onclick="testPoisonEffect()">测试中毒效果</button>
+            <button onclick="testSlowEffect()">测试减速效果</button>
+            <button onclick="testStealthEffect()">测试潜行效果</button>
+            <button onclick="clearEffects()">清除所有效果</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>卡牌效果测试</h2>
+            <div class="status">
+                <div class="status-item">
+                    <strong>火球术:</strong> 1能量，1秒吟唱，9点伤害
+                </div>
+                <div class="status-item">
+                    <strong>奥术冲击:</strong> 0能量，2秒吟唱，消耗所有能量
+                </div>
+                <div class="status-item">
+                    <strong>毒刃:</strong> 1能量，瞬发，6点伤害+中毒
+                </div>
+                <div class="status-item">
+                    <strong>伏击:</strong> 2能量，瞬发，15点伤害（需潜行）
+                </div>
+            </div>
+            <button onclick="testFireball()">测试火球术</button>
+            <button onclick="testArcaneBlast()">测试奥术冲击</button>
+            <button onclick="testPoisonBlade()">测试毒刃</button>
+            <button onclick="testAmbush()">测试伏击</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>测试日志</h2>
+            <div id="testLog" class="log"></div>
+        </div>
+    </div>
+
+    <script src="../js/Character.js"></script>
+    <script src="../js/CastingSystem.js"></script>
+    <script src="../js/Card.js"></script>
+    <script>
+        let testCharacter = null;
+        let testCastingSystem = null;
+        let testCard = null;
+        let animationId = null;
+        
+        // 初始化测试环境
+        function initializeTest() {
+            testCharacter = new Character("测试角色", "法师");
+            testCastingSystem = new CastingSystem();
+            testCard = new Card("测试卡牌", "法师", 1, 1, "吟唱", "测试效果", "TEST", 10, 0, 0);
+            
+            addLog("✅ 测试环境初始化完成");
+            updateCharacterDisplay();
+        }
+        
+        // 更新角色显示
+        function updateCharacterDisplay() {
+            if (!testCharacter) return;
+            
+            const info = testCharacter.getInfo();
+            document.getElementById('playerHealth').textContent = info.health;
+            document.getElementById('playerEnergy').textContent = info.energy;
+            document.getElementById('playerStrength').textContent = info.strength;
+            document.getElementById('playerAgility').textContent = info.agility;
+            document.getElementById('playerSpirit').textContent = info.spirit;
+        }
+        
+        // 测试角色属性
+        function testCharacterStats() {
+            addLog("🧪 测试角色属性...");
+            addLog(`职业: ${testCharacter.characterClass}`);
+            addLog(`最大生命: ${testCharacter.maxHealth}`);
+            addLog(`最大能量: ${testCharacter.maxEnergy}`);
+            addLog(`强度: ${testCharacter.strength}`);
+            addLog(`敏捷: ${testCharacter.agility}`);
+            addLog(`精神: ${testCharacter.spirit}`);
+        }
+        
+        // 测试生命恢复
+        function testHealthRegen() {
+            addLog("❤️ 测试生命恢复...");
+            testCharacter.currentHealth = Math.max(1, testCharacter.currentHealth - 10);
+            testCharacter.healthRegenRate = 2;
+            addLog(`当前生命: ${testCharacter.currentHealth}`);
+            addLog(`生命恢复速度: ${testCharacter.healthRegenRate}/秒`);
+            
+            // 启动恢复测试
+            startHealthRegenTest();
+        }
+        
+        // 启动生命恢复测试
+        function startHealthRegenTest() {
+            const testInterval = setInterval(() => {
+                testCharacter.update(1/60);
+                updateCharacterDisplay();
+                
+                if (testCharacter.currentHealth >= testCharacter.maxHealth) {
+                    clearInterval(testInterval);
+                    addLog("✅ 生命恢复测试完成");
+                }
+            }, 1000);
+        }
+        
+        // 测试能量恢复
+        function testEnergyRegen() {
+            addLog("⚡ 测试能量恢复...");
+            testCharacter.currentEnergy = 0;
+            testCharacter.energyRegenRate = 3;
+            addLog(`当前能量: ${testCharacter.currentEnergy}`);
+            addLog(`能量恢复速度: ${testCharacter.energyRegenRate}/秒`);
+            
+            // 启动恢复测试
+            startEnergyRegenTest();
+        }
+        
+        // 启动能量恢复测试
+        function startEnergyRegenTest() {
+            const testInterval = setInterval(() => {
+                testCharacter.update(1/60);
+                updateCharacterDisplay();
+                
+                if (testCharacter.currentEnergy >= testCharacter.maxEnergy) {
+                    clearInterval(testInterval);
+                    addLog("✅ 能量恢复测试完成");
+                }
+            }, 1000);
+        }
+        
+        // 测试吟唱
+        function testCasting() {
+            addLog("🔮 测试吟唱系统...");
+            
+            const target = new Character("目标", "战士");
+            const success = testCastingSystem.startCasting(testCard, testCharacter, target);
+            
+            if (success) {
+                addLog(`开始吟唱: ${testCard.name}`);
+                addLog(`吟唱时间: ${testCard.castTime}秒`);
+                
+                // 启动吟唱动画
+                startCastingAnimation();
+            } else {
+                addLog("❌ 吟唱启动失败");
+            }
+        }
+        
+        // 启动吟唱动画
+        function startCastingAnimation() {
+            const container = document.getElementById('castingBarContainer');
+            container.innerHTML = `
+                <div class="casting-bar">
+                    <div class="casting-progress" style="width: 0%"></div>
+                    <div class="casting-text">${testCard.name}</div>
+                </div>
+            `;
+            
+            const progressBar = container.querySelector('.casting-progress');
+            const textElement = container.querySelector('.casting-text');
+            let progress = 0;
+            
+            const animate = () => {
+                progress += 1;
+                const percentage = (progress / 60) * 100; // 60帧 = 1秒
+                
+                progressBar.style.width = `${percentage}%`;
+                textElement.textContent = `${testCard.name} (${(1 - progress/60).toFixed(1)}s)`;
+                
+                if (progress < 60) {
+                    animationId = requestAnimationFrame(animate);
+                } else {
+                    addLog("✅ 吟唱完成！");
+                    container.innerHTML = '';
+                }
+            };
+            
+            animate();
+        }
+        
+        // 测试吟唱中断
+        function testCastingInterrupt() {
+            if (testCastingSystem.isCurrentlyCasting()) {
+                testCastingSystem.interruptCasting("测试中断");
+                addLog("🛑 吟唱被中断");
+                
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
+                
+                document.getElementById('castingBarContainer').innerHTML = '';
+            } else {
+                addLog("❌ 没有正在进行的吟唱");
+            }
+        }
+        
+        // 清除吟唱
+        function clearCasting() {
+            testCastingSystem.resetCasting();
+            document.getElementById('castingBarContainer').innerHTML = '';
+            addLog("🧹 吟唱状态已清除");
+        }
+        
+        // 测试中毒效果
+        function testPoisonEffect() {
+            addLog("☠️ 测试中毒效果...");
+            const poisonEffect = new PoisonEffect(2, 5);
+            testCharacter.addStatusEffect(poisonEffect);
+            addLog("中毒效果已添加，持续5秒，每秒2点伤害");
+            updateStatusEffectsDisplay();
+        }
+        
+        // 测试减速效果
+        function testSlowEffect() {
+            addLog("🐌 测试减速效果...");
+            const slowEffect = new SlowEffect(2, 3);
+            testCharacter.addStatusEffect(slowEffect);
+            addLog("减速效果已添加，持续3秒，敏捷-2");
+            updateStatusEffectsDisplay();
+        }
+        
+        // 测试潜行效果
+        function testStealthEffect() {
+            addLog("👻 测试潜行效果...");
+            const stealthEffect = new StealthEffect(5);
+            testCharacter.addStatusEffect(stealthEffect);
+            addLog("潜行效果已添加，持续5秒");
+            updateStatusEffectsDisplay();
+        }
+        
+        // 清除所有效果
+        function clearEffects() {
+            testCharacter.statusEffects = [];
+            document.getElementById('statusEffectsContainer').innerHTML = '';
+            addLog("🧹 所有状态效果已清除");
+        }
+        
+        // 更新状态效果显示
+        function updateStatusEffectsDisplay() {
+            const container = document.getElementById('statusEffectsContainer');
+            container.innerHTML = '';
+            
+            testCharacter.statusEffects.forEach(effect => {
+                const effectElement = document.createElement('div');
+                effectElement.className = `effect ${effect.type}`;
+                effectElement.innerHTML = `
+                    <span>${effect.description}</span>
+                    <span>${effect.duration.toFixed(1)}s</span>
+                `;
+                container.appendChild(effectElement);
+            });
+        }
+        
+        // 测试火球术
+        function testFireball() {
+            addLog("🔥 测试火球术...");
+            const fireball = new Card("火球术", "法师", 1, 1, "吟唱", "吟唱1秒后，对单体目标造成9点伤害", "DAMAGE_9", 9, 0, 0);
+            addLog(`卡牌: ${fireball.name}`);
+            addLog(`能量消耗: ${fireball.energyCost}`);
+            addLog(`吟唱时间: ${fireball.castTime}秒`);
+            addLog(`伤害: ${fireball.value1}`);
+        }
+        
+        // 测试奥术冲击
+        function testArcaneBlast() {
+            addLog("💫 测试奥术冲击...");
+            const arcaneBlast = new Card("奥术冲击", "法师", 0, 2, "吟唱", "消耗当前所有能量，对目标释放一次强力的奥术冲击", "CONSUME_ALL_ENERGY", 2, 0, 0);
+            addLog(`卡牌: ${arcaneBlast.name}`);
+            addLog(`能量消耗: ${arcaneBlast.energyCost}`);
+            addLog(`吟唱时间: ${arcaneBlast.castTime}秒`);
+            addLog(`基础伤害倍数: ${arcaneBlast.value1}`);
+        }
+        
+        // 测试毒刃
+        function testPoisonBlade() {
+            addLog("🗡️ 测试毒刃...");
+            const poisonBlade = new Card("毒刃", "盗贼", 1, 0, "瞬发", "立刻攻击目标，造成6点伤害，并使其获得3层中毒", "DAMAGE_6_POISON", 6, 3, 0);
+            addLog(`卡牌: ${poisonBlade.name}`);
+            addLog(`能量消耗: ${poisonBlade.energyCost}`);
+            addLog(`吟唱时间: ${poisonBlade.castTime}秒`);
+            addLog(`伤害: ${poisonBlade.value1}`);
+            addLog(`中毒层数: ${poisonBlade.value2}`);
+        }
+        
+        // 测试伏击
+        function testAmbush() {
+            addLog("⚔️ 测试伏击...");
+            const ambush = new Card("伏击", "盗贼", 2, 0, "瞬发", "只能在潜行状态下使用，立刻攻击，造成15点伤害", "DAMAGE_15", 15, 0, 0);
+            addLog(`卡牌: ${ambush.name}`);
+            addLog(`能量消耗: ${ambush.energyCost}`);
+            addLog(`吟唱时间: ${ambush.castTime}秒`);
+            addLog(`伤害: ${ambush.value1}`);
+            addLog(`特殊要求: 需要潜行状态`);
+        }
+        
+        // 添加日志
+        function addLog(message) {
+            const log = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog("🚀 新功能测试页面已加载");
+            addLog("测试说明：");
+            addLog("1. 角色属性系统 - 测试基础属性、生命恢复、能量恢复");
+            addLog("2. 吟唱系统 - 测试吟唱进度、中断机制");
+            addLog("3. 状态效果系统 - 测试中毒、减速、潜行效果");
+            addLog("4. 卡牌效果测试 - 验证新卡牌配置");
+            
+            initializeTest();
+        });
+    </script>
+</body>
+</html> 

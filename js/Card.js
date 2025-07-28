@@ -36,7 +36,7 @@ class Card {
                 }
                 return this.formatEffect(this.value1);
                 
-            case "DAMAGE_8":
+            case "DAMAGE_9":
                 if (isPlayer) {
                     gameState.computerHealth -= this.value1;
                 } else {
@@ -55,16 +55,32 @@ class Card {
             case "DAMAGE_6_POISON":
                 if (isPlayer) {
                     gameState.computerHealth -= this.value1;
+                    // 添加中毒效果
+                    if (gameState.computerCharacter) {
+                        gameState.computerCharacter.addStatusEffect(new PoisonEffect(this.value2, 5));
+                    }
                 } else {
                     gameState.playerHealth -= this.value1;
+                    // 添加中毒效果
+                    if (gameState.playerCharacter) {
+                        gameState.playerCharacter.addStatusEffect(new PoisonEffect(this.value2, 5));
+                    }
                 }
                 return this.formatEffect(this.value1, this.value2);
                 
             case "DAMAGE_3_SLOW":
                 if (isPlayer) {
                     gameState.computerHealth -= this.value1;
+                    // 添加减速效果
+                    if (gameState.computerCharacter) {
+                        gameState.computerCharacter.addStatusEffect(new SlowEffect(this.value2, this.value3));
+                    }
                 } else {
                     gameState.playerHealth -= this.value1;
+                    // 添加减速效果
+                    if (gameState.playerCharacter) {
+                        gameState.playerCharacter.addStatusEffect(new SlowEffect(this.value2, this.value3));
+                    }
                 }
                 return this.formatEffect(this.value1, this.value2, this.value3);
                 
@@ -81,8 +97,16 @@ class Card {
             case "DAMAGE_4_ALL_SLOW":
                 if (isPlayer) {
                     gameState.computerHealth -= this.value1;
+                    // 添加减速效果
+                    if (gameState.computerCharacter) {
+                        gameState.computerCharacter.addStatusEffect(new SlowEffect(this.value2, 3));
+                    }
                 } else {
                     gameState.playerHealth -= this.value1;
+                    // 添加减速效果
+                    if (gameState.playerCharacter) {
+                        gameState.playerCharacter.addStatusEffect(new SlowEffect(this.value2, 3));
+                    }
                 }
                 return this.formatEffect(this.value1, this.value2);
                 
@@ -98,6 +122,83 @@ class Card {
                 return `${this.name} 消耗所有能量造成${damage}点伤害`;
                 
             case "DAMAGE_15":
+                // 检查潜行状态
+                if (isPlayer && gameState.playerCharacter && !gameState.playerCharacter.stealthSystem.isCurrentlyStealthed()) {
+                    return "伏击只能在潜行状态下使用";
+                }
+                if (!isPlayer && gameState.computerCharacter && !gameState.computerCharacter.stealthSystem.isCurrentlyStealthed()) {
+                    return "伏击只能在潜行状态下使用";
+                }
+                
+                if (isPlayer) {
+                    gameState.computerHealth -= this.value1;
+                } else {
+                    gameState.playerHealth -= this.value1;
+                }
+                return this.formatEffect(this.value1);
+                
+            case "STEALTH":
+                if (isPlayer && gameState.playerCharacter) {
+                    gameState.playerCharacter.stealthSystem.enterStealth(this.value1);
+                } else if (!isPlayer && gameState.computerCharacter) {
+                    gameState.computerCharacter.stealthSystem.enterStealth(this.value1);
+                }
+                return `进入潜行状态，持续${this.value1}秒`;
+                
+            case "DRAW_3_DISCARD_1":
+                // 抽取3张卡牌，随机丢弃1张
+                if (isPlayer) {
+                    const drawnCards = [];
+                    for (let i = 0; i < this.value1; i++) {
+                        if (gameState.playerDeck.length > 0) {
+                            drawnCards.push(gameState.playerDeck.pop());
+                        }
+                    }
+                    
+                    // 随机丢弃1张
+                    if (drawnCards.length > 0) {
+                        const discardIndex = Math.floor(Math.random() * drawnCards.length);
+                        const discardedCard = drawnCards.splice(discardIndex, 1)[0];
+                        gameState.playerDiscardPile.push(discardedCard);
+                        
+                        // 将剩余的卡牌加入手牌
+                        gameState.playerHand.push(...drawnCards);
+                    }
+                } else {
+                    const drawnCards = [];
+                    for (let i = 0; i < this.value1; i++) {
+                        if (gameState.computerDeck.length > 0) {
+                            drawnCards.push(gameState.computerDeck.pop());
+                        }
+                    }
+                    
+                    // 随机丢弃1张
+                    if (drawnCards.length > 0) {
+                        const discardIndex = Math.floor(Math.random() * drawnCards.length);
+                        const discardedCard = drawnCards.splice(discardIndex, 1)[0];
+                        gameState.computerDiscardPile.push(discardedCard);
+                        
+                        // 将剩余的卡牌加入手牌
+                        gameState.computerHand.push(...drawnCards);
+                    }
+                }
+                return `抽取${this.value1}张卡牌，随机丢弃1张`;
+                
+            case "HEAL_4_ALL":
+                if (isPlayer) {
+                    gameState.playerHealth = Math.min(gameState.playerHealth + this.value1, 30);
+                } else {
+                    gameState.computerHealth = Math.min(gameState.computerHealth + this.value1, 30);
+                }
+                return this.formatEffect(this.value1);
+                
+            case "DISPEL":
+                if (isPlayer && gameState.computerCharacter) {
+                    gameState.computerCharacter.statusEffects = [];
+                } else if (!isPlayer && gameState.playerCharacter) {
+                    gameState.playerCharacter.statusEffects = [];
+                }
+                return "移除所有负面效果";
                 if (isPlayer) {
                     gameState.computerHealth -= this.value1;
                 } else {

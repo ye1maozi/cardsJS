@@ -27,6 +27,9 @@ class Game {
             // 创建游戏UI
             this.gameUI = new GameUI(this.gameState);
 
+            // 启动游戏循环
+            this.startGameLoop();
+
             this.isInitialized = true;
             console.log('游戏初始化完成');
 
@@ -37,6 +40,25 @@ class Game {
             console.error('游戏初始化失败:', error);
             this.showError('游戏初始化失败: ' + error.message);
         }
+    }
+    
+    /**
+     * 启动游戏循环
+     */
+    startGameLoop() {
+        const gameLoop = () => {
+            // 更新游戏状态
+            this.gameState.update();
+            
+            // 更新UI
+            this.gameUI.update();
+            
+            // 继续循环
+            requestAnimationFrame(gameLoop);
+        };
+        
+        // 开始游戏循环
+        requestAnimationFrame(gameLoop);
     }
 
     /**

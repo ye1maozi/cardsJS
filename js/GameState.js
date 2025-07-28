@@ -3,18 +3,26 @@
  */
 class GameState {
     constructor() {
-        // 玩家状态
-        this.playerHealth = 30;
-        this.playerEnergy = 1; // 第1回合1点能量
-        this.playerArmor = 0; // 玩家护甲
+        // 创建角色系统
+        this.playerCharacter = new Character("玩家", "战士");
+        this.computerCharacter = new Character("电脑", "法师");
+        
+        // 创建吟唱系统
+        this.playerCastingSystem = new CastingSystem();
+        this.computerCastingSystem = new CastingSystem();
+        
+        // 玩家状态（兼容旧系统）
+        this.playerHealth = this.playerCharacter.currentHealth;
+        this.playerEnergy = this.playerCharacter.currentEnergy;
+        this.playerArmor = 0;
         this.playerDeck = [];
         this.playerHand = [];
         this.playerDiscardPile = [];
         
-        // 电脑状态
-        this.computerHealth = 30;
-        this.computerEnergy = 1; // 第1回合1点能量
-        this.computerArmor = 0; // 电脑护甲
+        // 电脑状态（兼容旧系统）
+        this.computerHealth = this.computerCharacter.currentHealth;
+        this.computerEnergy = this.computerCharacter.currentEnergy;
+        this.computerArmor = 0;
         this.computerDeck = [];
         this.computerHand = [];
         this.computerDiscardPile = [];
@@ -24,6 +32,9 @@ class GameState {
         this.isPlayerTurn = true;
         this.gameOver = false;
         this.winner = null;
+        
+        // 时间系统
+        this.lastUpdateTime = Date.now();
         
         // 初始化牌组
         this.initializeDeck();
@@ -145,12 +156,46 @@ class GameState {
         const maxEnergy = Math.min(this.currentTurn, 10);
         
         // 新回合开始时，双方都恢复能量
-        this.playerEnergy = maxEnergy;
-        this.computerEnergy = maxEnergy;
+        this.playerCharacter.gainEnergy(maxEnergy);
+        this.computerCharacter.gainEnergy(maxEnergy);
+        
+        // 同步状态到旧系统（兼容性）
+        this.playerEnergy = this.playerCharacter.currentEnergy;
+        this.computerEnergy = this.computerCharacter.currentEnergy;
         
         // 双方都抽牌
         this.drawCards(this.playerDeck, this.playerHand, 1, true);
         this.drawCards(this.computerDeck, this.computerHand, 1, false);
+    }
+    
+    /**
+     * 更新游戏状态（每帧调用）
+     */
+    update() {
+        const currentTime = Date.now();
+        const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // 转换为秒
+        this.lastUpdateTime = currentTime;
+        
+        // 更新角色状态
+        this.playerCharacter.update(deltaTime);
+        this.computerCharacter.update(deltaTime);
+        
+        // 同步状态到旧系统（兼容性）
+        this.playerHealth = this.playerCharacter.currentHealth;
+        this.playerEnergy = this.playerCharacter.currentEnergy;
+        this.computerHealth = this.computerCharacter.currentHealth;
+        this.computerEnergy = this.computerCharacter.currentEnergy;
+        
+        // 更新吟唱系统
+        this.playerCastingSystem.updateCasting(deltaTime);
+        this.computerCastingSystem.updateCasting(deltaTime);
+        
+        // 更新潜行系统
+        this.playerCharacter.stealthSystem.updateStealth(deltaTime);
+        this.computerCharacter.stealthSystem.updateStealth(deltaTime);
+        
+        // 检查游戏结束
+        this.checkGameEnd();
     }
 
     /**
@@ -196,20 +241,21 @@ class GameState {
      * @returns {object} 使用结果
      */
     useCard(card, isPlayer) {
-        const energy = isPlayer ? this.playerEnergy : this.computerEnergy;
+        const character = isPlayer ? this.playerCharacter : this.computerCharacter;
+        const castingSystem = isPlayer ? this.playerCastingSystem : this.computerCastingSystem;
         const hand = isPlayer ? this.playerHand : this.computerHand;
         const discardPile = isPlayer ? this.playerDiscardPile : this.computerDiscardPile;
 
         // 检查能量是否足够
-        if (energy < card.energyCost) {
+        if (!character.consumeEnergy(card.energyCost)) {
             return { success: false, message: "能量不足" };
         }
 
-        // 消耗能量
+        // 同步能量状态
         if (isPlayer) {
-            this.playerEnergy -= card.energyCost;
+            this.playerEnergy = character.currentEnergy;
         } else {
-            this.computerEnergy -= card.energyCost;
+            this.computerEnergy = character.currentEnergy;
         }
 
         // 从手牌移除卡牌
@@ -218,17 +264,33 @@ class GameState {
             hand.splice(cardIndex, 1);
         }
 
-        // 执行卡牌效果
-        const effectResult = card.executeEffect(this, isPlayer);
+        // 检查是否需要吟唱
+        if (card.castTime > 0) {
+            // 开始吟唱
+            const target = isPlayer ? this.computerCharacter : this.playerCharacter;
+            if (castingSystem.startCasting(card, character, target)) {
+                return {
+                    success: true,
+                    message: `${character.name} 开始吟唱 ${card.name}`,
+                    effectResult: `吟唱时间: ${card.castTime}秒`,
+                    isCasting: true
+                };
+            } else {
+                return { success: false, message: "已经在吟唱中" };
+            }
+        } else {
+            // 瞬发卡牌，直接执行效果
+            const effectResult = card.executeEffect(this, isPlayer);
+            
+            // 将卡牌加入弃牌堆
+            discardPile.push(card);
 
-        // 将卡牌加入弃牌堆
-        discardPile.push(card);
-
-        return {
-            success: true,
-            message: `${isPlayer ? '玩家' : '电脑'}使用了 ${card.name}`,
-            effectResult: effectResult
-        };
+            return {
+                success: true,
+                message: `${isPlayer ? '玩家' : '电脑'}使用了 ${card.name}`,
+                effectResult: effectResult
+            };
+        }
     }
 
     /**

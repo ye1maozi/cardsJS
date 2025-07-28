@@ -85,6 +85,117 @@ class GameUI {
 
         // 更新回合信息
         document.getElementById('turnInfo').textContent = `第${info.currentTurn}回合`;
+        
+        // 更新吟唱进度条
+        this.updateCastingBars();
+        
+        // 更新状态效果显示
+        this.updateStatusEffects();
+    }
+    
+    /**
+     * 更新吟唱进度条
+     */
+    updateCastingBars() {
+        // 玩家吟唱进度
+        const playerCastingInfo = this.gameState.playerCastingSystem.getCastingInfo();
+        if (playerCastingInfo.isCasting) {
+            // 显示玩家吟唱进度条
+            this.showCastingBar('player', playerCastingInfo);
+        } else {
+            this.hideCastingBar('player');
+        }
+        
+        // 电脑吟唱进度
+        const computerCastingInfo = this.gameState.computerCastingSystem.getCastingInfo();
+        if (computerCastingInfo.isCasting) {
+            // 显示电脑吟唱进度条
+            this.showCastingBar('computer', computerCastingInfo);
+        } else {
+            this.hideCastingBar('computer');
+        }
+    }
+    
+    /**
+     * 显示吟唱进度条
+     */
+    showCastingBar(target, castingInfo) {
+        let castingBar = document.getElementById(`${target}CastingBar`);
+        if (!castingBar) {
+            castingBar = document.createElement('div');
+            castingBar.id = `${target}CastingBar`;
+            castingBar.className = 'casting-bar';
+            castingBar.innerHTML = `
+                <div class="casting-progress"></div>
+                <div class="casting-text">${castingInfo.cardName}</div>
+            `;
+            
+            const targetArea = target === 'player' ? 'player-area' : 'computer-area';
+            document.querySelector(`.${targetArea}`).appendChild(castingBar);
+        }
+        
+        const progressBar = castingBar.querySelector('.casting-progress');
+        progressBar.style.width = `${castingInfo.progressPercentage}%`;
+        
+        const textElement = castingBar.querySelector('.casting-text');
+        textElement.textContent = `${castingInfo.cardName} (${castingInfo.remainingTime.toFixed(1)}s)`;
+    }
+    
+    /**
+     * 隐藏吟唱进度条
+     */
+    hideCastingBar(target) {
+        const castingBar = document.getElementById(`${target}CastingBar`);
+        if (castingBar) {
+            castingBar.remove();
+        }
+    }
+    
+    /**
+     * 更新状态效果显示
+     */
+    updateStatusEffects() {
+        // 更新玩家状态效果
+        const playerEffects = this.gameState.playerCharacter.statusEffects;
+        this.updateStatusEffectsDisplay('player', playerEffects);
+        
+        // 更新电脑状态效果
+        const computerEffects = this.gameState.computerCharacter.statusEffects;
+        this.updateStatusEffectsDisplay('computer', computerEffects);
+    }
+    
+    /**
+     * 更新状态效果显示
+     */
+    updateStatusEffectsDisplay(target, effects) {
+        let effectsContainer = document.getElementById(`${target}Effects`);
+        if (!effectsContainer) {
+            effectsContainer = document.createElement('div');
+            effectsContainer.id = `${target}Effects`;
+            effectsContainer.className = 'status-effects';
+            
+            const targetArea = target === 'player' ? 'player-area' : 'computer-area';
+            document.querySelector(`.${targetArea}`).appendChild(effectsContainer);
+        }
+        
+        effectsContainer.innerHTML = '';
+        
+        effects.forEach(effect => {
+            const effectElement = document.createElement('div');
+            effectElement.className = `effect ${effect.type}`;
+            effectElement.innerHTML = `
+                <span class="effect-name">${effect.description}</span>
+                <span class="effect-duration">${effect.duration.toFixed(1)}s</span>
+            `;
+            effectsContainer.appendChild(effectElement);
+        });
+    }
+    
+    /**
+     * 更新UI（每帧调用）
+     */
+    update() {
+        this.updateStatusDisplay();
     }
 
     /**

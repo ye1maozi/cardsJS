@@ -53,6 +53,12 @@ class CardConfigManager {
      */
     static async loadFromCSVFile() {
         try {
+            // 检查是否在本地文件系统中
+            if (window.location.protocol === 'file:') {
+                console.warn('检测到本地文件访问，CSV加载可能被CORS策略阻止，将使用默认配置');
+                return false;
+            }
+            
             const response = await fetch('cards.csv');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -60,7 +66,7 @@ class CardConfigManager {
             const csvData = await response.text();
             return this.loadFromCSV(csvData);
         } catch (error) {
-            console.error('从CSV文件加载失败:', error);
+            console.warn('从CSV文件加载失败，将使用默认配置:', error.message);
             return false;
         }
     }
@@ -74,15 +80,16 @@ class CardConfigManager {
             // 默认卡牌配置（作为后备方案）
             this.cardConfigs = [
                 new CardConfig("打击", "战士", 1, 0, "瞬发", "对单体目标造成6点伤害", "DAMAGE_6", 6, 0, 0),
-                new CardConfig("火球术", "法师", 2, 0, "1秒", "对单体目标造成8点伤害", "DAMAGE_8", 8, 0, 0),
+                new CardConfig("火球术", "法师", 1, 1, "吟唱", "吟唱1秒后，对单体目标造成9点伤害", "DAMAGE_9", 9, 0, 0),
                 new CardConfig("治疗术", "牧师", 1, 0, "瞬发", "恢复6点生命值", "HEAL_6", 6, 0, 0),
                 new CardConfig("毒刃", "盗贼", 1, 0, "瞬发", "立刻攻击目标，造成6点伤害，并使其获得3层中毒", "DAMAGE_6_POISON", 6, 3, 0),
                 new CardConfig("断筋", "战士", 1, 0, "瞬发", "对单体目标造成3点伤害，并使目标速度降低3点，持续5秒", "DAMAGE_3_SLOW", 3, 3, 5),
                 new CardConfig("盾击", "战士", 2, 0, "瞬发", "对单体目标造成4点伤害，并获得3点护甲", "DAMAGE_4_ARMOR", 4, 3, 0),
                 new CardConfig("冰霜新星", "法师", 3, 0, "瞬发", "对所有敌人造成4点伤害，并使其速度降低2点", "DAMAGE_4_ALL_SLOW", 4, 2, 0),
-                new CardConfig("奥术冲击", "法师", 1, 0, "瞬发", "消耗当前所有能量，对目标释放一次强力的奥术冲击", "CONSUME_ALL_ENERGY", 2, 0, 0),
+                new CardConfig("奥术冲击", "法师", 0, 2, "吟唱", "消耗当前所有能量，对目标释放一次强力的奥术冲击", "CONSUME_ALL_ENERGY", 2, 0, 0),
                 new CardConfig("伏击", "盗贼", 2, 0, "瞬发", "只能在潜行状态下使用，立刻攻击，造成15点伤害", "DAMAGE_15", 15, 0, 0),
-                new CardConfig("疾跑", "盗贼", 1, 0, "瞬发", "立刻进入潜行状态，最多可持续10秒", "STEALTH", 10, 0, 0),
+                new CardConfig("疾跑", "盗贼", 1, 0, "瞬发", "立刻抽取3张卡牌，随机丢弃本次抽取的其中1张卡牌", "DRAW_3_DISCARD_1", 3, 1, 0),
+                new CardConfig("潜行", "盗贼", 1, 0, "瞬发", "立刻进入潜行状态，最多可持续10秒", "STEALTH", 10, 0, 0),
                 new CardConfig("神圣新星", "牧师", 2, 0, "瞬发", "对所有友军恢复4点生命值", "HEAL_4_ALL", 4, 0, 0),
                 new CardConfig("驱散", "牧师", 1, 0, "瞬发", "移除目标身上的所有负面效果", "DISPEL", 0, 0, 0)
             ];
