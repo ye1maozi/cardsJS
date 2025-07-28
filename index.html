@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>卡牌对战游戏</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- 游戏标题 -->
+        <header class="game-header">
+            <h1>卡牌对战游戏</h1>
+            <div class="version-info">v1.1.0</div>
+        </header>
+
+        <!-- 游戏状态栏 -->
+        <div class="game-status">
+            <div class="player-status">
+                <div class="status-item">
+                    <span class="label">玩家生命:</span>
+                    <span id="playerHealth" class="value">30</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">玩家护甲:</span>
+                    <span id="playerArmor" class="value">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">玩家能量:</span>
+                    <span id="playerEnergy" class="value">3</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">牌组:</span>
+                    <span id="playerDeckCount" class="value">12</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">弃牌堆:</span>
+                    <span id="playerDiscardCount" class="value">0</span>
+                </div>
+            </div>
+            
+            <div class="turn-indicator">
+                <span id="turnInfo">第1回合</span>
+            </div>
+            
+            <div class="computer-status">
+                <div class="status-item">
+                    <span class="label">电脑生命:</span>
+                    <span id="computerHealth" class="value">30</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">电脑护甲:</span>
+                    <span id="computerArmor" class="value">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">电脑能量:</span>
+                    <span id="computerEnergy" class="value">3</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">牌组:</span>
+                    <span id="computerDeckCount" class="value">12</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">弃牌堆:</span>
+                    <span id="computerDiscardCount" class="value">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 游戏区域 -->
+        <div class="game-area">
+            <!-- 电脑区域 -->
+            <div class="computer-area">
+                <div class="computer-field" id="computerField">
+                    <!-- 电脑场上的卡牌 -->
+                </div>
+            </div>
+
+            <!-- 中央区域 -->
+            <div class="center-area">
+                <div class="game-log" id="gameLog">
+                    <div class="log-entry">游戏开始！</div>
+                </div>
+            </div>
+
+            <!-- 玩家区域 -->
+            <div class="player-area">
+                <div class="player-field" id="playerField">
+                    <!-- 玩家场上的卡牌 -->
+                </div>
+                <div class="player-hand" id="playerHand">
+                    <!-- 玩家手牌 -->
+                </div>
+                <div class="player-controls">
+                    <button id="endTurnBtn" class="btn btn-primary">结束回合</button>
+                    <button id="newGameBtn" class="btn btn-secondary">新游戏</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 游戏结束对话框 -->
+        <div id="gameOverModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h2 id="gameOverTitle">游戏结束</h2>
+                <p id="gameOverMessage"></p>
+                <button id="restartBtn" class="btn btn-primary">重新开始</button>
+                <button id="closeModalBtn" class="btn btn-secondary">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript文件 -->
+    <script src="js/Card.js"></script>
+    <script src="js/CardConfig.js"></script>
+    <script src="js/GameState.js"></script>
+    <script src="js/GameUI.js"></script>
+    <script src="js/Game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html> 

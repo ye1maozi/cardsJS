@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV配置加载测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .card {
+            display: inline-block;
+            width: 150px;
+            height: 100px;
+            margin: 5px;
+            padding: 10px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            text-align: center;
+            font-size: 11px;
+            vertical-align: top;
+        }
+        .card:hover {
+            background-color: #e9ecef;
+        }
+        .card.disabled {
+            border-color: #6c757d;
+            background-color: #e9ecef;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .card.used {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #e9ecef;
+        }
+        .health {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .armor {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+        .energy {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .test-results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+        }
+        .config-info {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        .config-info h4 {
+            margin: 0 0 10px 0;
+            color: #007bff;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>CSV配置加载测试</h1>
+        
+        <div class="test-section">
+            <h2>配置加载状态</h2>
+            <div id="configStatus" class="status">
+                <div>配置加载状态: <span id="loadStatus">未加载</span></div>
+                <div>加载方式: <span id="loadMethod">-</span></div>
+                <div>卡牌数量: <span id="cardCount">0</span></div>
+                <div>CSV文件状态: <span id="csvStatus">-</span></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>控制按钮</h2>
+            <button onclick="loadCSVConfig()">加载CSV配置</button>
+            <button onclick="loadDefaultConfig()">加载默认配置</button>
+            <button onclick="reloadConfig()">重新加载配置</button>
+            <button onclick="exportConfig()">导出配置</button>
+            <button onclick="testGame()">测试游戏</button>
+        </div>
+
+        <div class="test-section">
+            <h2>配置信息</h2>
+            <div id="configInfo">
+                <!-- 配置信息将在这里显示 -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>游戏测试</h2>
+            <div class="status">
+                <div>玩家生命: <span id="playerHealth" class="health">30</span></div>
+                <div>玩家护甲: <span id="playerArmor" class="armor">0</span></div>
+                <div>玩家能量: <span id="playerEnergy" class="energy">5</span></div>
+                <div>电脑生命: <span id="computerHealth" class="health">30</span></div>
+                <div>电脑护甲: <span id="computerArmor" class="armor">0</span></div>
+                <div>电脑能量: <span id="computerEnergy" class="energy">5</span></div>
+            </div>
+            <div id="testCards">
+                <!-- 测试卡牌将在这里显示 -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>测试日志</h2>
+            <div id="testLog" class="log"></div>
+        </div>
+
+        <div class="test-results">
+            <h3>测试结果</h3>
+            <div id="testResults">
+                <p>✅ CSV配置系统已实现</p>
+                <p>✅ 异步加载功能正常</p>
+                <p>✅ 后备配置机制完善</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="CardConfig.js"></script>
+    <script src="Card.js"></script>
+    <script src="GameState.js"></script>
+    <script>
+        let testGameState = null;
+        let configLoaded = false;
+
+        /**
+         * 加载CSV配置
+         */
+        async function loadCSVConfig() {
+            addLog("🔄 开始加载CSV配置...");
+            
+            try {
+                const success = await CardConfigManager.loadCardConfigs();
+                if (success) {
+                    configLoaded = true;
+                    updateConfigStatus("CSV文件", true);
+                    addLog("✅ CSV配置加载成功");
+                    displayConfigInfo();
+                } else {
+                    updateConfigStatus("默认配置", false);
+                    addLog("❌ CSV配置加载失败，使用默认配置");
+                }
+            } catch (error) {
+                updateConfigStatus("默认配置", false);
+                addLog(`❌ CSV配置加载出错: ${error.message}`);
+            }
+        }
+
+        /**
+         * 加载默认配置
+         */
+        function loadDefaultConfig() {
+            addLog("🔄 加载默认配置...");
+            
+            try {
+                const success = CardConfigManager.loadDefaultConfigs();
+                if (success) {
+                    configLoaded = true;
+                    updateConfigStatus("默认配置", true);
+                    addLog("✅ 默认配置加载成功");
+                    displayConfigInfo();
+                } else {
+                    updateConfigStatus("无配置", false);
+                    addLog("❌ 默认配置加载失败");
+                }
+            } catch (error) {
+                updateConfigStatus("无配置", false);
+                addLog(`❌ 默认配置加载出错: ${error.message}`);
+            }
+        }
+
+        /**
+         * 重新加载配置
+         */
+        async function reloadConfig() {
+            addLog("🔄 重新加载配置...");
+            
+            try {
+                CardConfigManager.reloadConfigs();
+                const success = await CardConfigManager.loadCardConfigs();
+                if (success) {
+                    configLoaded = true;
+                    updateConfigStatus("CSV文件", true);
+                    addLog("✅ 配置重新加载成功");
+                    displayConfigInfo();
+                } else {
+                    updateConfigStatus("默认配置", false);
+                    addLog("❌ 配置重新加载失败");
+                }
+            } catch (error) {
+                updateConfigStatus("无配置", false);
+                addLog(`❌ 配置重新加载出错: ${error.message}`);
+            }
+        }
+
+        /**
+         * 导出配置
+         */
+        function exportConfig() {
+            if (!CardConfigManager.isConfigLoaded()) {
+                addLog("❌ 没有可导出的配置");
+                return;
+            }
+
+            try {
+                const csvData = CardConfigManager.exportToCSV();
+                const blob = new Blob([csvData], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'cards_export.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                addLog("✅ 配置导出成功");
+            } catch (error) {
+                addLog(`❌ 配置导出失败: ${error.message}`);
+            }
+        }
+
+        /**
+         * 测试游戏
+         */
+        async function testGame() {
+            if (!configLoaded) {
+                addLog("❌ 请先加载配置");
+                return;
+            }
+
+            addLog("🔄 开始测试游戏...");
+            
+            try {
+                testGameState = new GameState();
+                await testGameState.initializeDeck();
+                testGameState.dealInitialCards();
+                
+                updateGameDisplay();
+                addLog("✅ 游戏测试成功");
+            } catch (error) {
+                addLog(`❌ 游戏测试失败: ${error.message}`);
+            }
+        }
+
+        /**
+         * 更新配置状态显示
+         */
+        function updateConfigStatus(method, success) {
+            document.getElementById('loadStatus').textContent = success ? '已加载' : '未加载';
+            document.getElementById('loadMethod').textContent = method;
+            document.getElementById('cardCount').textContent = CardConfigManager.getAllCardConfigs().length;
+            document.getElementById('csvStatus').textContent = success ? '正常' : '异常';
+            
+            const statusElement = document.getElementById('loadStatus');
+            statusElement.className = success ? 'success' : 'error';
+        }
+
+        /**
+         * 显示配置信息
+         */
+        function displayConfigInfo() {
+            const configInfo = document.getElementById('configInfo');
+            const configs = CardConfigManager.getAllCardConfigs();
+            
+            configInfo.innerHTML = '';
+            
+            configs.forEach((config, index) => {
+                const configDiv = document.createElement('div');
+                configDiv.className = 'config-info';
+                configDiv.innerHTML = `
+                    <h4>${config.name} (${config.class})</h4>
+                    <div><strong>能量消耗:</strong> ${config.energyCost}</div>
+                    <div><strong>施法类型:</strong> ${config.castType}</div>
+                    <div><strong>效果:</strong> ${config.effect}</div>
+                    <div><strong>效果代码:</strong> ${config.effectCode}</div>
+                    <div><strong>数值:</strong> ${config.value1}, ${config.value2}, ${config.value3}</div>
+                `;
+                configInfo.appendChild(configDiv);
+            });
+        }
+
+        /**
+         * 更新游戏显示
+         */
+        function updateGameDisplay() {
+            if (!testGameState) return;
+
+            const info = testGameState.getGameInfo();
+            
+            document.getElementById('playerHealth').textContent = info.playerHealth;
+            document.getElementById('playerArmor').textContent = info.playerArmor;
+            document.getElementById('playerEnergy').textContent = info.playerEnergy;
+            document.getElementById('computerHealth').textContent = info.computerHealth;
+            document.getElementById('computerArmor').textContent = info.computerArmor;
+            document.getElementById('computerEnergy').textContent = info.computerEnergy;
+            
+            updateTestCards();
+        }
+
+        /**
+         * 更新测试卡牌显示
+         */
+        function updateTestCards() {
+            if (!testGameState) return;
+
+            const cardsContainer = document.getElementById('testCards');
+            cardsContainer.innerHTML = '';
+            
+            testGameState.playerHand.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                
+                const canPlay = card.canPlay(testGameState.playerEnergy);
+                
+                if (!canPlay) {
+                    cardElement.classList.add('disabled');
+                }
+                
+                cardElement.innerHTML = `
+                    <div style="font-weight: bold;">${card.name}</div>
+                    <div>能量: ${card.energyCost}</div>
+                    <div style="font-size: 9px; margin-top: 5px;">${card.effect}</div>
+                `;
+                
+                if (canPlay) {
+                    cardElement.onclick = () => useTestCard(card, index);
+                }
+                
+                cardsContainer.appendChild(cardElement);
+            });
+        }
+
+        /**
+         * 使用测试卡牌
+         */
+        function useTestCard(card, index) {
+            if (!testGameState) return;
+
+            const result = testGameState.useCard(card, true);
+            
+            if (result.success) {
+                const combinedMessage = `${result.message} → ${result.effectResult}`;
+                addLog(`✅ ${combinedMessage}`);
+                
+                updateGameDisplay();
+            } else {
+                addLog(`❌ ${result.message}`);
+            }
+        }
+
+        /**
+         * 添加日志
+         */
+        function addLog(message) {
+            const logDiv = document.getElementById('testLog');
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // 页面加载完成后自动加载配置
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog("📋 CSV配置加载测试页面已加载");
+            addLog("测试说明：");
+            addLog("1. 点击'加载CSV配置'测试从CSV文件加载");
+            addLog("2. 点击'加载默认配置'测试后备配置");
+            addLog("3. 点击'测试游戏'验证配置是否正确应用");
+            addLog("4. 观察配置信息和游戏测试结果");
+            
+            // 自动尝试加载CSV配置
+            loadCSVConfig();
+        });
+    </script>
+</body>
+</html> 

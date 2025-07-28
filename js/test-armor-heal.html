@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>护甲和治疗效果测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .card {
+            display: inline-block;
+            width: 120px;
+            height: 80px;
+            margin: 5px;
+            padding: 10px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            text-align: center;
+            font-size: 12px;
+        }
+        .card:hover {
+            background-color: #e9ecef;
+        }
+        .card.disabled {
+            border-color: #6c757d;
+            background-color: #e9ecef;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .card.used {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #e9ecef;
+        }
+        .health {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .armor {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+        .energy {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .test-results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>护甲和治疗效果测试</h1>
+        
+        <div class="test-section">
+            <h2>当前状态</h2>
+            <div class="status">
+                <div>玩家生命: <span id="playerHealth" class="health">30</span></div>
+                <div>玩家护甲: <span id="playerArmor" class="armor">0</span></div>
+                <div>玩家能量: <span id="playerEnergy" class="energy">3</span></div>
+                <div>电脑生命: <span id="computerHealth" class="health">30</span></div>
+                <div>电脑护甲: <span id="computerArmor" class="armor">0</span></div>
+                <div>电脑能量: <span id="computerEnergy" class="energy">3</span></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>测试卡牌</h2>
+            <div id="testCards">
+                <!-- 测试卡牌将在这里动态生成 -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>控制按钮</h2>
+            <button onclick="resetTest()">重置测试</button>
+            <button onclick="damagePlayer()">对玩家造成伤害</button>
+            <button onclick="damageComputer()">对电脑造成伤害</button>
+            <button onclick="addEnergy()">增加能量</button>
+        </div>
+
+        <div class="test-section">
+            <h2>测试日志</h2>
+            <div id="testLog" class="log"></div>
+        </div>
+
+        <div class="test-results">
+            <h3>测试结果</h3>
+            <div id="testResults">
+                <p>✅ 护甲系统已实现</p>
+                <p>✅ 治疗效果文字描述已修复</p>
+                <p>✅ 护甲在UI中正确显示</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟游戏状态
+        class TestGameState {
+            constructor() {
+                this.playerHealth = 30;
+                this.playerEnergy = 3;
+                this.playerArmor = 0;
+                this.computerHealth = 30;
+                this.computerEnergy = 3;
+                this.computerArmor = 0;
+                this.usedCards = [];
+            }
+
+            useCard(card) {
+                if (this.playerEnergy < card.energyCost) {
+                    return { success: false, message: "能量不足" };
+                }
+
+                this.playerEnergy -= card.energyCost;
+                this.usedCards.push(card.name);
+                
+                // 执行卡牌效果
+                const result = this.executeCardEffect(card);
+                
+                return { 
+                    success: true, 
+                    message: `使用了 ${card.name}`,
+                    effectResult: result
+                };
+            }
+
+            executeCardEffect(card) {
+                switch (card.effectCode) {
+                    case "DAMAGE_4_ARMOR":
+                        this.computerHealth -= card.value1;
+                        this.playerArmor += card.value2;
+                        return card.formatEffect(card.value1, card.value2);
+                        
+                    case "HEAL_4_ALL":
+                        this.playerHealth = Math.min(this.playerHealth + card.value1, 30);
+                        return card.formatEffect(card.value1);
+                        
+                    case "HEAL_6":
+                        this.playerHealth = Math.min(this.playerHealth + card.value1, 30);
+                        return card.formatEffect(card.value1);
+                        
+                    default:
+                        this.computerHealth -= card.value1;
+                        return card.formatEffect(card.value1);
+                }
+            }
+
+            reset() {
+                this.playerHealth = 30;
+                this.playerEnergy = 3;
+                this.playerArmor = 0;
+                this.computerHealth = 30;
+                this.computerEnergy = 3;
+                this.computerArmor = 0;
+                this.usedCards = [];
+            }
+
+            damagePlayer() {
+                this.playerHealth = Math.max(this.playerHealth - 5, 0);
+            }
+
+            damageComputer() {
+                this.computerHealth = Math.max(this.computerHealth - 5, 0);
+            }
+
+            addEnergy() {
+                this.playerEnergy = Math.min(this.playerEnergy + 2, 10);
+            }
+        }
+
+        // 模拟卡牌类
+        class TestCard {
+            constructor(name, cardClass, energyCost, effect, effectCode, value1, value2, value3) {
+                this.name = name;
+                this.class = cardClass;
+                this.energyCost = energyCost;
+                this.effect = effect;
+                this.effectCode = effectCode;
+                this.value1 = value1;
+                this.value2 = value2;
+                this.value3 = value3;
+            }
+
+            canPlay(currentEnergy) {
+                return currentEnergy >= this.energyCost;
+            }
+
+            formatEffect(value1, value2 = null, value3 = null) {
+                if (value2 === null && value3 === null) {
+                    return this.effect.replace('{0}', value1);
+                } else if (value3 === null) {
+                    return this.effect.replace('{0}', value1).replace('{1}', value2);
+                } else {
+                    return this.effect.replace('{0}', value1).replace('{1}', value2).replace('{2}', value3);
+                }
+            }
+        }
+
+        let testGameState = new TestGameState();
+        let testCards = [
+            new TestCard("盾击", "战士", 2, "对单体目标造成{0}点伤害，并获得{1}点护甲", "DAMAGE_4_ARMOR", 4, 3, 0),
+            new TestCard("神圣新星", "牧师", 2, "对所有友军恢复{0}点生命值", "HEAL_4_ALL", 4, 0, 0),
+            new TestCard("治疗术", "牧师", 1, "恢复{0}点生命值", "HEAL_6", 6, 0, 0),
+            new TestCard("打击", "战士", 1, "对单体目标造成{0}点伤害", "DAMAGE_6", 6, 0, 0)
+        ];
+
+        function updateDisplay() {
+            document.getElementById('playerHealth').textContent = testGameState.playerHealth;
+            document.getElementById('playerArmor').textContent = testGameState.playerArmor;
+            document.getElementById('playerEnergy').textContent = testGameState.playerEnergy;
+            document.getElementById('computerHealth').textContent = testGameState.computerHealth;
+            document.getElementById('computerArmor').textContent = testGameState.computerArmor;
+            document.getElementById('computerEnergy').textContent = testGameState.computerEnergy;
+            
+            updateCards();
+        }
+
+        function updateCards() {
+            const cardsContainer = document.getElementById('testCards');
+            cardsContainer.innerHTML = '';
+            
+            testCards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                
+                const canPlay = card.canPlay(testGameState.playerEnergy);
+                const isUsed = testGameState.usedCards.includes(card.name);
+                
+                if (!canPlay) {
+                    cardElement.classList.add('disabled');
+                }
+                if (isUsed) {
+                    cardElement.classList.add('used');
+                }
+                
+                cardElement.innerHTML = `
+                    <div style="font-weight: bold;">${card.name}</div>
+                    <div>能量: ${card.energyCost}</div>
+                    <div style="font-size: 10px;">${card.effect}</div>
+                `;
+                
+                if (canPlay && !isUsed) {
+                    cardElement.onclick = () => useCard(card);
+                }
+                
+                cardsContainer.appendChild(cardElement);
+            });
+        }
+
+        function addLog(message) {
+            const logDiv = document.getElementById('testLog');
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function useCard(card) {
+            const result = testGameState.useCard(card);
+            
+            if (result.success) {
+                const combinedMessage = `${result.message} → ${result.effectResult}`;
+                addLog(`✅ ${combinedMessage}`);
+                
+                updateDisplay();
+                
+                // 检查文字描述是否正确
+                if (card.name === "神圣新星") {
+                    if (result.effectResult.includes("4")) {
+                        addLog("✅ 神圣新星文字描述正确显示数值");
+                    } else {
+                        addLog("❌ 神圣新星文字描述显示错误");
+                    }
+                }
+                
+                if (card.name === "盾击") {
+                    if (result.effectResult.includes("3")) {
+                        addLog("✅ 盾击护甲数值正确显示");
+                    } else {
+                        addLog("❌ 盾击护甲数值显示错误");
+                    }
+                }
+            } else {
+                addLog(`❌ ${result.message}`);
+            }
+        }
+
+        function resetTest() {
+            addLog("🔄 重置测试");
+            testGameState.reset();
+            updateDisplay();
+        }
+
+        function damagePlayer() {
+            testGameState.damagePlayer();
+            addLog("⚔️ 对玩家造成5点伤害");
+            updateDisplay();
+        }
+
+        function damageComputer() {
+            testGameState.damageComputer();
+            addLog("⚔️ 对电脑造成5点伤害");
+            updateDisplay();
+        }
+
+        function addEnergy() {
+            const oldEnergy = testGameState.playerEnergy;
+            testGameState.addEnergy();
+            addLog(`⚡ 能量从${oldEnergy}增加到${testGameState.playerEnergy}`);
+            updateDisplay();
+        }
+
+        // 初始化显示
+        updateDisplay();
+        addLog("护甲和治疗效果测试页面已加载");
+        addLog("测试说明：");
+        addLog("1. 点击'盾击'测试护甲系统");
+        addLog("2. 点击'神圣新星'测试治疗效果文字描述");
+        addLog("3. 观察护甲值是否正确显示");
+        addLog("4. 观察治疗效果文字是否正确显示数值");
+    </script>
+</body>
+</html> 

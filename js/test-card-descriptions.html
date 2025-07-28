@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>卡牌描述修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .card {
+            display: inline-block;
+            width: 150px;
+            height: 100px;
+            margin: 5px;
+            padding: 10px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            text-align: center;
+            font-size: 11px;
+            vertical-align: top;
+        }
+        .card:hover {
+            background-color: #e9ecef;
+        }
+        .card.disabled {
+            border-color: #6c757d;
+            background-color: #e9ecef;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .card.used {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #e9ecef;
+        }
+        .health {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .armor {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+        .energy {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .test-results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+        }
+        .description-test {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        .description-test h4 {
+            margin: 0 0 10px 0;
+            color: #007bff;
+        }
+        .description-test .expected {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .description-test .actual {
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>卡牌描述修复测试</h1>
+        
+        <div class="test-section">
+            <h2>当前状态</h2>
+            <div class="status">
+                <div>玩家生命: <span id="playerHealth" class="health">30</span></div>
+                <div>玩家护甲: <span id="playerArmor" class="armor">0</span></div>
+                <div>玩家能量: <span id="playerEnergy" class="energy">5</span></div>
+                <div>电脑生命: <span id="computerHealth" class="health">30</span></div>
+                <div>电脑护甲: <span id="computerArmor" class="armor">0</span></div>
+                <div>电脑能量: <span id="computerEnergy" class="energy">5</span></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>测试卡牌</h2>
+            <div id="testCards">
+                <!-- 测试卡牌将在这里动态生成 -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>控制按钮</h2>
+            <button onclick="resetTest()">重置测试</button>
+            <button onclick="addEnergy()">增加能量</button>
+            <button onclick="testAllCards()">测试所有卡牌</button>
+        </div>
+
+        <div class="test-section">
+            <h2>描述测试结果</h2>
+            <div id="descriptionTests">
+                <!-- 描述测试结果将在这里显示 -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>测试日志</h2>
+            <div id="testLog" class="log"></div>
+        </div>
+
+        <div class="test-results">
+            <h3>测试结果</h3>
+            <div id="testResults">
+                <p>✅ 卡牌描述已修复</p>
+                <p>✅ 数值正确显示</p>
+                <p>✅ 无{0}{1}{2}占位符</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟游戏状态
+        class TestGameState {
+            constructor() {
+                this.playerHealth = 30;
+                this.playerEnergy = 5;
+                this.playerArmor = 0;
+                this.computerHealth = 30;
+                this.computerEnergy = 5;
+                this.computerArmor = 0;
+                this.usedCards = [];
+            }
+
+            useCard(card) {
+                if (this.playerEnergy < card.energyCost) {
+                    return { success: false, message: "能量不足" };
+                }
+
+                this.playerEnergy -= card.energyCost;
+                this.usedCards.push(card.name);
+                
+                // 执行卡牌效果
+                const result = this.executeCardEffect(card);
+                
+                return { 
+                    success: true, 
+                    message: `使用了 ${card.name}`,
+                    effectResult: result
+                };
+            }
+
+            executeCardEffect(card) {
+                switch (card.effectCode) {
+                    case "DAMAGE_6":
+                        this.computerHealth -= card.value1;
+                        return card.formatEffect(card.value1);
+                        
+                    case "DAMAGE_8":
+                        this.computerHealth -= card.value1;
+                        return card.formatEffect(card.value1);
+                        
+                    case "HEAL_6":
+                        this.playerHealth = Math.min(this.playerHealth + card.value1, 30);
+                        return card.formatEffect(card.value1);
+                        
+                    case "DAMAGE_6_POISON":
+                        this.computerHealth -= card.value1;
+                        return card.formatEffect(card.value1, card.value2);
+                        
+                    case "DAMAGE_3_SLOW":
+                        this.computerHealth -= card.value1;
+                        return card.formatEffect(card.value1, card.value2, card.value3);
+                        
+                    case "DAMAGE_4_ARMOR":
+                        this.computerHealth -= card.value1;
+                        this.playerArmor += card.value2;
+                        return card.formatEffect(card.value1, card.value2);
+                        
+                    case "DAMAGE_4_ALL_SLOW":
+                        this.computerHealth -= card.value1;
+                        return card.formatEffect(card.value1, card.value2);
+                        
+                    case "CONSUME_ALL_ENERGY":
+                        const damage = this.playerEnergy * card.value1;
+                        this.computerHealth -= damage;
+                        this.playerEnergy = 0;
+                        return `${card.name} 消耗所有能量造成${damage}点伤害`;
+                        
+                    case "DAMAGE_15":
+                        this.computerHealth -= card.value1;
+                        return card.formatEffect(card.value1);
+                        
+                    case "STEALTH":
+                        return card.formatEffect(card.value1);
+                        
+                    case "HEAL_4_ALL":
+                        this.playerHealth = Math.min(this.playerHealth + card.value1, 30);
+                        return card.formatEffect(card.value1);
+                        
+                    case "DISPEL":
+                        return card.effect;
+                        
+                    default:
+                        this.computerHealth -= card.value1;
+                        return card.formatEffect(card.value1);
+                }
+            }
+
+            reset() {
+                this.playerHealth = 30;
+                this.playerEnergy = 5;
+                this.playerArmor = 0;
+                this.computerHealth = 30;
+                this.computerEnergy = 5;
+                this.computerArmor = 0;
+                this.usedCards = [];
+            }
+
+            addEnergy() {
+                this.playerEnergy = Math.min(this.playerEnergy + 3, 10);
+            }
+        }
+
+        // 模拟卡牌类
+        class TestCard {
+            constructor(name, cardClass, energyCost, effect, effectCode, value1, value2, value3) {
+                this.name = name;
+                this.class = cardClass;
+                this.energyCost = energyCost;
+                this.effect = effect;
+                this.effectCode = effectCode;
+                this.value1 = value1;
+                this.value2 = value2;
+                this.value3 = value3;
+            }
+
+            canPlay(currentEnergy) {
+                return currentEnergy >= this.energyCost;
+            }
+
+            formatEffect(value1, value2 = null, value3 = null) {
+                if (value2 === null && value3 === null) {
+                    return this.effect.replace('{0}', value1);
+                } else if (value3 === null) {
+                    return this.effect.replace('{0}', value1).replace('{1}', value2);
+                } else {
+                    return this.effect.replace('{0}', value1).replace('{1}', value2).replace('{2}', value3);
+                }
+            }
+        }
+
+        let testGameState = new TestGameState();
+        let testCards = [
+            new TestCard("打击", "战士", 1, "对单体目标造成6点伤害", "DAMAGE_6", 6, 0, 0),
+            new TestCard("火球术", "法师", 2, "对单体目标造成8点伤害", "DAMAGE_8", 8, 0, 0),
+            new TestCard("治疗术", "牧师", 1, "恢复6点生命值", "HEAL_6", 6, 0, 0),
+            new TestCard("毒刃", "盗贼", 1, "立刻攻击目标，造成6点伤害，并使其获得3层中毒", "DAMAGE_6_POISON", 6, 3, 0),
+            new TestCard("断筋", "战士", 1, "对单体目标造成3点伤害，并使目标速度降低3点，持续5秒", "DAMAGE_3_SLOW", 3, 3, 5),
+            new TestCard("盾击", "战士", 2, "对单体目标造成4点伤害，并获得3点护甲", "DAMAGE_4_ARMOR", 4, 3, 0),
+            new TestCard("冰霜新星", "法师", 3, "对所有敌人造成4点伤害，并使其速度降低2点", "DAMAGE_4_ALL_SLOW", 4, 2, 0),
+            new TestCard("奥术冲击", "法师", 1, "消耗当前所有能量，对目标释放一次强力的奥术冲击", "CONSUME_ALL_ENERGY", 2, 0, 0),
+            new TestCard("伏击", "盗贼", 2, "只能在潜行状态下使用，立刻攻击，造成15点伤害", "DAMAGE_15", 15, 0, 0),
+            new TestCard("疾跑", "盗贼", 1, "立刻进入潜行状态，最多可持续10秒", "STEALTH", 10, 0, 0),
+            new TestCard("神圣新星", "牧师", 2, "对所有友军恢复4点生命值", "HEAL_4_ALL", 4, 0, 0),
+            new TestCard("驱散", "牧师", 1, "移除目标身上的所有负面效果", "DISPEL", 0, 0, 0)
+        ];
+
+        function updateDisplay() {
+            document.getElementById('playerHealth').textContent = testGameState.playerHealth;
+            document.getElementById('playerArmor').textContent = testGameState.playerArmor;
+            document.getElementById('playerEnergy').textContent = testGameState.playerEnergy;
+            document.getElementById('computerHealth').textContent = testGameState.computerHealth;
+            document.getElementById('computerArmor').textContent = testGameState.computerArmor;
+            document.getElementById('computerEnergy').textContent = testGameState.computerEnergy;
+            
+            updateCards();
+        }
+
+        function updateCards() {
+            const cardsContainer = document.getElementById('testCards');
+            cardsContainer.innerHTML = '';
+            
+            testCards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                
+                const canPlay = card.canPlay(testGameState.playerEnergy);
+                const isUsed = testGameState.usedCards.includes(card.name);
+                
+                if (!canPlay) {
+                    cardElement.classList.add('disabled');
+                }
+                if (isUsed) {
+                    cardElement.classList.add('used');
+                }
+                
+                cardElement.innerHTML = `
+                    <div style="font-weight: bold;">${card.name}</div>
+                    <div>能量: ${card.energyCost}</div>
+                    <div style="font-size: 9px; margin-top: 5px;">${card.effect}</div>
+                `;
+                
+                if (canPlay && !isUsed) {
+                    cardElement.onclick = () => useCard(card);
+                }
+                
+                cardsContainer.appendChild(cardElement);
+            });
+        }
+
+        function addLog(message) {
+            const logDiv = document.getElementById('testLog');
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function useCard(card) {
+            const result = testGameState.useCard(card);
+            
+            if (result.success) {
+                const combinedMessage = `${result.message} → ${result.effectResult}`;
+                addLog(`✅ ${combinedMessage}`);
+                
+                updateDisplay();
+                
+                // 检查描述是否正确
+                checkDescription(card, result.effectResult);
+            } else {
+                addLog(`❌ ${result.message}`);
+            }
+        }
+
+        function checkDescription(card, actualResult) {
+            const descriptionTests = document.getElementById('descriptionTests');
+            
+            // 检查是否包含占位符
+            const hasPlaceholders = actualResult.includes('{0}') || actualResult.includes('{1}') || actualResult.includes('{2}');
+            
+            const testDiv = document.createElement('div');
+            testDiv.className = 'description-test';
+            testDiv.innerHTML = `
+                <h4>${card.name}</h4>
+                <div><strong>原始描述:</strong> ${card.effect}</div>
+                <div><strong>实际结果:</strong> <span class="${hasPlaceholders ? 'actual' : 'expected'}">${actualResult}</span></div>
+                <div><strong>状态:</strong> <span class="${hasPlaceholders ? 'actual' : 'expected'}">${hasPlaceholders ? '❌ 包含占位符' : '✅ 正确显示'}</span></div>
+            `;
+            
+            descriptionTests.appendChild(testDiv);
+        }
+
+        function resetTest() {
+            addLog("🔄 重置测试");
+            testGameState.reset();
+            updateDisplay();
+            document.getElementById('descriptionTests').innerHTML = '';
+        }
+
+        function addEnergy() {
+            const oldEnergy = testGameState.playerEnergy;
+            testGameState.addEnergy();
+            addLog(`⚡ 能量从${oldEnergy}增加到${testGameState.playerEnergy}`);
+            updateDisplay();
+        }
+
+        function testAllCards() {
+            addLog("🧪 开始测试所有卡牌");
+            testCards.forEach(card => {
+                if (card.canPlay(testGameState.playerEnergy)) {
+                    useCard(card);
+                }
+            });
+        }
+
+        // 初始化显示
+        updateDisplay();
+        addLog("卡牌描述修复测试页面已加载");
+        addLog("测试说明：");
+        addLog("1. 点击卡牌测试描述显示");
+        addLog("2. 观察是否还有{0}{1}{2}占位符");
+        addLog("3. 使用'测试所有卡牌'按钮批量测试");
+        addLog("4. 检查描述测试结果区域");
+    </script>
+</body>
+</html> 

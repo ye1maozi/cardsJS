@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>回合控制测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .card {
+            display: inline-block;
+            width: 120px;
+            height: 80px;
+            margin: 5px;
+            padding: 10px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            text-align: center;
+            font-size: 12px;
+        }
+        .card:hover {
+            background-color: #e9ecef;
+        }
+        .card.disabled {
+            border-color: #6c757d;
+            background-color: #e9ecef;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .card.used {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+        .energy-display {
+            font-size: 18px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .turn-display {
+            font-size: 16px;
+            color: #6c757d;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>回合控制测试</h1>
+        
+        <div class="test-section">
+            <h2>当前状态</h2>
+            <div class="status">
+                <div class="turn-display">回合: <span id="currentTurn">1</span></div>
+                <div class="energy-display">玩家能量: <span id="playerEnergy">1</span></div>
+                <div class="turn-display">当前回合: <span id="isPlayerTurn">玩家</span></div>
+                <div class="turn-display">游戏状态: <span id="gameState">进行中</span></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>测试卡牌</h2>
+            <div id="testCards">
+                <!-- 测试卡牌将在这里动态生成 -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>控制按钮</h2>
+            <button onclick="endTurn()">结束回合</button>
+            <button onclick="resetTest()">重置测试</button>
+            <button onclick="addEnergy()">增加能量</button>
+        </div>
+
+        <div class="test-section">
+            <h2>测试日志</h2>
+            <div id="testLog" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟游戏状态
+        class TestGameState {
+            constructor() {
+                this.playerEnergy = 1;
+                this.currentTurn = 1;
+                this.isPlayerTurn = true;
+                this.gameOver = false;
+                this.usedCards = [];
+            }
+
+            useCard(card) {
+                if (this.playerEnergy < card.energyCost) {
+                    return { success: false, message: "能量不足" };
+                }
+
+                this.playerEnergy -= card.energyCost;
+                this.usedCards.push(card.name);
+                
+                return { 
+                    success: true, 
+                    message: `使用了 ${card.name}`,
+                    effectResult: `造成${card.damage}点伤害`
+                };
+            }
+
+            endTurn() {
+                this.isPlayerTurn = false;
+                // 模拟电脑回合
+                setTimeout(() => {
+                    this.currentTurn++;
+                    this.playerEnergy = Math.min(this.currentTurn, 10);
+                    this.isPlayerTurn = true;
+                    this.usedCards = [];
+                    updateDisplay();
+                    addLog("新回合开始，玩家能量恢复");
+                }, 1000);
+            }
+
+            reset() {
+                this.playerEnergy = 1;
+                this.currentTurn = 1;
+                this.isPlayerTurn = true;
+                this.gameOver = false;
+                this.usedCards = [];
+            }
+
+            addEnergy() {
+                this.playerEnergy = Math.min(this.playerEnergy + 1, 10);
+            }
+        }
+
+        // 模拟卡牌
+        class TestCard {
+            constructor(name, energyCost, damage) {
+                this.name = name;
+                this.energyCost = energyCost;
+                this.damage = damage;
+            }
+
+            canPlay(currentEnergy) {
+                return currentEnergy >= this.energyCost;
+            }
+        }
+
+        let testGameState = new TestGameState();
+        let testCards = [
+            new TestCard("打击", 1, 6),
+            new TestCard("火球术", 2, 8),
+            new TestCard("冰霜新星", 3, 4)
+        ];
+
+        function updateDisplay() {
+            document.getElementById('currentTurn').textContent = testGameState.currentTurn;
+            document.getElementById('playerEnergy').textContent = testGameState.playerEnergy;
+            document.getElementById('isPlayerTurn').textContent = testGameState.isPlayerTurn ? '玩家' : '电脑';
+            document.getElementById('gameState').textContent = testGameState.gameOver ? '结束' : '进行中';
+            
+            updateCards();
+        }
+
+        function updateCards() {
+            const cardsContainer = document.getElementById('testCards');
+            cardsContainer.innerHTML = '';
+            
+            testCards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                
+                const canPlay = card.canPlay(testGameState.playerEnergy);
+                const isUsed = testGameState.usedCards.includes(card.name);
+                
+                if (!canPlay) {
+                    cardElement.classList.add('disabled');
+                }
+                if (isUsed) {
+                    cardElement.classList.add('used');
+                }
+                
+                cardElement.innerHTML = `
+                    <div style="font-weight: bold;">${card.name}</div>
+                    <div>能量: ${card.energyCost}</div>
+                    <div>伤害: ${card.damage}</div>
+                `;
+                
+                if (canPlay && !isUsed && testGameState.isPlayerTurn) {
+                    cardElement.onclick = () => useCard(card);
+                }
+                
+                cardsContainer.appendChild(cardElement);
+            });
+        }
+
+        function addLog(message) {
+            const logDiv = document.getElementById('testLog');
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function useCard(card) {
+            if (!testGameState.isPlayerTurn) {
+                addLog("❌ 不是玩家回合，无法使用卡牌");
+                return;
+            }
+
+            const result = testGameState.useCard(card);
+            
+            if (result.success) {
+                const combinedMessage = `${result.message} → ${result.effectResult}`;
+                addLog(`✅ ${combinedMessage}`);
+                
+                updateDisplay();
+                
+                // 检查能量是否耗尽
+                if (testGameState.playerEnergy <= 0) {
+                    addLog("⚠️ 玩家能量耗尽，请点击'结束回合'按钮");
+                }
+            } else {
+                addLog(`❌ ${result.message}`);
+            }
+        }
+
+        function endTurn() {
+            if (!testGameState.isPlayerTurn) {
+                addLog("❌ 不是玩家回合，无法结束回合");
+                return;
+            }
+            
+            addLog("✅ 玩家结束回合");
+            testGameState.endTurn();
+            updateDisplay();
+        }
+
+        function resetTest() {
+            addLog("🔄 重置测试");
+            testGameState.reset();
+            updateDisplay();
+        }
+
+        function addEnergy() {
+            const oldEnergy = testGameState.playerEnergy;
+            testGameState.addEnergy();
+            addLog(`⚡ 能量从${oldEnergy}增加到${testGameState.playerEnergy}`);
+            updateDisplay();
+        }
+
+        // 初始化显示
+        updateDisplay();
+        addLog("回合控制测试页面已加载");
+        addLog("测试说明：");
+        addLog("1. 点击卡牌使用它们");
+        addLog("2. 能量耗尽时不会自动结束回合");
+        addLog("3. 需要手动点击'结束回合'按钮");
+        addLog("4. 可以使用'增加能量'按钮测试不同能量值");
+    </script>
+</body>
+</html> 

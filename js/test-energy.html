@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>能量恢复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+        .success {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .energy-display {
+            font-size: 18px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .turn-display {
+            font-size: 16px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>能量恢复系统测试</h1>
+        
+        <div class="test-section">
+            <h2>当前状态</h2>
+            <div class="turn-display">回合: <span id="currentTurn">1</span></div>
+            <div class="energy-display">玩家能量: <span id="playerEnergy">1</span></div>
+            <div class="energy-display">电脑能量: <span id="computerEnergy">1</span></div>
+        </div>
+
+        <div class="test-section">
+            <h2>测试操作</h2>
+            <button onclick="testInitialEnergy()">测试初始能量</button>
+            <button onclick="testEnergyRecovery()">测试能量恢复</button>
+            <button onclick="testMultipleTurns()">测试多回合</button>
+            <button onclick="testEnergyCap()">测试能量上限</button>
+            <button onclick="resetTest()">重置测试</button>
+        </div>
+
+        <div class="test-section">
+            <h2>测试结果</h2>
+            <div id="testResults"></div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟GameState类
+        class TestGameState {
+            constructor() {
+                this.playerEnergy = 1;
+                this.computerEnergy = 1;
+                this.currentTurn = 1;
+                this.isPlayerTurn = true;
+            }
+
+            startNewTurn() {
+                this.currentTurn++;
+                
+                // 能量恢复逻辑：每回合能量值等于回合数，最高10点
+                const maxEnergy = Math.min(this.currentTurn, 10);
+                
+                if (this.isPlayerTurn) {
+                    this.playerEnergy = maxEnergy;
+                } else {
+                    this.computerEnergy = maxEnergy;
+                }
+            }
+
+            reset() {
+                this.playerEnergy = 1;
+                this.computerEnergy = 1;
+                this.currentTurn = 1;
+                this.isPlayerTurn = true;
+            }
+        }
+
+        let testGameState = new TestGameState();
+
+        function updateDisplay() {
+            document.getElementById('currentTurn').textContent = testGameState.currentTurn;
+            document.getElementById('playerEnergy').textContent = testGameState.playerEnergy;
+            document.getElementById('computerEnergy').textContent = testGameState.computerEnergy;
+        }
+
+        function addTestResult(message, isSuccess = true) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${isSuccess ? 'success' : 'error'}`;
+            resultDiv.textContent = message;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function testInitialEnergy() {
+            addTestResult('=== 测试初始能量 ===');
+            
+            if (testGameState.playerEnergy === 1 && testGameState.computerEnergy === 1) {
+                addTestResult('✅ 初始能量正确：玩家1点，电脑1点');
+            } else {
+                addTestResult('❌ 初始能量错误', false);
+            }
+            
+            if (testGameState.currentTurn === 1) {
+                addTestResult('✅ 初始回合正确：第1回合');
+            } else {
+                addTestResult('❌ 初始回合错误', false);
+            }
+        }
+
+        function testEnergyRecovery() {
+            addTestResult('=== 测试能量恢复 ===');
+            
+            const initialEnergy = testGameState.playerEnergy;
+            testGameState.startNewTurn();
+            
+            if (testGameState.playerEnergy === 2) {
+                addTestResult('✅ 第2回合能量恢复正确：2点');
+            } else {
+                addTestResult(`❌ 第2回合能量恢复错误：期望2点，实际${testGameState.playerEnergy}点`, false);
+            }
+            
+            if (testGameState.currentTurn === 2) {
+                addTestResult('✅ 回合数增加正确');
+            } else {
+                addTestResult('❌ 回合数增加错误', false);
+            }
+            
+            updateDisplay();
+        }
+
+        function testMultipleTurns() {
+            addTestResult('=== 测试多回合能量恢复 ===');
+            
+            for (let i = 3; i <= 5; i++) {
+                testGameState.startNewTurn();
+                const expectedEnergy = Math.min(i, 10);
+                
+                if (testGameState.playerEnergy === expectedEnergy) {
+                    addTestResult(`✅ 第${i}回合能量正确：${expectedEnergy}点`);
+                } else {
+                    addTestResult(`❌ 第${i}回合能量错误：期望${expectedEnergy}点，实际${testGameState.playerEnergy}点`, false);
+                }
+            }
+            
+            updateDisplay();
+        }
+
+        function testEnergyCap() {
+            addTestResult('=== 测试能量上限 ===');
+            
+            // 快速推进到第15回合
+            for (let i = testGameState.currentTurn + 1; i <= 15; i++) {
+                testGameState.startNewTurn();
+            }
+            
+            if (testGameState.playerEnergy === 10) {
+                addTestResult('✅ 能量上限正确：最高10点');
+            } else {
+                addTestResult(`❌ 能量上限错误：期望10点，实际${testGameState.playerEnergy}点`, false);
+            }
+            
+            if (testGameState.currentTurn === 15) {
+                addTestResult('✅ 回合数正确：第15回合');
+            } else {
+                addTestResult('❌ 回合数错误', false);
+            }
+            
+            updateDisplay();
+        }
+
+        function resetTest() {
+            addTestResult('=== 重置测试 ===');
+            testGameState.reset();
+            updateDisplay();
+            
+            if (testGameState.playerEnergy === 1 && testGameState.computerEnergy === 1 && testGameState.currentTurn === 1) {
+                addTestResult('✅ 重置成功：能量和回合数都正确重置');
+            } else {
+                addTestResult('❌ 重置失败', false);
+            }
+        }
+
+        // 初始化显示
+        updateDisplay();
+        addTestResult('能量恢复系统测试页面已加载');
+    </script>
+</body>
+</html> 
