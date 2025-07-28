@@ -1,4 +1,297 @@
 /**
+ * 卡牌效果策略接口
+ */
+class CardEffectStrategy {
+    execute(gameState, isPlayer, card) {
+        throw new Error('execute method must be implemented');
+    }
+}
+
+/**
+ * 伤害效果策略
+ */
+class DamageEffectStrategy extends CardEffectStrategy {
+    execute(gameState, isPlayer, card) {
+        const character = isPlayer ? gameState.playerCharacter : gameState.computerCharacter;
+        const damage = card.calculateActualDamage(card.value1, character);
+        
+        if (isPlayer) {
+            gameState.computerCharacter.takeDamage(damage);
+            gameState.computerHealth = gameState.computerCharacter.currentHealth;
+        } else {
+            gameState.playerCharacter.takeDamage(damage);
+            gameState.playerHealth = gameState.playerCharacter.currentHealth;
+        }
+        
+        return card.formatEffect(damage);
+    }
+}
+
+/**
+ * 治疗效果策略
+ */
+class HealEffectStrategy extends CardEffectStrategy {
+    execute(gameState, isPlayer, card) {
+        if (isPlayer) {
+            gameState.playerCharacter.heal(card.value1);
+            gameState.playerHealth = gameState.playerCharacter.currentHealth;
+        } else {
+            gameState.computerCharacter.heal(card.value1);
+            gameState.computerHealth = gameState.computerCharacter.currentHealth;
+        }
+        
+        return card.formatEffect(card.value1);
+    }
+}
+
+/**
+ * 伤害+中毒效果策略
+ */
+class DamagePoisonEffectStrategy extends CardEffectStrategy {
+    execute(gameState, isPlayer, card) {
+        const character = isPlayer ? gameState.playerCharacter : gameState.computerCharacter;
+        const damage = card.calculateActualDamage(card.value1, character);
+        
+        if (isPlayer) {
+            gameState.computerCharacter.takeDamage(damage);
+            gameState.computerHealth = gameState.computerCharacter.currentHealth;
+            if (gameState.computerCharacter) {
+                gameState.computerCharacter.addStatusEffect(new PoisonEffect(card.value2, 5));
+            }
+        } else {
+            gameState.playerCharacter.takeDamage(damage);
+            gameState.playerHealth = gameState.playerCharacter.currentHealth;
+            if (gameState.playerCharacter) {
+                gameState.playerCharacter.addStatusEffect(new PoisonEffect(card.value2, 5));
+            }
+        }
+        
+        return card.formatEffect(damage, card.value2);
+    }
+}
+
+/**
+ * 伤害+减速效果策略
+ */
+class DamageSlowEffectStrategy extends CardEffectStrategy {
+    execute(gameState, isPlayer, card) {
+        const character = isPlayer ? gameState.playerCharacter : gameState.computerCharacter;
+        const damage = card.calculateActualDamage(card.value1, character);
+        
+        if (isPlayer) {
+            gameState.computerCharacter.takeDamage(damage);
+            gameState.computerHealth = gameState.computerCharacter.currentHealth;
+            if (gameState.computerCharacter) {
+                gameState.computerCharacter.addStatusEffect(new SlowEffect(card.value2, card.value3));
+            }
+        } else {
+            gameState.playerCharacter.takeDamage(damage);
+            gameState.playerHealth = gameState.playerCharacter.currentHealth;
+            if (gameState.playerCharacter) {
+                gameState.playerCharacter.addStatusEffect(new SlowEffect(card.value2, card.value3));
+            }
+        }
+        
+        return card.formatEffect(damage, card.value2, card.value3);
+    }
+}
+
+/**
+ * 伤害+护甲效果策略
+ */
+class DamageArmorEffectStrategy extends CardEffectStrategy {
+    execute(gameState, isPlayer, card) {
+        const character = isPlayer ? gameState.playerCharacter : gameState.computerCharacter;
+        const damage = card.calculateActualDamage(card.value1, character);
+        
+        if (isPlayer) {
+            gameState.computerCharacter.takeDamage(damage);
+            gameState.computerHealth = gameState.computerCharacter.currentHealth;
+            gameState.playerArmor += card.value2;
+        } else {
+            gameState.playerCharacter.takeDamage(damage);
+            gameState.playerHealth = gameState.playerCharacter.currentHealth;
+            gameState.computerArmor += card.value2;
+        }
+        
+        return card.formatEffect(damage, card.value2);
+    }
+}
+
+/**
+ * 消耗所有能量效果策略
+ */
+class ConsumeAllEnergyEffectStrategy extends CardEffectStrategy {
+    execute(gameState, isPlayer, card) {
+        const energy = isPlayer ? gameState.playerEnergy : gameState.computerEnergy;
+        // 修改伤害计算：基础伤害 + 额外消耗的能量
+        const baseDamage = card.value1 || 0; // 基础伤害，如果没有设置则默认为0
+        const extraDamage = energy; // 额外消耗的能量直接转换为伤害
+        const totalDamage = baseDamage + extraDamage;
+        
+        if (isPlayer) {
+            gameState.computerCharacter.takeDamage(totalDamage);
+            gameState.computerHealth = gameState.computerCharacter.currentHealth;
+            gameState.playerEnergy = 0;
+        } else {
+            gameState.playerCharacter.takeDamage(totalDamage);
+            gameState.playerHealth = gameState.playerCharacter.currentHealth;
+            gameState.computerEnergy = 0;
+        }
+        
+        return `${card.name} 消耗所有能量造成${totalDamage}点伤害（基础${baseDamage} + 额外${extraDamage}）`;
+    }
+}
+
+/**
+ * 伏击效果策略
+ */
+class AmbushEffectStrategy extends CardEffectStrategy {
+    execute(gameState, isPlayer, card) {
+        const character = isPlayer ? gameState.playerCharacter : gameState.computerCharacter;
+        const damage = card.calculateActualDamage(card.value1, character);
+        
+        // 检查潜行状态
+        if (isPlayer && gameState.playerCharacter && !gameState.playerCharacter.stealthSystem.isCurrentlyStealthed()) {
+            return "伏击只能在潜行状态下使用";
+        }
+        if (!isPlayer && gameState.computerCharacter && !gameState.computerCharacter.stealthSystem.isCurrentlyStealthed()) {
+            return "伏击只能在潜行状态下使用";
+        }
+        
+        // 检查目标是否在吟唱中，如果是则中断吟唱
+        let interruptMessage = "";
+        if (isPlayer && gameState.computerCastingSystem.isCurrentlyCasting()) {
+            gameState.computerCastingSystem.interruptCasting();
+            interruptMessage = "，中断了目标的吟唱";
+        } else if (!isPlayer && gameState.playerCastingSystem.isCurrentlyCasting()) {
+            gameState.playerCastingSystem.interruptCasting();
+            interruptMessage = "，中断了目标的吟唱";
+        }
+        
+        if (isPlayer) {
+            gameState.computerCharacter.takeDamage(damage);
+            gameState.computerHealth = gameState.computerCharacter.currentHealth;
+        } else {
+            gameState.playerCharacter.takeDamage(damage);
+            gameState.playerHealth = gameState.playerCharacter.currentHealth;
+        }
+        
+        return card.formatEffect(damage) + interruptMessage;
+    }
+}
+
+/**
+ * 潜行效果策略
+ */
+class StealthEffectStrategy extends CardEffectStrategy {
+    execute(gameState, isPlayer, card) {
+        if (isPlayer && gameState.playerCharacter) {
+            gameState.playerCharacter.stealthSystem.enterStealth(card.value1);
+        } else if (!isPlayer && gameState.computerCharacter) {
+            gameState.computerCharacter.stealthSystem.enterStealth(card.value1);
+        }
+        return `进入潜行状态，持续${card.value1}秒`;
+    }
+}
+
+/**
+ * 抽牌弃牌效果策略
+ */
+class DrawDiscardEffectStrategy extends CardEffectStrategy {
+    execute(gameState, isPlayer, card) {
+        if (isPlayer) {
+            const drawnCards = [];
+            for (let i = 0; i < card.value1; i++) {
+                if (gameState.playerDeck.length > 0) {
+                    drawnCards.push(gameState.playerDeck.pop());
+                }
+            }
+            
+            // 随机丢弃1张
+            if (drawnCards.length > 0) {
+                const discardIndex = Math.floor(Math.random() * drawnCards.length);
+                const discardedCard = drawnCards.splice(discardIndex, 1)[0];
+                gameState.playerDiscardPile.push(discardedCard);
+                
+                // 将剩余的卡牌加入手牌
+                gameState.playerHand.push(...drawnCards);
+            }
+        } else {
+            const drawnCards = [];
+            for (let i = 0; i < card.value1; i++) {
+                if (gameState.computerDeck.length > 0) {
+                    drawnCards.push(gameState.computerDeck.pop());
+                }
+            }
+            
+            // 随机丢弃1张
+            if (drawnCards.length > 0) {
+                const discardIndex = Math.floor(Math.random() * drawnCards.length);
+                const discardedCard = drawnCards.splice(discardIndex, 1)[0];
+                gameState.computerDiscardPile.push(discardedCard);
+                
+                // 将剩余的卡牌加入手牌
+                gameState.computerHand.push(...drawnCards);
+            }
+        }
+        return `抽取${card.value1}张卡牌，随机丢弃1张`;
+    }
+}
+
+/**
+ * 驱散效果策略
+ */
+class DispelEffectStrategy extends CardEffectStrategy {
+    execute(gameState, isPlayer, card) {
+        if (isPlayer && gameState.computerCharacter) {
+            gameState.computerCharacter.statusEffects = [];
+        } else if (!isPlayer && gameState.playerCharacter) {
+            gameState.playerCharacter.statusEffects = [];
+        }
+        return "移除所有负面效果";
+    }
+}
+
+/**
+ * 血祭效果策略
+ */
+class BloodSacrificeEffectStrategy extends CardEffectStrategy {
+    execute(gameState, isPlayer, card) {
+        // 设置生命消耗
+        card.healthCost = 2;
+        const character = isPlayer ? gameState.playerCharacter : gameState.computerCharacter;
+        const damage = card.calculateActualDamage(card.value1, character);
+        
+        if (isPlayer) {
+            gameState.computerCharacter.takeDamage(damage);
+            gameState.computerHealth = gameState.computerCharacter.currentHealth;
+        } else {
+            gameState.playerCharacter.takeDamage(damage);
+            gameState.playerHealth = gameState.playerCharacter.currentHealth;
+        }
+        
+        return `${card.name} 消耗2点生命值，对${isPlayer ? "电脑" : "玩家"}造成${damage}点伤害`;
+    }
+}
+
+/**
+ * 默认效果策略
+ */
+class DefaultEffectStrategy extends CardEffectStrategy {
+    execute(gameState, isPlayer, card) {
+        if (isPlayer) {
+            gameState.computerCharacter.takeDamage(4);
+            gameState.computerHealth = gameState.computerCharacter.currentHealth;
+        } else {
+            gameState.playerCharacter.takeDamage(4);
+            gameState.playerHealth = gameState.playerCharacter.currentHealth;
+        }
+        return `${card.name} 对${isPlayer ? "电脑" : "玩家"}造成4点伤害`;
+    }
+}
+
+/**
  * 卡牌类 - 对应C#版本的Card类
  */
 class Card {
@@ -17,6 +310,36 @@ class Card {
         this.isExhaust = false; // 是否用后进入消耗堆
         this.isLocked = false; // 是否已锁定目标（锁定后不受潜行影响）
         this.lockedTarget = null; // 锁定的目标
+        
+        // 初始化效果策略
+        this.effectStrategy = this.createEffectStrategy();
+    }
+
+    /**
+     * 创建效果策略
+     */
+    createEffectStrategy() {
+        const effectCode = this.effectCode || this.name;
+        
+        const strategyMap = {
+            'DAMAGE_6': new DamageEffectStrategy(),
+            'DAMAGE_8': new DamageEffectStrategy(),
+            'DAMAGE_9': new DamageEffectStrategy(),
+            'HEAL_6': new HealEffectStrategy(),
+            'DAMAGE_6_POISON': new DamagePoisonEffectStrategy(),
+            'DAMAGE_3_SLOW': new DamageSlowEffectStrategy(),
+            'DAMAGE_4_ARMOR': new DamageArmorEffectStrategy(),
+            'DAMAGE_4_ALL_SLOW': new DamageSlowEffectStrategy(),
+            'CONSUME_ALL_ENERGY': new ConsumeAllEnergyEffectStrategy(),
+            'DAMAGE_15': new AmbushEffectStrategy(),
+            'STEALTH': new StealthEffectStrategy(),
+            'DRAW_3_DISCARD_1': new DrawDiscardEffectStrategy(),
+            'HEAL_4_ALL': new HealEffectStrategy(),
+            'DISPEL': new DispelEffectStrategy(),
+            'BLOOD_SACRIFICE': new BloodSacrificeEffectStrategy()
+        };
+        
+        return strategyMap[effectCode] || new DefaultEffectStrategy();
     }
 
     /**
@@ -70,261 +393,8 @@ class Card {
      * @returns {string} 效果描述
      */
     executeEffect(gameState, isPlayer) {
-        // 优先使用EffectCode，如果没有则使用Name作为后备
-        const effectCode = this.effectCode || this.name;
-        
-        // 获取施法者角色（用于伤害计算）
-        const character = isPlayer ? gameState.playerCharacter : gameState.computerCharacter;
-        
-        switch (effectCode) {
-            case "DAMAGE_6":
-                const damage6 = this.calculateActualDamage(this.value1, character);
-                if (isPlayer) {
-                    gameState.computerCharacter.takeDamage(damage6);
-                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
-                } else {
-                    gameState.playerCharacter.takeDamage(damage6);
-                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
-                }
-                return this.formatEffect(damage6);
-                
-            case "DAMAGE_8":
-                const damage8 = this.calculateActualDamage(this.value1, character);
-                if (isPlayer) {
-                    gameState.computerCharacter.takeDamage(damage8);
-                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
-                } else {
-                    gameState.playerCharacter.takeDamage(damage8);
-                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
-                }
-                return this.formatEffect(damage8);
-                
-            case "DAMAGE_9":
-                const damage9 = this.calculateActualDamage(this.value1, character);
-                if (isPlayer) {
-                    gameState.computerCharacter.takeDamage(damage9);
-                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
-                } else {
-                    gameState.playerCharacter.takeDamage(damage9);
-                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
-                }
-                return this.formatEffect(damage9);
-                
-            case "HEAL_6":
-                if (isPlayer) {
-                    gameState.playerCharacter.heal(this.value1);
-                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
-                } else {
-                    gameState.computerCharacter.heal(this.value1);
-                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
-                }
-                return this.formatEffect(this.value1);
-                
-            case "DAMAGE_6_POISON":
-                const damagePoison = this.calculateActualDamage(this.value1, character);
-                if (isPlayer) {
-                    gameState.computerCharacter.takeDamage(damagePoison);
-                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
-                    // 添加中毒效果
-                    if (gameState.computerCharacter) {
-                        gameState.computerCharacter.addStatusEffect(new PoisonEffect(this.value2, 5));
-                    }
-                } else {
-                    gameState.playerCharacter.takeDamage(damagePoison);
-                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
-                    // 添加中毒效果
-                    if (gameState.playerCharacter) {
-                        gameState.playerCharacter.addStatusEffect(new PoisonEffect(this.value2, 5));
-                    }
-                }
-                return this.formatEffect(damagePoison, this.value2);
-                
-            case "DAMAGE_3_SLOW":
-                const damageSlow = this.calculateActualDamage(this.value1, character);
-                if (isPlayer) {
-                    gameState.computerCharacter.takeDamage(damageSlow);
-                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
-                    // 添加减速效果
-                    if (gameState.computerCharacter) {
-                        gameState.computerCharacter.addStatusEffect(new SlowEffect(this.value2, this.value3));
-                    }
-                } else {
-                    gameState.playerCharacter.takeDamage(damageSlow);
-                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
-                    // 添加减速效果
-                    if (gameState.playerCharacter) {
-                        gameState.playerCharacter.addStatusEffect(new SlowEffect(this.value2, this.value3));
-                    }
-                }
-                return this.formatEffect(damageSlow, this.value2, this.value3);
-                
-            case "DAMAGE_4_ARMOR":
-                const damageArmor = this.calculateActualDamage(this.value1, character);
-                if (isPlayer) {
-                    gameState.computerCharacter.takeDamage(damageArmor);
-                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
-                    gameState.playerArmor += this.value2;
-                } else {
-                    gameState.playerCharacter.takeDamage(damageArmor);
-                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
-                    gameState.computerArmor += this.value2;
-                }
-                return this.formatEffect(damageArmor, this.value2);
-                
-            case "DAMAGE_4_ALL_SLOW":
-                if (isPlayer) {
-                    gameState.computerCharacter.takeDamage(this.value1);
-                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
-                    // 添加减速效果
-                    if (gameState.computerCharacter) {
-                        gameState.computerCharacter.addStatusEffect(new SlowEffect(this.value2, 3));
-                    }
-                } else {
-                    gameState.playerCharacter.takeDamage(this.value1);
-                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
-                    // 添加减速效果
-                    if (gameState.playerCharacter) {
-                        gameState.playerCharacter.addStatusEffect(new SlowEffect(this.value2, 3));
-                    }
-                }
-                return this.formatEffect(this.value1, this.value2);
-                
-            case "CONSUME_ALL_ENERGY":
-                // 获取当前能量值
-                const energy = isPlayer ? gameState.playerEnergy : gameState.computerEnergy;
-                // 计算伤害：1+2+3+...+energy（等差数列求和）
-                const damage = (energy * (energy + 1)) / 2;
-                
-                if (isPlayer) {
-                    gameState.computerCharacter.takeDamage(damage);
-                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
-                    gameState.playerEnergy = 0;
-                } else {
-                    gameState.playerCharacter.takeDamage(damage);
-                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
-                    gameState.computerEnergy = 0;
-                }
-                return `${this.name} 消耗所有能量造成${damage}点伤害`;
-                
-            case "DAMAGE_15":
-                const damage15 = this.calculateActualDamage(this.value1, character);
-                // 检查潜行状态
-                if (isPlayer && gameState.playerCharacter && !gameState.playerCharacter.stealthSystem.isCurrentlyStealthed()) {
-                    return "伏击只能在潜行状态下使用";
-                }
-                if (!isPlayer && gameState.computerCharacter && !gameState.computerCharacter.stealthSystem.isCurrentlyStealthed()) {
-                    return "伏击只能在潜行状态下使用";
-                }
-                // 检查目标是否在吟唱中，如果是则中断吟唱
-                let interruptMessage = "";
-                if (isPlayer && gameState.computerCastingSystem.isCurrentlyCasting()) {
-                    gameState.computerCastingSystem.interruptCasting();
-                    interruptMessage = "，中断了目标的吟唱";
-                } else if (!isPlayer && gameState.playerCastingSystem.isCurrentlyCasting()) {
-                    gameState.playerCastingSystem.interruptCasting();
-                    interruptMessage = "，中断了目标的吟唱";
-                }
-                if (isPlayer) {
-                    gameState.computerCharacter.takeDamage(damage15);
-                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
-                } else {
-                    gameState.playerCharacter.takeDamage(damage15);
-                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
-                }
-                return this.formatEffect(damage15) + interruptMessage;
-                
-            case "STEALTH":
-                if (isPlayer && gameState.playerCharacter) {
-                    gameState.playerCharacter.stealthSystem.enterStealth(this.value1);
-                } else if (!isPlayer && gameState.computerCharacter) {
-                    gameState.computerCharacter.stealthSystem.enterStealth(this.value1);
-                }
-                return `进入潜行状态，持续${this.value1}秒`;
-                
-            case "DRAW_3_DISCARD_1":
-                // 抽取3张卡牌，随机丢弃1张
-                if (isPlayer) {
-                    const drawnCards = [];
-                    for (let i = 0; i < this.value1; i++) {
-                        if (gameState.playerDeck.length > 0) {
-                            drawnCards.push(gameState.playerDeck.pop());
-                        }
-                    }
-                    
-                    // 随机丢弃1张
-                    if (drawnCards.length > 0) {
-                        const discardIndex = Math.floor(Math.random() * drawnCards.length);
-                        const discardedCard = drawnCards.splice(discardIndex, 1)[0];
-                        gameState.playerDiscardPile.push(discardedCard);
-                        
-                        // 将剩余的卡牌加入手牌
-                        gameState.playerHand.push(...drawnCards);
-                    }
-                } else {
-                    const drawnCards = [];
-                    for (let i = 0; i < this.value1; i++) {
-                        if (gameState.computerDeck.length > 0) {
-                            drawnCards.push(gameState.computerDeck.pop());
-                        }
-                    }
-                    
-                    // 随机丢弃1张
-                    if (drawnCards.length > 0) {
-                        const discardIndex = Math.floor(Math.random() * drawnCards.length);
-                        const discardedCard = drawnCards.splice(discardIndex, 1)[0];
-                        gameState.computerDiscardPile.push(discardedCard);
-                        
-                        // 将剩余的卡牌加入手牌
-                        gameState.computerHand.push(...drawnCards);
-                    }
-                }
-                return `抽取${this.value1}张卡牌，随机丢弃1张`;
-                
-            case "HEAL_4_ALL":
-                if (isPlayer) {
-                    gameState.playerCharacter.heal(this.value1);
-                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
-                } else {
-                    gameState.computerCharacter.heal(this.value1);
-                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
-                }
-                return this.formatEffect(this.value1);
-                
-            case "DISPEL":
-                if (isPlayer && gameState.computerCharacter) {
-                    gameState.computerCharacter.statusEffects = [];
-                } else if (!isPlayer && gameState.playerCharacter) {
-                    gameState.playerCharacter.statusEffects = [];
-                }
-                return "移除所有负面效果";
-                
-            case "BLOOD_SACRIFICE":
-                // 设置生命消耗
-                this.healthCost = 2;
-                const damageBlood = this.calculateActualDamage(this.value1, character);
-                if (isPlayer) {
-                    gameState.computerCharacter.takeDamage(damageBlood);
-                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
-                } else {
-                    gameState.playerCharacter.takeDamage(damageBlood);
-                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
-                }
-                return `${this.name} 消耗2点生命值，对${isPlayer ? "电脑" : "玩家"}造成${damageBlood}点伤害`;
-                
-            default:
-                // 默认效果：造成4点伤害
-                if (isPlayer) {
-                    gameState.computerCharacter.takeDamage(4);
-                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
-                } else {
-                    gameState.playerCharacter.takeDamage(4);
-                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
-                }
-                return `${this.name} 对${isPlayer ? "电脑" : "玩家"}造成4点伤害`;
-        }
+        return this.effectStrategy.execute(gameState, isPlayer, this);
     }
-
-
 
     /**
      * 格式化效果描述

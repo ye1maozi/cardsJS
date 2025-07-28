@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>能量伤害计算对比</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .comparison-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .damage-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .damage-table th, .damage-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        .damage-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .old-formula {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .new-formula {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            font-weight: bold;
+        }
+        .formula-display {
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>能量伤害计算对比</h1>
+    
+    <div class="comparison-container">
+        <h2>计算公式对比</h2>
+        
+        <div class="formula-display">
+            <strong>修改前（等差数列求和）：</strong> damage = (energy × (energy + 1)) ÷ 2
+        </div>
+        
+        <div class="formula-display">
+            <strong>修改后（线性关系）：</strong> damage = baseDamage + energy
+        </div>
+    </div>
+
+    <div class="comparison-container">
+        <h2>伤害数值对比表</h2>
+        <p>假设基础伤害为 3 点</p>
+        
+        <table class="damage-table">
+            <thead>
+                <tr>
+                    <th>能量数量</th>
+                    <th>修改前伤害</th>
+                    <th>修改后伤害</th>
+                    <th>差异</th>
+                    <th>备注</th>
+                </tr>
+            </thead>
+            <tbody id="damage-table-body">
+                <!-- 表格内容将通过JavaScript生成 -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="comparison-container">
+        <h2>测试控制</h2>
+        <button onclick="generateComparisonTable()">生成对比表</button>
+        <button onclick="testSpecificEnergy()">测试特定能量值</button>
+        <button onclick="showBalanceAnalysis()">平衡性分析</button>
+    </div>
+
+    <div id="test-results"></div>
+
+    <script>
+        function calculateOldDamage(energy) {
+            return Math.floor((energy * (energy + 1)) / 2);
+        }
+
+        function calculateNewDamage(energy, baseDamage = 3) {
+            return baseDamage + energy;
+        }
+
+        function generateComparisonTable() {
+            const tableBody = document.getElementById('damage-table-body');
+            tableBody.innerHTML = '';
+            
+            const energies = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20];
+            const baseDamage = 3;
+            
+            energies.forEach(energy => {
+                const oldDamage = calculateOldDamage(energy);
+                const newDamage = calculateNewDamage(energy, baseDamage);
+                const difference = newDamage - oldDamage;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="highlight">${energy}</td>
+                    <td class="old-formula">${oldDamage}</td>
+                    <td class="new-formula">${newDamage}</td>
+                    <td>${difference > 0 ? '+' : ''}${difference}</td>
+                    <td>${difference > 0 ? '新公式更强' : difference < 0 ? '旧公式更强' : '相同'}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function testSpecificEnergy() {
+            const energy = prompt('请输入要测试的能量数量：', '5');
+            if (energy === null) return;
+            
+            const energyNum = parseInt(energy);
+            if (isNaN(energyNum) || energyNum < 0) {
+                alert('请输入有效的非负整数！');
+                return;
+            }
+            
+            const oldDamage = calculateOldDamage(energyNum);
+            const newDamage = calculateNewDamage(energyNum, 3);
+            const difference = newDamage - oldDamage;
+            
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = `
+                <div class="comparison-container">
+                    <h3>特定能量值测试结果</h3>
+                    <p><strong>能量数量：</strong> ${energyNum}</p>
+                    <p><strong>修改前伤害：</strong> ${oldDamage}</p>
+                    <p><strong>修改后伤害：</strong> ${newDamage}</p>
+                    <p><strong>差异：</strong> ${difference > 0 ? '+' : ''}${difference}</p>
+                    <p><strong>结论：</strong> ${difference > 0 ? '新公式更强' : difference < 0 ? '旧公式更强' : '相同'}</p>
+                </div>
+            `;
+        }
+
+        function showBalanceAnalysis() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = `
+                <div class="comparison-container">
+                    <h3>平衡性分析</h3>
+                    
+                    <h4>修改前公式特点：</h4>
+                    <ul>
+                        <li>伤害增长呈二次函数关系</li>
+                        <li>高能量时伤害增长过快</li>
+                        <li>难以平衡和预测</li>
+                        <li>低能量时伤害较低</li>
+                    </ul>
+                    
+                    <h4>修改后公式特点：</h4>
+                    <ul>
+                        <li>伤害增长呈线性关系</li>
+                        <li>更容易预测和平衡</li>
+                        <li>可以通过基础伤害调整平衡性</li>
+                        <li>能量消耗与伤害直接对应</li>
+                    </ul>
+                    
+                    <h4>平衡建议：</h4>
+                    <ul>
+                        <li>基础伤害设为 2-4 点较为合适</li>
+                        <li>高能量时新公式更平衡</li>
+                        <li>低能量时可以通过基础伤害补偿</li>
+                        <li>便于游戏平衡调整</li>
+                    </ul>
+                </div>
+            `;
+        }
+
+        // 页面加载完成后自动生成对比表
+        window.onload = function() {
+            generateComparisonTable();
+        };
+    </script>
+</body>
+</html> 

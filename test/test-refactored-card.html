@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>重构后Card类测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .card-display {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>重构后Card类测试</h1>
+    
+    <div class="test-container">
+        <h2>测试说明</h2>
+        <p>此测试验证重构后的Card类是否正常工作，包括：</p>
+        <ul>
+            <li>策略模式的正确实现</li>
+            <li>各种卡牌效果的正确执行</li>
+            <li>伤害计算和状态更新的正确性</li>
+            <li>新卡牌类型的添加便利性</li>
+        </ul>
+    </div>
+
+    <div class="test-container">
+        <h2>测试控制</h2>
+        <button onclick="runAllTests()">运行所有测试</button>
+        <button onclick="testDamageCard()">测试伤害卡牌</button>
+        <button onclick="testHealCard()">测试治疗卡牌</button>
+        <button onclick="testComplexCard()">测试复合效果卡牌</button>
+        <button onclick="testNewCardType()">测试新卡牌类型</button>
+        <button onclick="clearResults()">清除结果</button>
+    </div>
+
+    <div id="test-results"></div>
+
+    <script src="../js/Character.js"></script>
+    <script src="../js/StealthSystem.js"></script>
+    <script src="../js/CastingSystem.js"></script>
+    <script src="../js/GameState.js"></script>
+    <script src="../js/Card.js"></script>
+    
+    <script>
+        let testResults = [];
+
+        function addResult(message, type = 'info') {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            document.getElementById('test-results').appendChild(resultDiv);
+            testResults.push({ message, type });
+        }
+
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+            testResults = [];
+        }
+
+        function testDamageCard() {
+            addResult('=== 测试伤害卡牌 ===', 'info');
+            
+            try {
+                // 创建游戏状态
+                const gameState = new GameState();
+                
+                // 创建伤害卡牌
+                const damageCard = new Card("火球术", "法师", 3, 0, "法术", "造成{0}点伤害", "DAMAGE_6", 6);
+                
+                // 记录初始状态
+                const initialHealth = gameState.computerHealth;
+                
+                // 执行卡牌效果
+                const result = damageCard.executeEffect(gameState, true);
+                
+                // 验证结果
+                if (gameState.computerHealth === initialHealth - 6) {
+                    addResult(`✓ 伤害卡牌测试通过: ${result}`, 'success');
+                } else {
+                    addResult(`✗ 伤害卡牌测试失败: 期望伤害6，实际伤害${initialHealth - gameState.computerHealth}`, 'error');
+                }
+                
+            } catch (error) {
+                addResult(`✗ 伤害卡牌测试异常: ${error.message}`, 'error');
+            }
+        }
+
+        function testHealCard() {
+            addResult('=== 测试治疗卡牌 ===', 'info');
+            
+            try {
+                // 创建游戏状态
+                const gameState = new GameState();
+                
+                // 先造成一些伤害
+                gameState.playerCharacter.takeDamage(10);
+                const damagedHealth = gameState.playerHealth;
+                
+                // 创建治疗卡牌
+                const healCard = new Card("治疗术", "牧师", 2, 0, "法术", "恢复{0}点生命值", "HEAL_6", 6);
+                
+                // 执行卡牌效果
+                const result = healCard.executeEffect(gameState, true);
+                
+                // 验证结果
+                if (gameState.playerHealth === damagedHealth + 6) {
+                    addResult(`✓ 治疗卡牌测试通过: ${result}`, 'success');
+                } else {
+                    addResult(`✗ 治疗卡牌测试失败: 期望治疗6，实际治疗${gameState.playerHealth - damagedHealth}`, 'error');
+                }
+                
+            } catch (error) {
+                addResult(`✗ 治疗卡牌测试异常: ${error.message}`, 'error');
+            }
+        }
+
+        function testComplexCard() {
+            addResult('=== 测试复合效果卡牌 ===', 'info');
+            
+            try {
+                // 创建游戏状态
+                const gameState = new GameState();
+                
+                // 创建复合效果卡牌（伤害+中毒）
+                const poisonCard = new Card("毒箭", "盗贼", 2, 0, "攻击", "造成{0}点伤害，中毒{1}点", "DAMAGE_6_POISON", 6, 3);
+                
+                // 记录初始状态
+                const initialHealth = gameState.computerHealth;
+                const initialEffects = gameState.computerCharacter.statusEffects.length;
+                
+                // 执行卡牌效果
+                const result = poisonCard.executeEffect(gameState, true);
+                
+                // 验证结果
+                const damageDealt = initialHealth - gameState.computerHealth;
+                const effectsAdded = gameState.computerCharacter.statusEffects.length - initialEffects;
+                
+                if (damageDealt === 6 && effectsAdded === 1) {
+                    addResult(`✓ 复合效果卡牌测试通过: ${result}`, 'success');
+                } else {
+                    addResult(`✗ 复合效果卡牌测试失败: 伤害${damageDealt}，效果${effectsAdded}`, 'error');
+                }
+                
+            } catch (error) {
+                addResult(`✗ 复合效果卡牌测试异常: ${error.message}`, 'error');
+            }
+        }
+
+        function testNewCardType() {
+            addResult('=== 测试新卡牌类型添加 ===', 'info');
+            
+            try {
+                // 定义新的效果策略
+                class TestEffectStrategy extends CardEffectStrategy {
+                    execute(gameState, isPlayer, card) {
+                        if (isPlayer) {
+                            gameState.playerEnergy += card.value1;
+                        } else {
+                            gameState.computerEnergy += card.value1;
+                        }
+                        return `恢复${card.value1}点能量`;
+                    }
+                }
+                
+                // 创建游戏状态
+                const gameState = new GameState();
+                
+                // 创建测试卡牌
+                const testCard = new Card("能量恢复", "法师", 1, 0, "法术", "恢复{0}点能量", "ENERGY_RESTORE", 3);
+                
+                // 手动设置策略（模拟新卡牌类型）
+                testCard.effectStrategy = new TestEffectStrategy();
+                
+                // 记录初始状态
+                const initialEnergy = gameState.playerEnergy;
+                
+                // 执行卡牌效果
+                const result = testCard.executeEffect(gameState, true);
+                
+                // 验证结果
+                if (gameState.playerEnergy === initialEnergy + 3) {
+                    addResult(`✓ 新卡牌类型测试通过: ${result}`, 'success');
+                    addResult('✓ 策略模式扩展性验证通过', 'success');
+                } else {
+                    addResult(`✗ 新卡牌类型测试失败: 期望恢复3点能量，实际恢复${gameState.playerEnergy - initialEnergy}`, 'error');
+                }
+                
+            } catch (error) {
+                addResult(`✗ 新卡牌类型测试异常: ${error.message}`, 'error');
+            }
+        }
+
+        function runAllTests() {
+            clearResults();
+            addResult('开始运行所有测试...', 'info');
+            
+            testDamageCard();
+            testHealCard();
+            testComplexCard();
+            testNewCardType();
+            
+            // 统计测试结果
+            const successCount = testResults.filter(r => r.type === 'success').length;
+            const errorCount = testResults.filter(r => r.type === 'error').length;
+            
+            addResult(`=== 测试完成 ===`, 'info');
+            addResult(`成功: ${successCount}, 失败: ${errorCount}`, 
+                     errorCount === 0 ? 'success' : 'error');
+        }
+
+        // 页面加载完成后显示说明
+        window.onload = function() {
+            addResult('重构后的Card类测试页面已加载', 'info');
+            addResult('点击上方按钮开始测试', 'info');
+        };
+    </script>
+</body>
+</html> 

@@ -70,38 +70,31 @@ class Character {
      * 初始化默认职业属性（后备方案）
      */
     initializeDefaultClassStats() {
-        switch (this.characterClass) {
-            case '战士':
-                this.maxHealth = 35;
-                this.currentHealth = 35;
-                this.strength = 2;
-                this.agility = 1;
-                this.spirit = 0;
-                break;
-            case '法师':
-                this.maxHealth = 25;
-                this.currentHealth = 25;
-                this.maxEnergy = 12;
-                this.currentEnergy = 2;
-                this.strength = 0;
-                this.agility = 0;
-                this.spirit = 3;
-                break;
-            case '盗贼':
-                this.maxHealth = 28;
-                this.currentHealth = 28;
-                this.strength = 1;
-                this.agility = 3;
-                this.spirit = 0;
-                break;
-            case '牧师':
-                this.maxHealth = 32;
-                this.currentHealth = 32;
-                this.strength = 0;
-                this.agility = 1;
-                this.spirit = 2;
-                this.healthRegenRate = 0.5; // 牧师有生命恢复
-                break;
+        // 使用ConfigManager中的默认配置
+        const defaultConfigs = ConfigManager.getDefaultCharacterClassConfigs();
+        const classConfig = defaultConfigs.find(config => config.class === this.characterClass);
+        
+        if (classConfig) {
+            this.maxHealth = classConfig.maxHealth;
+            this.currentHealth = classConfig.maxHealth;
+            this.maxEnergy = classConfig.maxEnergy;
+            this.currentEnergy = classConfig.initialEnergy;
+            this.strength = classConfig.strength;
+            this.agility = classConfig.agility;
+            this.spirit = classConfig.spirit;
+            this.healthRegenRate = classConfig.healthRegenRate;
+            this.energyRegenRate = classConfig.energyRegenRate;
+        } else {
+            // 如果找不到配置，使用基础默认值
+            this.maxHealth = 30;
+            this.currentHealth = 30;
+            this.maxEnergy = 10;
+            this.currentEnergy = 1;
+            this.strength = 1;
+            this.agility = 1;
+            this.spirit = 1;
+            this.healthRegenRate = 0;
+            this.energyRegenRate = 1;
         }
     }
     

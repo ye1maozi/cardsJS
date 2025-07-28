@@ -25,22 +25,16 @@ class Game {
             // 异步初始化牌组（包括加载CSV配置）
             await this.gameState.initializeDeck();
 
-            // 发初始手牌
-            this.gameState.dealInitialCards();
-
             // 创建游戏UI
             this.gameUI = new GameUI(this.gameState);
             
             // 设置GameState的UI引用
             this.gameState.gameUI = this.gameUI;
 
-            // 启动游戏循环
-            this.startGameLoop();
-
             this.isInitialized = true;
-            console.log('游戏初始化完成');
+            console.log('游戏初始化完成，等待用户开始...');
 
-            // 不自动添加初始日志，等待用户开始游戏
+            // 不自动开始游戏，等待用户点击开始按钮
 
         } catch (error) {
             console.error('游戏初始化失败:', error);
@@ -85,6 +79,14 @@ class Game {
         }
 
         console.log('游戏开始');
+        
+        // 发初始手牌
+        this.gameState.dealInitialCards();
+        
+        // 启动游戏循环
+        this.startGameLoop();
+        
+        // 添加游戏开始日志
         this.gameUI.addGameLog('游戏开始！');
         this.gameUI.addGameLog('欢迎来到卡牌对战游戏！');
     }

@@ -241,57 +241,9 @@ class HeroSkillManager {
      * 初始化默认技能（后备方案）
      */
     initializeDefaultSkills() {
-        const defaultConfigs = [
-            {
-                class: '战士',
-                name: '狂暴',
-                description: '增加5点强度，持续10秒',
-                cooldown: 15,
-                energyCost: 2,
-                effectType: 'STRENGTH_BOOST',
-                value1: 5,
-                value2: 0,
-                value3: 0,
-                duration: 10
-            },
-            {
-                class: '法师',
-                name: '奥术强化',
-                description: '恢复3点能量，下次法术伤害翻倍',
-                cooldown: 20,
-                energyCost: 0,
-                effectType: 'ENERGY_RESTORE_SPELL_BOOST',
-                value1: 3,
-                value2: 0,
-                value3: 0,
-                duration: 0
-            },
-            {
-                class: '盗贼',
-                name: '暗影步',
-                description: '立即进入潜行状态，持续8秒',
-                cooldown: 12,
-                energyCost: 1,
-                effectType: 'STEALTH',
-                value1: 0,
-                value2: 0,
-                value3: 0,
-                duration: 8
-            },
-            {
-                class: '牧师',
-                name: '神圣护盾',
-                description: '获得10点护甲，持续15秒',
-                cooldown: 18,
-                energyCost: 1,
-                effectType: 'ARMOR_BOOST',
-                value1: 10,
-                value2: 0,
-                value3: 0,
-                duration: 15
-            }
-        ];
-
+        // 使用ConfigManager中的默认配置
+        const defaultConfigs = ConfigManager.getDefaultHeroSkillConfigs();
+        
         for (const config of defaultConfigs) {
             this.skills.set(config.class, new ConfigurableHeroSkill(config));
         }

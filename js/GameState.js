@@ -116,15 +116,27 @@ class GameState {
         // 尝试从配置加载卡牌
         this.loadCardsFromConfig();
         
-        // 如果配置为空，使用最小化基础卡牌
+        // 如果配置为空，使用ConfigManager中的默认卡牌
         if (this.playerDeck.length === 0) {
-            console.warn('没有可用的卡牌配置，使用基础卡牌');
-            const basicCards = [
-                new Card("打击", "战士", 1, 0, "瞬发", "对单体目标造成6点伤害", "DAMAGE_6", 6, 0, 0),
-                new Card("火球术", "法师", 1, 0, "瞬发", "对单体目标造成8点伤害", "DAMAGE_8", 8, 0, 0),
-                new Card("治疗术", "牧师", 1, 0, "瞬发", "恢复6点生命值", "HEAL_6", 6, 0, 0),
-                new Card("毒刃", "盗贼", 1, 0, "瞬发", "立刻攻击目标，造成6点伤害，并使其获得3层中毒", "DAMAGE_6_POISON", 6, 3, 0)
-            ];
+            console.warn('没有可用的卡牌配置，使用默认卡牌');
+            const defaultConfigs = ConfigManager.getDefaultCardConfigs();
+            const basicCards = [];
+            
+            for (const config of defaultConfigs) {
+                const card = new Card(
+                    config.name,
+                    config.class,
+                    config.energyCost,
+                    config.castTime,
+                    config.castType,
+                    config.effect,
+                    config.effectCode,
+                    config.value1,
+                    config.value2,
+                    config.value3
+                );
+                basicCards.push(card);
+            }
             
             this.playerDeck = [...basicCards];
             this.computerDeck = [...basicCards];

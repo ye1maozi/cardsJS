@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card重构简单测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border-left-color: #28a745;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left-color: #dc3545;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border-left-color: #17a2b8;
+        }
+        .card-info {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Card类重构测试</h1>
+    
+    <div class="test-result info">
+        <h3>测试说明</h3>
+        <p>此测试验证重构后的Card类是否正常工作，包括策略模式的实现和各种卡牌效果。</p>
+    </div>
+
+    <div id="results"></div>
+
+    <script src="../js/Character.js"></script>
+    <script src="../js/StealthSystem.js"></script>
+    <script src="../js/CastingSystem.js"></script>
+    <script src="../js/GameState.js"></script>
+    <script src="../js/Card.js"></script>
+    
+    <script>
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = message;
+            document.getElementById('results').appendChild(div);
+        }
+
+        function testCardCreation() {
+            addResult('=== 测试卡牌创建 ===', 'info');
+            
+            try {
+                const card = new Card("火球术", "法师", 3, 0, "法术", "造成{0}点伤害", "DAMAGE_6", 6);
+                
+                if (card.effectStrategy) {
+                    addResult('✓ 卡牌创建成功，策略对象已初始化', 'success');
+                } else {
+                    addResult('✗ 卡牌创建失败，策略对象未初始化', 'error');
+                }
+                
+                return card;
+            } catch (error) {
+                addResult(`✗ 卡牌创建异常: ${error.message}`, 'error');
+                return null;
+            }
+        }
+
+        function testDamageEffect(card) {
+            addResult('=== 测试伤害效果 ===', 'info');
+            
+            try {
+                const gameState = new GameState();
+                const initialHealth = gameState.computerHealth;
+                
+                const result = card.executeEffect(gameState, true);
+                
+                if (gameState.computerHealth === initialHealth - 6) {
+                    addResult(`✓ 伤害效果测试通过: ${result}`, 'success');
+                } else {
+                    addResult(`✗ 伤害效果测试失败: 期望伤害6，实际伤害${initialHealth - gameState.computerHealth}`, 'error');
+                }
+                
+            } catch (error) {
+                addResult(`✗ 伤害效果测试异常: ${error.message}`, 'error');
+            }
+        }
+
+        function testHealEffect() {
+            addResult('=== 测试治疗效果 ===', 'info');
+            
+            try {
+                const gameState = new GameState();
+                gameState.playerCharacter.takeDamage(10);
+                const damagedHealth = gameState.playerHealth;
+                
+                const healCard = new Card("治疗术", "牧师", 2, 0, "法术", "恢复{0}点生命值", "HEAL_6", 6);
+                const result = healCard.executeEffect(gameState, true);
+                
+                if (gameState.playerHealth === damagedHealth + 6) {
+                    addResult(`✓ 治疗效果测试通过: ${result}`, 'success');
+                } else {
+                    addResult(`✗ 治疗效果测试失败: 期望治疗6，实际治疗${gameState.playerHealth - damagedHealth}`, 'error');
+                }
+                
+            } catch (error) {
+                addResult(`✗ 治疗效果测试异常: ${error.message}`, 'error');
+            }
+        }
+
+        function testStrategyPattern() {
+            addResult('=== 测试策略模式 ===', 'info');
+            
+            try {
+                // 测试不同卡牌使用不同策略
+                const damageCard = new Card("火球术", "法师", 3, 0, "法术", "造成{0}点伤害", "DAMAGE_6", 6);
+                const healCard = new Card("治疗术", "牧师", 2, 0, "法术", "恢复{0}点生命值", "HEAL_6", 6);
+                
+                if (damageCard.effectStrategy.constructor.name !== healCard.effectStrategy.constructor.name) {
+                    addResult('✓ 策略模式测试通过：不同卡牌使用不同策略', 'success');
+                } else {
+                    addResult('✗ 策略模式测试失败：不同卡牌使用了相同策略', 'error');
+                }
+                
+            } catch (error) {
+                addResult(`✗ 策略模式测试异常: ${error.message}`, 'error');
+            }
+        }
+
+        function runAllTests() {
+            addResult('开始运行重构测试...', 'info');
+            
+            const card = testCardCreation();
+            if (card) {
+                testDamageEffect(card);
+            }
+            testHealEffect();
+            testStrategyPattern();
+            
+            addResult('=== 测试完成 ===', 'info');
+        }
+
+        // 页面加载完成后自动运行测试
+        window.onload = function() {
+            runAllTests();
+        };
+    </script>
+</body>
+</html> 
