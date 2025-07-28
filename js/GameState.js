@@ -236,28 +236,12 @@ class GameState {
      * @returns {string} 回合结果描述
      */
     computerTurn() {
-        let turnLog = "";
-        
-        // 电脑AI：随机选择可以使用的卡牌
-        const playableCards = this.computerHand.filter(card => 
-            card.energyCost <= this.computerEnergy
-        );
-
-        if (playableCards.length > 0) {
-            // 随机选择一张卡牌
-            const randomIndex = Math.floor(Math.random() * playableCards.length);
-            const selectedCard = playableCards[randomIndex];
-
-            // 使用卡牌
-            const useResult = this.useCard(selectedCard, false);
-            if (useResult.success) {
-                turnLog = `${useResult.message} → ${useResult.effectResult}`;
-            }
-        } else {
-            turnLog = "电脑没有足够的能量使用卡牌";
+        // 使用BotPlayer进行智能决策
+        if (!this.botPlayer) {
+            this.botPlayer = new BotPlayer(this);
         }
-
-        return turnLog;
+        
+        return this.botPlayer.executeTurn();
     }
 
     /**
@@ -302,6 +286,11 @@ class GameState {
         this.isPlayerTurn = true;
         this.gameOver = false;
         this.winner = null;
+
+        // 重置BotPlayer
+        if (this.botPlayer) {
+            this.botPlayer.reset();
+        }
 
         this.initializeDeck();
         this.dealInitialCards();

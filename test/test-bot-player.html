@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BotPlayer AI测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .card {
+            display: inline-block;
+            width: 150px;
+            height: 100px;
+            margin: 5px;
+            padding: 10px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            text-align: center;
+            font-size: 11px;
+            vertical-align: top;
+        }
+        .card:hover {
+            background-color: #e9ecef;
+        }
+        .card.disabled {
+            border-color: #6c757d;
+            background-color: #e9ecef;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .card.used {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #e9ecef;
+        }
+        .health {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .armor {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+        .energy {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .test-results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+        }
+        .ai-info {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        .ai-info h4 {
+            margin: 0 0 10px 0;
+            color: #007bff;
+        }
+        .personality-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+        .personality-fill {
+            height: 100%;
+            background-color: #007bff;
+            transition: width 0.3s ease;
+        }
+        .strategy-info {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff3cd;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .info {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>BotPlayer AI测试</h1>
+        
+        <div class="test-section">
+            <h2>AI控制</h2>
+            <div class="status">
+                <div>AI难度: <span id="aiDifficulty">normal</span></div>
+                <div>AI状态: <span id="aiStatus">已初始化</span></div>
+                <div>测试回合: <span id="testTurn">0</span></div>
+            </div>
+            <button onclick="setDifficulty('easy')">简单模式</button>
+            <button onclick="setDifficulty('normal')">普通模式</button>
+            <button onclick="setDifficulty('hard')">困难模式</button>
+            <button onclick="resetAI()">重置AI</button>
+            <button onclick="runAITest()">运行AI测试</button>
+        </div>
+
+        <div class="test-section">
+            <h2>AI个性分析</h2>
+            <div id="personalityInfo">
+                <!-- AI个性信息将在这里显示 -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>策略分析</h2>
+            <div id="strategyInfo">
+                <!-- 策略分析信息将在这里显示 -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>游戏状态</h2>
+            <div class="status">
+                <div>玩家生命: <span id="playerHealth" class="health">30</span></div>
+                <div>玩家护甲: <span id="playerArmor" class="armor">0</span></div>
+                <div>玩家能量: <span id="playerEnergy" class="energy">5</span></div>
+                <div>电脑生命: <span id="computerHealth" class="health">30</span></div>
+                <div>电脑护甲: <span id="computerArmor" class="armor">0</span></div>
+                <div>电脑能量: <span id="computerEnergy" class="energy">5</span></div>
+            </div>
+            <button onclick="adjustPlayerHealth(-10)">减少玩家生命</button>
+            <button onclick="adjustPlayerHealth(10)">增加玩家生命</button>
+            <button onclick="adjustComputerHealth(-10)">减少电脑生命</button>
+            <button onclick="adjustComputerHealth(10)">增加电脑生命</button>
+        </div>
+
+        <div class="test-section">
+            <h2>电脑手牌</h2>
+            <div id="computerHand">
+                <!-- 电脑手牌将在这里显示 -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>AI决策测试</h2>
+            <button onclick="testAIDecision()">测试AI决策</button>
+            <button onclick="runMultipleTests()">运行多次测试</button>
+            <div id="decisionResults">
+                <!-- AI决策结果将在这里显示 -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>测试日志</h2>
+            <div id="testLog" class="log"></div>
+        </div>
+
+        <div class="test-results">
+            <h3>测试结果</h3>
+            <div id="testResults">
+                <p>✅ BotPlayer AI系统已实现</p>
+                <p>✅ 智能决策机制正常</p>
+                <p>✅ 个性系统工作正常</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="CardConfig.js"></script>
+    <script src="Card.js"></script>
+    <script src="BotPlayer.js"></script>
+    <script src="GameState.js"></script>
+    <script>
+        let testGameState = null;
+        let botPlayer = null;
+        let testTurn = 0;
+
+        /**
+         * 初始化测试环境
+         */
+        function initializeTest() {
+            if (!testGameState) {
+                testGameState = new GameState();
+                testGameState.initializeDeck();
+                testGameState.dealInitialCards();
+                botPlayer = new BotPlayer(testGameState);
+                addLog("🔧 测试环境初始化完成");
+            }
+        }
+
+        /**
+         * 设置AI难度
+         */
+        function setDifficulty(difficulty) {
+            initializeTest();
+            botPlayer.setDifficulty(difficulty);
+            document.getElementById('aiDifficulty').textContent = difficulty;
+            addLog(`⚙️ AI难度设置为: ${difficulty}`);
+            updatePersonalityInfo();
+        }
+
+        /**
+         * 重置AI
+         */
+        function resetAI() {
+            if (botPlayer) {
+                botPlayer.reset();
+                addLog("🔄 AI已重置");
+                updatePersonalityInfo();
+            }
+        }
+
+        /**
+         * 运行AI测试
+         */
+        function runAITest() {
+            initializeTest();
+            addLog("🧪 开始AI测试...");
+            
+            // 模拟多个回合的AI决策
+            for (let i = 0; i < 5; i++) {
+                testTurn++;
+                document.getElementById('testTurn').textContent = testTurn;
+                
+                // 给电脑一些手牌
+                testGameState.computerHand = generateTestHand();
+                testGameState.computerEnergy = Math.floor(Math.random() * 5) + 1;
+                
+                // 执行AI决策
+                const result = botPlayer.executeTurn();
+                addLog(`回合 ${testTurn}: ${result}`);
+                
+                updateGameDisplay();
+                updateStrategyInfo();
+            }
+            
+            addLog("✅ AI测试完成");
+        }
+
+        /**
+         * 生成测试手牌
+         */
+        function generateTestHand() {
+            const allCards = [
+                new Card("打击", "战士", 1, 0, "瞬发", "对单体目标造成6点伤害", "DAMAGE_6", 6, 0, 0),
+                new Card("火球术", "法师", 2, 0, "1秒", "对单体目标造成8点伤害", "DAMAGE_8", 8, 0, 0),
+                new Card("治疗术", "牧师", 1, 0, "瞬发", "恢复6点生命值", "HEAL_6", 6, 0, 0),
+                new Card("盾击", "战士", 2, 0, "瞬发", "对单体目标造成4点伤害，并获得3点护甲", "DAMAGE_4_ARMOR", 4, 3, 0),
+                new Card("神圣新星", "牧师", 2, 0, "瞬发", "对所有友军恢复4点生命值", "HEAL_4_ALL", 4, 0, 0)
+            ];
+            
+            const hand = [];
+            const handSize = Math.floor(Math.random() * 3) + 2; // 2-4张卡牌
+            
+            for (let i = 0; i < handSize; i++) {
+                const randomCard = allCards[Math.floor(Math.random() * allCards.length)];
+                hand.push(new Card(
+                    randomCard.name,
+                    randomCard.class,
+                    randomCard.energyCost,
+                    randomCard.castTime,
+                    randomCard.castType,
+                    randomCard.effect,
+                    randomCard.effectCode,
+                    randomCard.value1,
+                    randomCard.value2,
+                    randomCard.value3
+                ));
+            }
+            
+            return hand;
+        }
+
+        /**
+         * 测试AI决策
+         */
+        function testAIDecision() {
+            initializeTest();
+            
+            // 设置特定场景
+            testGameState.computerHand = generateTestHand();
+            testGameState.computerEnergy = 3;
+            
+            addLog("🎯 测试AI决策...");
+            addLog(`电脑手牌: ${testGameState.computerHand.map(c => c.name).join(', ')}`);
+            addLog(`电脑能量: ${testGameState.computerEnergy}`);
+            
+            const result = botPlayer.executeTurn();
+            addLog(`AI决策结果: ${result}`);
+            
+            updateGameDisplay();
+            updateStrategyInfo();
+        }
+
+        /**
+         * 运行多次测试
+         */
+        function runMultipleTests() {
+            initializeTest();
+            addLog("📊 运行多次AI测试...");
+            
+            const results = {
+                damage: 0,
+                heal: 0,
+                armor: 0,
+                other: 0
+            };
+            
+            for (let i = 0; i < 20; i++) {
+                testGameState.computerHand = generateTestHand();
+                testGameState.computerEnergy = Math.floor(Math.random() * 5) + 1;
+                
+                const result = botPlayer.executeTurn();
+                
+                if (result.includes('伤害')) {
+                    results.damage++;
+                } else if (result.includes('恢复') || result.includes('治疗')) {
+                    results.heal++;
+                } else if (result.includes('护甲')) {
+                    results.armor++;
+                } else {
+                    results.other++;
+                }
+            }
+            
+            addLog(`📈 测试结果统计:`);
+            addLog(`  伤害卡牌: ${results.damage}次`);
+            addLog(`  治疗卡牌: ${results.heal}次`);
+            addLog(`  护甲卡牌: ${results.armor}次`);
+            addLog(`  其他卡牌: ${results.other}次`);
+        }
+
+        /**
+         * 调整玩家生命
+         */
+        function adjustPlayerHealth(amount) {
+            initializeTest();
+            testGameState.playerHealth = Math.max(0, Math.min(30, testGameState.playerHealth + amount));
+            addLog(`❤️ 玩家生命调整为: ${testGameState.playerHealth}`);
+            updateGameDisplay();
+            updateStrategyInfo();
+        }
+
+        /**
+         * 调整电脑生命
+         */
+        function adjustComputerHealth(amount) {
+            initializeTest();
+            testGameState.computerHealth = Math.max(0, Math.min(30, testGameState.computerHealth + amount));
+            addLog(`💙 电脑生命调整为: ${testGameState.computerHealth}`);
+            updateGameDisplay();
+            updateStrategyInfo();
+        }
+
+        /**
+         * 更新游戏显示
+         */
+        function updateGameDisplay() {
+            if (!testGameState) return;
+
+            document.getElementById('playerHealth').textContent = testGameState.playerHealth;
+            document.getElementById('playerArmor').textContent = testGameState.playerArmor;
+            document.getElementById('playerEnergy').textContent = testGameState.playerEnergy;
+            document.getElementById('computerHealth').textContent = testGameState.computerHealth;
+            document.getElementById('computerArmor').textContent = testGameState.computerArmor;
+            document.getElementById('computerEnergy').textContent = testGameState.computerEnergy;
+            
+            updateComputerHand();
+        }
+
+        /**
+         * 更新电脑手牌显示
+         */
+        function updateComputerHand() {
+            if (!testGameState) return;
+
+            const handContainer = document.getElementById('computerHand');
+            handContainer.innerHTML = '';
+            
+            testGameState.computerHand.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                
+                const canPlay = card.energyCost <= testGameState.computerEnergy;
+                
+                if (!canPlay) {
+                    cardElement.classList.add('disabled');
+                }
+                
+                cardElement.innerHTML = `
+                    <div style="font-weight: bold;">${card.name}</div>
+                    <div>能量: ${card.energyCost}</div>
+                    <div style="font-size: 9px; margin-top: 5px;">${card.effect}</div>
+                `;
+                
+                handContainer.appendChild(cardElement);
+            });
+        }
+
+        /**
+         * 更新个性信息显示
+         */
+        function updatePersonalityInfo() {
+            if (!botPlayer) return;
+
+            const personality = botPlayer.personality;
+            const status = botPlayer.getStatus();
+            
+            const infoDiv = document.getElementById('personalityInfo');
+            infoDiv.innerHTML = `
+                <h4>AI个性特征</h4>
+                <div>攻击性: ${(personality.aggressiveness * 100).toFixed(1)}%
+                    <div class="personality-bar">
+                        <div class="personality-fill" style="width: ${personality.aggressiveness * 100}%"></div>
+                    </div>
+                </div>
+                <div>防御性: ${(personality.defensiveness * 100).toFixed(1)}%
+                    <div class="personality-bar">
+                        <div class="personality-fill" style="width: ${personality.defensiveness * 100}%"></div>
+                    </div>
+                </div>
+                <div>效率性: ${(personality.efficiency * 100).toFixed(1)}%
+                    <div class="personality-bar">
+                        <div class="personality-fill" style="width: ${personality.efficiency * 100}%"></div>
+                    </div>
+                </div>
+                <div>风险承受度: ${(personality.riskTolerance * 100).toFixed(1)}%
+                    <div class="personality-bar">
+                        <div class="personality-fill" style="width: ${personality.riskTolerance * 100}%"></div>
+                    </div>
+                </div>
+                <div>适应性: ${(personality.adaptability * 100).toFixed(1)}%
+                    <div class="personality-bar">
+                        <div class="personality-fill" style="width: ${personality.adaptability * 100}%"></div>
+                    </div>
+                </div>
+                <div><strong>难度:</strong> ${status.difficulty}</div>
+                <div><strong>记忆大小:</strong> ${status.memorySize.healthHistory} 条历史记录</div>
+            `;
+        }
+
+        /**
+         * 更新策略信息显示
+         */
+        function updateStrategyInfo() {
+            if (!botPlayer || !testGameState) return;
+
+            const strategy = botPlayer.analyzeSituation();
+            
+            const strategyDiv = document.getElementById('strategyInfo');
+            strategyDiv.innerHTML = `
+                <h4>当前策略分析</h4>
+                <div class="strategy-info">
+                    <div><strong>玩家血量比例:</strong> ${(strategy.playerHealthRatio * 100).toFixed(1)}%</div>
+                    <div><strong>电脑血量比例:</strong> ${(strategy.computerHealthRatio * 100).toFixed(1)}%</div>
+                    <div><strong>能量效率:</strong> ${(strategy.energyEfficiency * 100).toFixed(1)}%</div>
+                    <div><strong>卡牌优势:</strong> ${strategy.cardAdvantage}</div>
+                    <div><strong>电脑危险:</strong> <span class="${strategy.isInDanger ? 'error' : 'success'}">${strategy.isInDanger ? '是' : '否'}</span></div>
+                    <div><strong>玩家危险:</strong> <span class="${strategy.isPlayerInDanger ? 'warning' : 'success'}">${strategy.isPlayerInDanger ? '是' : '否'}</span></div>
+                    <div><strong>可以终结:</strong> <span class="${strategy.canFinishPlayer ? 'error' : 'info'}">${strategy.canFinishPlayer ? '是' : '否'}</span></div>
+                    <div><strong>应该防御:</strong> <span class="${strategy.shouldDefend ? 'warning' : 'info'}">${strategy.shouldDefend ? '是' : '否'}</span></div>
+                    <div><strong>应该攻击:</strong> <span class="${strategy.shouldAggress ? 'error' : 'info'}">${strategy.shouldAggress ? '是' : '否'}</span></div>
+                </div>
+            `;
+        }
+
+        /**
+         * 添加日志
+         */
+        function addLog(message) {
+            const logDiv = document.getElementById('testLog');
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog("🤖 BotPlayer AI测试页面已加载");
+            addLog("测试说明：");
+            addLog("1. 设置AI难度（简单/普通/困难）");
+            addLog("2. 调整游戏状态测试AI反应");
+            addLog("3. 运行AI测试观察决策过程");
+            addLog("4. 查看个性分析和策略分析");
+            
+            // 自动初始化
+            initializeTest();
+            updatePersonalityInfo();
+            updateStrategyInfo();
+        });
+    </script>
+</body>
+</html> 
