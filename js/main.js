@@ -12,6 +12,24 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.log('页面加载完成，准备游戏...');
     
     try {
+        // 首先加载所有配置
+        console.log('正在加载配置文件...');
+        const configLoaded = await ConfigManager.loadAllConfigs();
+        if (!configLoaded) {
+            console.warn('部分配置文件加载失败，将使用默认配置');
+        }
+        
+        // 验证配置
+        console.log('正在验证配置文件...');
+        ConfigValidator.logValidationReport();
+        
+        // 更新版本信息
+        const versionInfo = document.getElementById('versionInfo');
+        if (versionInfo) {
+            const gameVersion = ConfigManager.getGameConfig('GameVersion', '1.4.2');
+            versionInfo.textContent = `v${gameVersion}`;
+        }
+        
         // 创建游戏实例
         game = new Game();
         
@@ -55,7 +73,7 @@ function showStartScreen() {
                 <button id="loadGameBtn" class="btn btn-secondary">加载游戏</button>
             </div>
             <div class="game-info">
-                <p>版本: v1.4.2</p>
+                <p>版本: v${ConfigManager.getGameConfig('GameVersion', '1.4.2')}</p>
                 <p>按 R 键重新开始 | 按 S 键保存 | 按 L 键加载</p>
             </div>
         </div>

@@ -217,10 +217,10 @@ class Card {
                 }
                 // 检查目标是否在吟唱中，如果是则中断吟唱
                 let interruptMessage = "";
-                if (isPlayer && gameState.computerCastingSystem.isCasting) {
+                if (isPlayer && gameState.computerCastingSystem.isCurrentlyCasting()) {
                     gameState.computerCastingSystem.interruptCasting();
                     interruptMessage = "，中断了目标的吟唱";
-                } else if (!isPlayer && gameState.playerCastingSystem.isCasting) {
+                } else if (!isPlayer && gameState.playerCastingSystem.isCurrentlyCasting()) {
                     gameState.playerCastingSystem.interruptCasting();
                     interruptMessage = "，中断了目标的吟唱";
                 }

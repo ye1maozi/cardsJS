@@ -186,7 +186,7 @@ class Game {
 
         const info = this.gameState.getGameInfo();
         return {
-            currentTurn: info.currentTurn,
+            gameTime: info.gameTime,
             playerHealth: info.playerHealth,
             computerHealth: info.computerHealth,
             playerHandCount: info.playerHandCount,

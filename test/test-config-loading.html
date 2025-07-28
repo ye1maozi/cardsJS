@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>配置加载测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .config-item {
+            margin: 5px 0;
+            padding: 5px;
+            background-color: #f8f9fa;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>配置加载测试</h1>
+        <p>此页面测试新的配置加载方案，包括内置数据加载和CSV文件加载的兼容性。</p>
+        
+        <div class="test-section">
+            <div class="test-title">1. 内置配置数据测试</div>
+            <button onclick="testBuiltInData()">测试内置数据</button>
+            <div id="builtInResult" class="test-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">2. 卡牌配置加载测试</div>
+            <button onclick="testCardConfig()">测试卡牌配置</button>
+            <div id="cardConfigResult" class="test-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">3. 英雄技能配置测试</div>
+            <button onclick="testHeroSkills()">测试英雄技能</button>
+            <div id="heroSkillsResult" class="test-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">4. 角色职业配置测试</div>
+            <button onclick="testCharacterClasses()">测试角色职业</button>
+            <div id="characterClassesResult" class="test-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">5. 游戏配置测试</div>
+            <button onclick="testGameConfig()">测试游戏配置</button>
+            <div id="gameConfigResult" class="test-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">6. 完整配置加载测试</div>
+            <button onclick="testFullConfig()">测试完整配置</button>
+            <div id="fullConfigResult" class="test-result"></div>
+        </div>
+    </div>
+
+    <!-- 引入配置数据文件 -->
+    <script src="../js/ConfigData.js"></script>
+    
+    <script>
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `test-result ${type}`;
+        }
+
+        function testBuiltInData() {
+            try {
+                if (typeof window.ConfigData === 'undefined') {
+                    showResult('builtInResult', '错误: ConfigData 未定义', 'error');
+                    return;
+                }
+                
+                let result = '内置配置数据测试结果:\n\n';
+                
+                // 测试卡牌数据
+                if (window.ConfigData.CARD_CONFIG_DATA) {
+                    result += `✓ 卡牌配置数据: ${window.ConfigData.CARD_CONFIG_DATA.length} 张卡牌\n`;
+                    result += `  示例: ${window.ConfigData.CARD_CONFIG_DATA[0].name} (${window.ConfigData.CARD_CONFIG_DATA[0].class})\n`;
+                } else {
+                    result += `✗ 卡牌配置数据: 未找到\n`;
+                }
+                
+                // 测试英雄技能数据
+                if (window.ConfigData.HERO_SKILL_DATA) {
+                    result += `✓ 英雄技能数据: ${window.ConfigData.HERO_SKILL_DATA.length} 个技能\n`;
+                    result += `  示例: ${window.ConfigData.HERO_SKILL_DATA[0].name} (${window.ConfigData.HERO_SKILL_DATA[0].class})\n`;
+                } else {
+                    result += `✗ 英雄技能数据: 未找到\n`;
+                }
+                
+                // 测试角色职业数据
+                if (window.ConfigData.CHARACTER_CLASS_DATA) {
+                    result += `✓ 角色职业数据: ${window.ConfigData.CHARACTER_CLASS_DATA.length} 个职业\n`;
+                    result += `  示例: ${window.ConfigData.CHARACTER_CLASS_DATA[0].class} (生命: ${window.ConfigData.CHARACTER_CLASS_DATA[0].maxHealth})\n`;
+                } else {
+                    result += `✗ 角色职业数据: 未找到\n`;
+                }
+                
+                // 测试游戏配置数据
+                if (window.ConfigData.GAME_CONFIG_DATA) {
+                    result += `✓ 游戏配置数据: ${Object.keys(window.ConfigData.GAME_CONFIG_DATA).length} 个配置项\n`;
+                    result += `  示例: 初始手牌数 = ${window.ConfigData.GAME_CONFIG_DATA.InitialHandSize}\n`;
+                } else {
+                    result += `✗ 游戏配置数据: 未找到\n`;
+                }
+                
+                showResult('builtInResult', result, 'success');
+            } catch (error) {
+                showResult('builtInResult', `错误: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCardConfig() {
+            try {
+                // 动态加载CardConfig.js
+                await loadScript('../js/CardConfig.js');
+                
+                const success = await CardConfigManager.loadCardConfigs();
+                let result = '卡牌配置加载测试结果:\n\n';
+                
+                if (success) {
+                    result += `✓ 卡牌配置加载成功\n`;
+                    result += `  加载卡牌数量: ${CardConfigManager.cardConfigs.length}\n`;
+                    result += `  已加载状态: ${CardConfigManager.isLoaded}\n\n`;
+                    
+                    result += '卡牌列表:\n';
+                    CardConfigManager.cardConfigs.forEach((card, index) => {
+                        result += `  ${index + 1}. ${card.name} (${card.class}) - 能量: ${card.energyCost}\n`;
+                    });
+                    
+                    showResult('cardConfigResult', result, 'success');
+                } else {
+                    result += `✗ 卡牌配置加载失败\n`;
+                    showResult('cardConfigResult', result, 'error');
+                }
+            } catch (error) {
+                showResult('cardConfigResult', `错误: ${error.message}`, 'error');
+            }
+        }
+
+        async function testHeroSkills() {
+            try {
+                // 动态加载ConfigManager.js
+                await loadScript('../js/ConfigManager.js');
+                
+                const success = await ConfigManager.loadHeroSkills();
+                let result = '英雄技能配置测试结果:\n\n';
+                
+                if (success) {
+                    result += `✓ 英雄技能配置加载成功\n`;
+                    result += `  加载技能数量: ${ConfigManager.configs.heroSkills.length}\n\n`;
+                    
+                    result += '技能列表:\n';
+                    ConfigManager.configs.heroSkills.forEach((skill, index) => {
+                        result += `  ${index + 1}. ${skill.name} (${skill.class}) - 冷却: ${skill.cooldown}s\n`;
+                    });
+                    
+                    showResult('heroSkillsResult', result, 'success');
+                } else {
+                    result += `✗ 英雄技能配置加载失败\n`;
+                    showResult('heroSkillsResult', result, 'error');
+                }
+            } catch (error) {
+                showResult('heroSkillsResult', `错误: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCharacterClasses() {
+            try {
+                // 动态加载ConfigManager.js
+                await loadScript('../js/ConfigManager.js');
+                
+                const success = await ConfigManager.loadCharacterClasses();
+                let result = '角色职业配置测试结果:\n\n';
+                
+                if (success) {
+                    result += `✓ 角色职业配置加载成功\n`;
+                    result += `  加载职业数量: ${ConfigManager.configs.characterClasses.length}\n\n`;
+                    
+                    result += '职业列表:\n';
+                    ConfigManager.configs.characterClasses.forEach((cls, index) => {
+                        result += `  ${index + 1}. ${cls.class} - 生命: ${cls.maxHealth}, 能量: ${cls.maxEnergy}\n`;
+                    });
+                    
+                    showResult('characterClassesResult', result, 'success');
+                } else {
+                    result += `✗ 角色职业配置加载失败\n`;
+                    showResult('characterClassesResult', result, 'error');
+                }
+            } catch (error) {
+                showResult('characterClassesResult', `错误: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGameConfig() {
+            try {
+                // 动态加载ConfigManager.js
+                await loadScript('../js/ConfigManager.js');
+                
+                const success = await ConfigManager.loadGameConfig();
+                let result = '游戏配置测试结果:\n\n';
+                
+                if (success) {
+                    result += `✓ 游戏配置加载成功\n`;
+                    result += `  配置项数量: ${ConfigManager.configs.gameConfig.size}\n\n`;
+                    
+                    result += '配置项列表:\n';
+                    for (const [key, value] of ConfigManager.configs.gameConfig) {
+                        result += `  ${key}: ${value}\n`;
+                    }
+                    
+                    showResult('gameConfigResult', result, 'success');
+                } else {
+                    result += `✗ 游戏配置加载失败\n`;
+                    showResult('gameConfigResult', result, 'error');
+                }
+            } catch (error) {
+                showResult('gameConfigResult', `错误: ${error.message}`, 'error');
+            }
+        }
+
+        async function testFullConfig() {
+            try {
+                // 动态加载所有必要的脚本
+                await loadScript('../js/ConfigManager.js');
+                
+                const success = await ConfigManager.loadAllConfigs();
+                let result = '完整配置加载测试结果:\n\n';
+                
+                if (success) {
+                    result += `✓ 完整配置加载成功\n`;
+                    result += `  已加载状态: ${ConfigManager.isLoaded}\n\n`;
+                    
+                    result += '配置统计:\n';
+                    result += `  卡牌配置: ${ConfigManager.configs.cards.length} 张\n`;
+                    result += `  英雄技能: ${ConfigManager.configs.heroSkills.length} 个\n`;
+                    result += `  角色职业: ${ConfigManager.configs.characterClasses.length} 个\n`;
+                    result += `  游戏配置: ${ConfigManager.configs.gameConfig.size} 项\n`;
+                    
+                    showResult('fullConfigResult', result, 'success');
+                } else {
+                    result += `✗ 完整配置加载失败\n`;
+                    showResult('fullConfigResult', result, 'error');
+                }
+            } catch (error) {
+                showResult('fullConfigResult', `错误: ${error.message}`, 'error');
+            }
+        }
+
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                // 检查脚本是否已经加载
+                const existingScript = document.querySelector(`script[src="${src}"]`);
+                if (existingScript) {
+                    resolve();
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        // 页面加载完成后自动运行内置数据测试
+        window.addEventListener('load', () => {
+            setTimeout(testBuiltInData, 100);
+        });
+    </script>
+</body>
+</html> 

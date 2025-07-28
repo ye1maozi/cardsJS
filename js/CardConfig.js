@@ -29,20 +29,67 @@ class CardConfigManager {
      */
     static async loadCardConfigs() {
         try {
-            // 尝试从CSV文件加载配置
-            const success = await this.loadFromCSVFile();
-            if (success) {
+            // 优先尝试从CSV文件加载配置
+            const fileSuccess = await this.loadFromCSVFile();
+            if (fileSuccess) {
                 this.isLoaded = true;
                 console.log(`从CSV文件成功加载 ${this.cardConfigs.length} 张卡牌配置`);
                 return true;
-            } else {
-                // 如果CSV加载失败，使用默认配置
-                console.warn('CSV文件加载失败，使用默认配置');
-                return this.loadDefaultConfigs();
             }
+            
+            // 如果文件加载失败，尝试使用内置配置数据
+            const builtInSuccess = this.loadFromBuiltInData();
+            if (builtInSuccess) {
+                this.isLoaded = true;
+                console.log(`从内置数据成功加载 ${this.cardConfigs.length} 张卡牌配置`);
+                return true;
+            }
+            
+            // 最后使用最小化默认配置
+            console.warn('所有配置加载失败，使用最小化默认配置');
+            return this.loadDefaultConfigs();
         } catch (error) {
             console.error('加载卡牌配置失败:', error);
             this.isLoaded = false;
+            return false;
+        }
+    }
+
+    /**
+     * 从内置配置数据加载
+     * @returns {boolean} 是否加载成功
+     */
+    static loadFromBuiltInData() {
+        try {
+            // 检查是否有内置配置数据
+            if (typeof window.ConfigData === 'undefined' || !window.ConfigData.CARD_CONFIG_DATA) {
+                console.warn('内置配置数据不可用');
+                return false;
+            }
+            
+            this.cardConfigs = [];
+            const data = window.ConfigData.CARD_CONFIG_DATA;
+            
+            for (const item of data) {
+                const config = new CardConfig(
+                    item.name,
+                    item.class,
+                    item.energyCost,
+                    item.castTime,
+                    item.castType,
+                    item.effect,
+                    item.effectCode,
+                    item.value1,
+                    item.value2,
+                    item.value3
+                );
+                this.cardConfigs.push(config);
+            }
+            
+            console.log(`从内置数据成功加载 ${this.cardConfigs.length} 张卡牌配置`);
+            return true;
+        } catch (error) {
+            console.warn('从内置数据加载失败:', error.message);
             return false;
         }
     }
@@ -55,7 +102,7 @@ class CardConfigManager {
         try {
             // 检查是否在本地文件系统中
             if (window.location.protocol === 'file:') {
-                console.warn('检测到本地文件访问，CSV加载可能被CORS策略阻止，将使用默认配置');
+                console.warn('检测到本地文件访问，CSV加载可能被CORS策略阻止');
                 return false;
             }
             
@@ -66,7 +113,7 @@ class CardConfigManager {
             const csvData = await response.text();
             return this.loadFromCSV(csvData);
         } catch (error) {
-            console.warn('从CSV文件加载失败，将使用默认配置:', error.message);
+            console.warn('从CSV文件加载失败:', error.message);
             return false;
         }
     }

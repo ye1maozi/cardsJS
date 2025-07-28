@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI逻辑完善测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .test-result {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .success {
+            color: #28a745;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .info {
+            color: #17a2b8;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .ai-status {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .strategy-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .strategy-item {
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 3px;
+            border-left: 3px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>AI逻辑完善测试</h1>
+        
+        <div class="test-section">
+            <div class="test-title">测试1: 威胁评估系统</div>
+            <button onclick="testThreatAssessment()">测试威胁评估</button>
+            <div id="threat-result" class="test-result"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">测试2: 连击系统</div>
+            <button onclick="testComboSystem()">测试连击系统</button>
+            <div id="combo-result" class="test-result"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">测试3: 吟唱系统支持</div>
+            <button onclick="testCastingSystem()">测试吟唱系统</button>
+            <div id="casting-result" class="test-result"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">测试4: 英雄技能使用</div>
+            <button onclick="testHeroSkill()">测试英雄技能</button>
+            <div id="hero-skill-result" class="test-result"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">测试5: 策略切换</div>
+            <button onclick="testStrategySwitching()">测试策略切换</button>
+            <div id="strategy-result" class="test-result"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">测试6: 状态效果考虑</div>
+            <button onclick="testStatusEffects()">测试状态效果</button>
+            <div id="status-result" class="test-result"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">测试7: 综合AI表现</div>
+            <button onclick="testOverallAI()">测试综合表现</button>
+            <div id="overall-result" class="test-result"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">AI状态监控</div>
+            <div id="ai-status" class="ai-status"></div>
+        </div>
+    </div>
+
+    <!-- 引入必要的脚本 -->
+    <script src="../js/Character.js"></script>
+    <script src="../js/Card.js"></script>
+    <script src="../js/CardConfig.js"></script>
+    <script src="../js/CastingSystem.js"></script>
+    <script src="../js/HeroSkill.js"></script>
+    <script src="../js/GameState.js"></script>
+    <script src="../js/BotPlayer.js"></script>
+
+    <script>
+        let gameState;
+        let botPlayer;
+
+        // 初始化测试环境
+        function initializeTest() {
+            if (!gameState) {
+                gameState = new GameState();
+                botPlayer = new BotPlayer(gameState);
+                
+                // 等待卡牌配置加载
+                setTimeout(() => {
+                    console.log("测试环境初始化完成");
+                }, 1000);
+            }
+        }
+
+        // 测试威胁评估系统
+        async function testThreatAssessment() {
+            initializeTest();
+            const resultDiv = document.getElementById('threat-result');
+            resultDiv.innerHTML = '<span class="info">正在测试威胁评估系统...</span>';
+
+            try {
+                // 设置不同的游戏状态来测试威胁评估
+                const testScenarios = [
+                    {
+                        name: "低威胁场景",
+                        setup: () => {
+                            gameState.playerHealth = 25;
+                            gameState.computerHealth = 30;
+                            gameState.playerHand = [];
+                            gameState.playerEnergy = 1;
+                        }
+                    },
+                    {
+                        name: "高威胁场景",
+                        setup: () => {
+                            gameState.playerHealth = 30;
+                            gameState.computerHealth = 5;
+                            gameState.playerHand = [
+                                new Card("火球术", "法师", 3, 0, "瞬发", "造成8点伤害", "DAMAGE_8", 8, 0, 0),
+                                new Card("闪电箭", "法师", 2, 0, "瞬发", "造成6点伤害", "DAMAGE_6", 6, 0, 0)
+                            ];
+                            gameState.playerEnergy = 5;
+                        }
+                    },
+                    {
+                        name: "中等威胁场景",
+                        setup: () => {
+                            gameState.playerHealth = 15;
+                            gameState.computerHealth = 20;
+                            gameState.playerHand = [
+                                new Card("火球术", "法师", 3, 0, "瞬发", "造成8点伤害", "DAMAGE_8", 8, 0, 0)
+                            ];
+                            gameState.playerEnergy = 3;
+                        }
+                    }
+                ];
+
+                let results = [];
+                for (const scenario of testScenarios) {
+                    scenario.setup();
+                    botPlayer.updateThreatLevel();
+                    
+                    results.push({
+                        scenario: scenario.name,
+                        threatLevel: botPlayer.threatLevel,
+                        playerHealth: gameState.playerHealth,
+                        computerHealth: gameState.computerHealth,
+                        playerDamage: botPlayer.calculatePlayerDamagePotential()
+                    });
+                }
+
+                let resultHTML = '<h4>威胁评估测试结果:</h4>';
+                results.forEach(result => {
+                    const threatColor = result.threatLevel >= 7 ? 'error' : 
+                                      result.threatLevel >= 4 ? 'info' : 'success';
+                    resultHTML += `
+                        <div class="strategy-item">
+                            <strong>${result.scenario}:</strong><br>
+                            威胁等级: <span class="${threatColor}">${result.threatLevel}/10</span><br>
+                            玩家血量: ${result.playerHealth}<br>
+                            电脑血量: ${result.computerHealth}<br>
+                            玩家伤害潜力: ${result.playerDamage}
+                        </div>
+                    `;
+                });
+
+                resultDiv.innerHTML = resultHTML;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">威胁评估测试失败: ${error.message}</span>`;
+            }
+        }
+
+        // 测试连击系统
+        async function testComboSystem() {
+            initializeTest();
+            const resultDiv = document.getElementById('combo-result');
+            resultDiv.innerHTML = '<span class="info">正在测试连击系统...</span>';
+
+            try {
+                // 模拟连续使用低消耗卡牌
+                gameState.computerHand = [
+                    new Card("匕首投掷", "盗贼", 1, 0, "瞬发", "造成3点伤害", "DAMAGE_3", 3, 0, 0),
+                    new Card("毒刃", "盗贼", 1, 0, "瞬发", "造成2点伤害并中毒", "DAMAGE_2_POISON", 2, 3, 0),
+                    new Card("背刺", "盗贼", 2, 0, "瞬发", "造成5点伤害", "DAMAGE_5", 5, 0, 0)
+                ];
+                gameState.computerEnergy = 5;
+                gameState.currentTurn = 1;
+
+                let comboResults = [];
+                for (let i = 0; i < 3; i++) {
+                    const card = gameState.computerHand[0];
+                    botPlayer.updateComboCounter(card);
+                    comboResults.push({
+                        turn: gameState.currentTurn + i,
+                        comboCount: botPlayer.comboCounter,
+                        cardName: card.name,
+                        hasComboCards: botPlayer.hasComboCards(),
+                        comboOpportunity: botPlayer.hasComboOpportunity()
+                    });
+                    gameState.currentTurn++;
+                }
+
+                let resultHTML = '<h4>连击系统测试结果:</h4>';
+                comboResults.forEach(result => {
+                    resultHTML += `
+                        <div class="strategy-item">
+                            <strong>回合 ${result.turn}:</strong><br>
+                            连击数: <span class="success">${result.comboCount}</span><br>
+                            使用卡牌: ${result.cardName}<br>
+                            有连击卡牌: ${result.hasComboCards ? '是' : '否'}<br>
+                            连击机会: ${result.comboOpportunity ? '是' : '否'}
+                        </div>
+                    `;
+                });
+
+                resultDiv.innerHTML = resultHTML;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">连击系统测试失败: ${error.message}</span>`;
+            }
+        }
+
+        // 测试吟唱系统
+        async function testCastingSystem() {
+            initializeTest();
+            const resultDiv = document.getElementById('casting-result');
+            resultDiv.innerHTML = '<span class="info">正在测试吟唱系统...</span>';
+
+            try {
+                // 测试吟唱卡牌的选择
+                gameState.computerHand = [
+                    new Card("大火球", "法师", 4, 3, "吟唱", "造成12点伤害", "DAMAGE_12", 12, 0, 0),
+                    new Card("火球术", "法师", 3, 0, "瞬发", "造成8点伤害", "DAMAGE_8", 8, 0, 0),
+                    new Card("治疗术", "牧师", 2, 0, "瞬发", "恢复6点生命", "HEAL_6", 6, 0, 0)
+                ];
+                gameState.computerEnergy = 5;
+                gameState.computerHealth = 25;
+
+                const strategy = botPlayer.analyzeSituation();
+                const castingOpportunity = botPlayer.hasCastingOpportunity();
+                const castingScore = botPlayer.getCastingCardScore(
+                    gameState.computerHand[0], strategy
+                );
+
+                let resultHTML = '<h4>吟唱系统测试结果:</h4>';
+                resultHTML += `
+                    <div class="strategy-item">
+                        <strong>吟唱机会检测:</strong> ${castingOpportunity ? '是' : '否'}<br>
+                        <strong>吟唱卡牌评分:</strong> ${castingScore.toFixed(2)}<br>
+                        <strong>当前策略:</strong> ${strategy.strategy}<br>
+                        <strong>威胁等级:</strong> ${strategy.threatLevel}
+                    </div>
+                `;
+
+                // 测试吟唱状态处理
+                if (gameState.computerCastingSystem.isCasting()) {
+                    const castingResult = botPlayer.handleCastingTurn();
+                    resultHTML += `<div class="strategy-item">吟唱状态: ${castingResult}</div>`;
+                }
+
+                resultDiv.innerHTML = resultHTML;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">吟唱系统测试失败: ${error.message}</span>`;
+            }
+        }
+
+        // 测试英雄技能使用
+        async function testHeroSkill() {
+            initializeTest();
+            const resultDiv = document.getElementById('hero-skill-result');
+            resultDiv.innerHTML = '<span class="info">正在测试英雄技能使用...</span>';
+
+            try {
+                const classes = ['战士', '法师', '盗贼', '牧师'];
+                let results = [];
+
+                for (const className of classes) {
+                    gameState.computerCharacter.characterClass = className;
+                    gameState.computerCharacter.currentEnergy = 3;
+                    
+                    // 设置不同的血量状态
+                    const scenarios = [
+                        { computerHealth: 30, playerHealth: 30, name: "满血状态" },
+                        { computerHealth: 10, playerHealth: 30, name: "电脑低血" },
+                        { computerHealth: 30, playerHealth: 5, name: "玩家低血" }
+                    ];
+
+                    for (const scenario of scenarios) {
+                        gameState.computerHealth = scenario.computerHealth;
+                        gameState.playerHealth = scenario.playerHealth;
+                        
+                        if (className === '法师') {
+                            // 为法师添加高伤害法术
+                            gameState.computerHand = [
+                                new Card("大火球", "法师", 4, 3, "吟唱", "造成12点伤害", "DAMAGE_12", 12, 0, 0)
+                            ];
+                        } else {
+                            gameState.computerHand = [];
+                        }
+
+                        const shouldUse = botPlayer.shouldUseHeroSkill();
+                        results.push({
+                            class: className,
+                            scenario: scenario.name,
+                            shouldUse: shouldUse,
+                            computerHealth: scenario.computerHealth,
+                            playerHealth: scenario.playerHealth
+                        });
+                    }
+                }
+
+                let resultHTML = '<h4>英雄技能使用测试结果:</h4>';
+                results.forEach(result => {
+                    const useColor = result.shouldUse ? 'success' : 'info';
+                    resultHTML += `
+                        <div class="strategy-item">
+                            <strong>${result.class} - ${result.scenario}:</strong><br>
+                            建议使用: <span class="${useColor}">${result.shouldUse ? '是' : '否'}</span><br>
+                            电脑血量: ${result.computerHealth}<br>
+                            玩家血量: ${result.playerHealth}
+                        </div>
+                    `;
+                });
+
+                resultDiv.innerHTML = resultHTML;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">英雄技能测试失败: ${error.message}</span>`;
+            }
+        }
+
+        // 测试策略切换
+        async function testStrategySwitching() {
+            initializeTest();
+            const resultDiv = document.getElementById('strategy-result');
+            resultDiv.innerHTML = '<span class="info">正在测试策略切换...</span>';
+
+            try {
+                const scenarios = [
+                    {
+                        name: "防御策略",
+                        setup: () => {
+                            gameState.computerHealth = 8;
+                            gameState.playerHealth = 25;
+                            gameState.computerHand = [
+                                new Card("治疗术", "牧师", 2, 0, "瞬发", "恢复6点生命", "HEAL_6", 6, 0, 0),
+                                new Card("护甲术", "法师", 2, 0, "瞬发", "获得5点护甲", "ARMOR_5", 0, 5, 0)
+                            ];
+                            gameState.computerEnergy = 4;
+                        }
+                    },
+                    {
+                        name: "攻击策略",
+                        setup: () => {
+                            gameState.computerHealth = 25;
+                            gameState.playerHealth = 8;
+                            gameState.computerHand = [
+                                new Card("火球术", "法师", 3, 0, "瞬发", "造成8点伤害", "DAMAGE_8", 8, 0, 0),
+                                new Card("闪电箭", "法师", 2, 0, "瞬发", "造成6点伤害", "DAMAGE_6", 6, 0, 0)
+                            ];
+                            gameState.computerEnergy = 5;
+                        }
+                    },
+                    {
+                        name: "连击策略",
+                        setup: () => {
+                            gameState.computerHealth = 20;
+                            gameState.playerHealth = 20;
+                            gameState.computerHand = [
+                                new Card("匕首投掷", "盗贼", 1, 0, "瞬发", "造成3点伤害", "DAMAGE_3", 3, 0, 0),
+                                new Card("毒刃", "盗贼", 1, 0, "瞬发", "造成2点伤害并中毒", "DAMAGE_2_POISON", 2, 3, 0)
+                            ];
+                            gameState.computerEnergy = 4;
+                            botPlayer.comboCounter = 2;
+                        }
+                    },
+                    {
+                        name: "平衡策略",
+                        setup: () => {
+                            gameState.computerHealth = 20;
+                            gameState.playerHealth = 20;
+                            gameState.computerHand = [
+                                new Card("火球术", "法师", 3, 0, "瞬发", "造成8点伤害", "DAMAGE_8", 8, 0, 0),
+                                new Card("治疗术", "牧师", 2, 0, "瞬发", "恢复6点生命", "HEAL_6", 6, 0, 0)
+                            ];
+                            gameState.computerEnergy = 5;
+                        }
+                    }
+                ];
+
+                let results = [];
+                for (const scenario of scenarios) {
+                    scenario.setup();
+                    botPlayer.updateThreatLevel();
+                    botPlayer.updateStrategy();
+                    
+                    const strategy = botPlayer.analyzeSituation();
+                    results.push({
+                        scenario: scenario.name,
+                        strategy: botPlayer.strategy,
+                        threatLevel: botPlayer.threatLevel,
+                        computerHealth: gameState.computerHealth,
+                        playerHealth: gameState.playerHealth,
+                        hasComboCards: botPlayer.hasComboCards(),
+                        comboCounter: botPlayer.comboCounter
+                    });
+                }
+
+                let resultHTML = '<h4>策略切换测试结果:</h4>';
+                results.forEach(result => {
+                    const strategyColor = result.strategy === 'defensive' ? 'error' :
+                                        result.strategy === 'aggressive' ? 'success' :
+                                        result.strategy === 'combo' ? 'info' : 'info';
+                    resultHTML += `
+                        <div class="strategy-item">
+                            <strong>${result.scenario}:</strong><br>
+                            选择策略: <span class="${strategyColor}">${result.strategy}</span><br>
+                            威胁等级: ${result.threatLevel}/10<br>
+                            电脑血量: ${result.computerHealth}<br>
+                            玩家血量: ${result.playerHealth}<br>
+                            连击数: ${result.comboCounter}
+                        </div>
+                    `;
+                });
+
+                resultDiv.innerHTML = resultHTML;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">策略切换测试失败: ${error.message}</span>`;
+            }
+        }
+
+        // 测试状态效果考虑
+        async function testStatusEffects() {
+            initializeTest();
+            const resultDiv = document.getElementById('status-result');
+            resultDiv.innerHTML = '<span class="info">正在测试状态效果考虑...</span>';
+
+            try {
+                // 测试不同状态效果卡牌的评分
+                const statusCards = [
+                    new Card("毒刃", "盗贼", 1, 0, "瞬发", "造成2点伤害并中毒", "DAMAGE_2_POISON", 2, 3, 0),
+                    new Card("减速术", "法师", 2, 0, "瞬发", "减速目标", "SLOW_2", 0, 2, 3),
+                    new Card("潜行", "盗贼", 2, 0, "瞬发", "进入潜行状态", "STEALTH", 0, 0, 5)
+                ];
+
+                // 设置不同的游戏状态
+                const scenarios = [
+                    { playerHealth: 30, computerHealth: 15, name: "电脑低血状态" },
+                    { playerHealth: 25, computerHealth: 25, name: "平衡状态" },
+                    { playerHealth: 10, computerHealth: 30, name: "玩家低血状态" }
+                ];
+
+                let results = [];
+                for (const scenario of scenarios) {
+                    gameState.playerHealth = scenario.playerHealth;
+                    gameState.computerHealth = scenario.computerHealth;
+                    gameState.computerEnergy = 5;
+                    
+                    const strategy = botPlayer.analyzeSituation();
+                    
+                    const cardScores = statusCards.map(card => {
+                        let score = 0;
+                        if (card.effectCode.includes('POISON')) {
+                            score = botPlayer.getPoisonCardScore(card, strategy);
+                        } else if (card.effectCode.includes('SLOW')) {
+                            score = botPlayer.getControlCardScore(card, strategy);
+                        } else if (card.effectCode.includes('STEALTH')) {
+                            score = botPlayer.getStealthCardScore(card, strategy);
+                        }
+                        return { card: card.name, score: score };
+                    });
+
+                    results.push({
+                        scenario: scenario.name,
+                        cardScores: cardScores,
+                        threatLevel: strategy.threatLevel,
+                        strategy: strategy.strategy
+                    });
+                }
+
+                let resultHTML = '<h4>状态效果考虑测试结果:</h4>';
+                results.forEach(result => {
+                    resultHTML += `<div class="strategy-item"><strong>${result.scenario}:</strong><br>`;
+                    resultHTML += `威胁等级: ${result.threatLevel}, 策略: ${result.strategy}<br>`;
+                    result.cardScores.forEach(cardScore => {
+                        resultHTML += `${cardScore.card}: ${cardScore.score.toFixed(2)}<br>`;
+                    });
+                    resultHTML += '</div>';
+                });
+
+                resultDiv.innerHTML = resultHTML;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">状态效果测试失败: ${error.message}</span>`;
+            }
+        }
+
+        // 测试综合AI表现
+        async function testOverallAI() {
+            initializeTest();
+            const resultDiv = document.getElementById('overall-result');
+            resultDiv.innerHTML = '<span class="info">正在测试综合AI表现...</span>';
+
+            try {
+                // 模拟一个完整的游戏回合
+                gameState.computerHealth = 18;
+                gameState.playerHealth = 22;
+                gameState.computerEnergy = 4;
+                gameState.computerHand = [
+                    new Card("火球术", "法师", 3, 0, "瞬发", "造成8点伤害", "DAMAGE_8", 8, 0, 0),
+                    new Card("治疗术", "牧师", 2, 0, "瞬发", "恢复6点生命", "HEAL_6", 6, 0, 0),
+                    new Card("毒刃", "盗贼", 1, 0, "瞬发", "造成2点伤害并中毒", "DAMAGE_2_POISON", 2, 3, 0)
+                ];
+                gameState.playerHand = [
+                    new Card("火球术", "法师", 3, 0, "瞬发", "造成8点伤害", "DAMAGE_8", 8, 0, 0)
+                ];
+                gameState.playerEnergy = 3;
+
+                // 执行AI决策
+                const aiResult = botPlayer.executeTurn();
+                const aiStatus = botPlayer.getStatus();
+
+                let resultHTML = '<h4>综合AI表现测试结果:</h4>';
+                resultHTML += `
+                    <div class="strategy-item">
+                        <strong>AI决策结果:</strong> ${aiResult}<br>
+                        <strong>当前策略:</strong> ${aiStatus.strategy}<br>
+                        <strong>威胁等级:</strong> ${aiStatus.threatLevel}/10<br>
+                        <strong>连击数:</strong> ${aiStatus.comboCounter}<br>
+                        <strong>难度:</strong> ${aiStatus.difficulty}
+                    </div>
+                `;
+
+                // 显示个性特征
+                resultHTML += '<div class="strategy-item"><strong>AI个性特征:</strong><br>';
+                Object.entries(aiStatus.personality).forEach(([trait, value]) => {
+                    resultHTML += `${trait}: ${value.toFixed(2)}<br>`;
+                });
+                resultHTML += '</div>';
+
+                resultDiv.innerHTML = resultHTML;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">综合AI测试失败: ${error.message}</span>`;
+            }
+        }
+
+        // 更新AI状态显示
+        function updateAIStatus() {
+            if (!botPlayer) return;
+            
+            const statusDiv = document.getElementById('ai-status');
+            const status = botPlayer.getStatus();
+            
+            statusDiv.innerHTML = `
+                <h4>AI状态监控</h4>
+                <div class="strategy-info">
+                    <div class="strategy-item">
+                        <strong>策略:</strong> ${status.strategy}<br>
+                        <strong>威胁等级:</strong> ${status.threatLevel}/10<br>
+                        <strong>连击数:</strong> ${status.comboCounter}
+                    </div>
+                    <div class="strategy-item">
+                        <strong>难度:</strong> ${status.difficulty}<br>
+                        <strong>记忆大小:</strong> ${Object.values(status.memorySize).reduce((a, b) => a + b, 0)}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTest();
+            setInterval(updateAIStatus, 1000);
+        });
+    </script>
+</body>
+</html> 

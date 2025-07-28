@@ -45,6 +45,31 @@ class Character {
      * 根据职业初始化基础属性
      */
     initializeClassStats() {
+        // 从配置管理器获取职业配置
+        if (ConfigManager && ConfigManager.isConfigLoaded()) {
+            const classConfig = ConfigManager.getCharacterClassConfig(this.characterClass);
+            if (classConfig) {
+                this.maxHealth = classConfig.maxHealth;
+                this.currentHealth = classConfig.maxHealth;
+                this.maxEnergy = classConfig.maxEnergy;
+                this.currentEnergy = classConfig.initialEnergy;
+                this.strength = classConfig.strength;
+                this.agility = classConfig.agility;
+                this.spirit = classConfig.spirit;
+                this.healthRegenRate = classConfig.healthRegenRate;
+                this.energyRegenRate = classConfig.energyRegenRate;
+                return;
+            }
+        }
+        
+        // 如果配置未加载或找不到配置，使用默认值
+        this.initializeDefaultClassStats();
+    }
+
+    /**
+     * 初始化默认职业属性（后备方案）
+     */
+    initializeDefaultClassStats() {
         switch (this.characterClass) {
             case '战士':
                 this.maxHealth = 35;

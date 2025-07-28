@@ -39,16 +39,19 @@ class GameState {
         // 游戏状态
         this.gameOver = false;
         this.winner = null;
+        this.gameTime = 0; // 游戏进行时间（秒）
         
         // 时间系统
         this.lastUpdateTime = Date.now();
         this.gameStartTime = Date.now();
         
+        console.log('GameState初始化完成，gameStartTime:', this.gameStartTime);
+        
         // 抽牌时间系统
         this.lastPlayerDrawTime = 0;
         this.lastComputerDrawTime = 0;
-        this.baseDrawInterval = 3; // 基础抽卡间隔（秒）
-        this.drawInterval = 3; // 当前抽卡间隔（秒）
+        this.baseDrawInterval = ConfigManager.getGameConfig('DrawInterval', 3); // 基础抽卡间隔（秒）
+        this.drawInterval = ConfigManager.getGameConfig('DrawInterval', 3); // 当前抽卡间隔（秒）
         
         // 初始化牌组
         this.initializeDeck();
@@ -150,8 +153,9 @@ class GameState {
         this.shuffleDeck(this.playerDeck);
         this.shuffleDeck(this.computerDeck);
 
-        // 发5张手牌
-        for (let i = 0; i < 5; i++) {
+        // 发初始手牌
+        const initialHandSize = ConfigManager.getGameConfig('InitialHandSize', 5);
+        for (let i = 0; i < initialHandSize; i++) {
             if (this.playerDeck.length > 0) {
                 this.playerHand.push(this.playerDeck.pop());
             }
@@ -170,6 +174,14 @@ class GameState {
         const currentTime = Date.now();
         const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // 转换为秒
         this.lastUpdateTime = currentTime;
+        
+        // 更新游戏时间
+        this.gameTime = (currentTime - this.gameStartTime) / 1000;
+        
+        // 每10秒输出一次调试信息
+        if (Math.floor(this.gameTime) % 10 === 0 && this.gameTime > 0) {
+            console.log(`游戏时间更新: ${this.gameTime.toFixed(1)}s`);
+        }
         
         // 更新角色状态
         this.playerCharacter.update(deltaTime);
@@ -207,7 +219,8 @@ class GameState {
      * @param {number} currentTime - 当前时间戳
      */
     updateTimeBasedDrawing(currentTime) {
-        const gameTime = (currentTime - this.gameStartTime) / 1000; // 游戏进行时间（秒）
+        // 使用已经更新的gameTime，而不是重新计算
+        const gameTime = this.gameTime;
         
         // 玩家抽牌检查（考虑敏捷属性）
         const playerDrawInterval = this.calculatePlayerDrawInterval();
@@ -218,13 +231,24 @@ class GameState {
         
         // 电脑抽牌检查（考虑敏捷属性）
         const computerDrawInterval = this.computerCharacter.calculateDrawInterval(this.baseDrawInterval);
-        if (gameTime - this.lastComputerDrawTime >= computerDrawInterval) {
+        const timeSinceLastComputerDraw = gameTime - this.lastComputerDrawTime;
+        
+        // 只在需要时输出调试信息，避免刷屏
+        if (timeSinceLastComputerDraw >= computerDrawInterval * 0.8) {
+            console.log(`电脑抽牌检查 - 游戏时间: ${gameTime.toFixed(1)}s, 上次抽牌: ${this.lastComputerDrawTime.toFixed(1)}s, 间隔: ${computerDrawInterval.toFixed(1)}s, 经过时间: ${timeSinceLastComputerDraw.toFixed(1)}s`);
+        }
+        
+        if (timeSinceLastComputerDraw >= computerDrawInterval) {
+            console.log('电脑开始抽牌...');
             this.drawCards(this.computerDeck, this.computerHand, 1, false);
             this.lastComputerDrawTime = gameTime;
+            
+            console.log(`电脑抽牌完成，游戏时间: ${this.gameTime.toFixed(1)}s, 手牌数量: ${this.computerHand.length}`);
             
             // 电脑AI决策（在抽牌后）
             setTimeout(() => {
                 if (!this.gameOver) {
+                    console.log('开始电脑AI决策...');
                     const aiResult = this.computerTurn();
                     
                     // 通知UI显示AI决策结果
@@ -293,15 +317,23 @@ class GameState {
      * @returns {object} 使用结果
      */
     useCard(card, isPlayer) {
+        console.log(`=== 使用卡牌开始 ===`);
+        console.log(`卡牌: ${card.name}, 使用者: ${isPlayer ? '玩家' : '电脑'}, 能量消耗: ${card.energyCost}`);
+        
         const character = isPlayer ? this.playerCharacter : this.computerCharacter;
         const castingSystem = isPlayer ? this.playerCastingSystem : this.computerCastingSystem;
         const hand = isPlayer ? this.playerHand : this.computerHand;
         const discardPile = isPlayer ? this.playerDiscardPile : this.computerDiscardPile;
 
+        console.log(`当前能量: ${character.currentEnergy}, 最大能量: ${character.maxEnergy}`);
+
         // 检查能量是否足够
         if (!character.consumeEnergy(card.energyCost)) {
+            console.log(`能量不足，无法使用卡牌: ${card.name}`);
             return { success: false, message: "能量不足" };
         }
+        
+        console.log(`能量消耗成功，剩余能量: ${character.currentEnergy}`);
         
         // 检查生命消耗（如果有）
         if (card.healthCost > 0) {
@@ -332,13 +364,19 @@ class GameState {
         }
 
         // 从手牌移除卡牌（使用索引确保移除正确的卡牌）
+        console.log(`准备从手牌移除卡牌: ${card.name}, 手牌数量: ${hand.length}`);
         if (card.handIndex !== undefined && card.handIndex >= 0 && card.handIndex < hand.length) {
+            console.log(`使用handIndex移除卡牌: ${card.handIndex}`);
             hand.splice(card.handIndex, 1);
         } else {
             // 后备方案：查找并移除第一张匹配的卡牌
             const cardIndex = hand.findIndex(c => c.name === card.name);
+            console.log(`使用findIndex查找卡牌: ${cardIndex}`);
             if (cardIndex !== -1) {
                 hand.splice(cardIndex, 1);
+                console.log(`成功移除卡牌，剩余手牌数量: ${hand.length}`);
+            } else {
+                console.log(`警告：未找到要移除的卡牌: ${card.name}`);
             }
         }
 
@@ -403,7 +441,16 @@ class GameState {
             this.botPlayer = new BotPlayer(this);
         }
         
-        return this.botPlayer.executeTurn();
+        // 添加调试信息
+        console.log(`电脑AI决策开始 - 手牌数量: ${this.computerHand.length}, 能量: ${this.computerEnergy}`);
+        if (this.computerHand.length > 0) {
+            console.log('电脑手牌:', this.computerHand.map(card => `${card.name}(消耗${card.energyCost})`));
+        }
+        
+        const result = this.botPlayer.executeTurn();
+        console.log(`电脑AI决策结果: ${result}`);
+        
+        return result;
     }
 
     /**
@@ -461,6 +508,7 @@ class GameState {
         // 重置游戏状态
         this.gameOver = false;
         this.winner = null;
+        this.gameTime = 0; // 重置游戏时间
         
         // 重置时间系统
         this.lastUpdateTime = Date.now();
@@ -482,7 +530,8 @@ class GameState {
      * @returns {object} 游戏状态信息
      */
     getGameInfo() {
-        const gameTime = (Date.now() - this.gameStartTime) / 1000;
+        // 使用已经更新的gameTime，保持一致性
+        const gameTime = this.gameTime;
         
         // 计算倒计时
         const drawCountdown = this.calculateDrawCountdown(gameTime);

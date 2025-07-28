@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CastingSystem修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .casting-info {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            margin: 10px 0;
+        }
+        .casting-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+        .casting-progress {
+            height: 100%;
+            background-color: #007bff;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>CastingSystem修复测试</h1>
+        <p>此页面测试CastingSystem的方法调用是否正确，验证修复是否有效。</p>
+        
+        <div class="test-section">
+            <div class="test-title">1. CastingSystem基础功能测试</div>
+            <button onclick="testCastingSystem()">测试CastingSystem</button>
+            <button onclick="testCastingMethods()">测试方法调用</button>
+            <div id="castingTestResult" class="test-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">2. 游戏状态集成测试</div>
+            <button onclick="testGameStateIntegration()">测试游戏状态集成</button>
+            <button onclick="testBotPlayerIntegration()">测试AI集成</button>
+            <div id="integrationTestResult" class="test-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">3. 吟唱状态显示</div>
+            <div id="castingStatus" class="casting-info">
+                <h4>吟唱状态</h4>
+                <div id="castingBar" class="casting-bar">
+                    <div id="castingProgress" class="casting-progress" style="width: 0%"></div>
+                </div>
+                <div id="castingText">未在吟唱</div>
+            </div>
+            <button onclick="startCasting()">开始吟唱</button>
+            <button onclick="interruptCasting()">中断吟唱</button>
+            <button onclick="updateCasting()">更新吟唱</button>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">4. 错误测试</div>
+            <button onclick="testErrorCases()">测试错误情况</button>
+            <div id="errorTestResult" class="test-result"></div>
+        </div>
+    </div>
+
+    <!-- 引入配置数据文件 -->
+    <script src="../js/ConfigData.js"></script>
+    
+    <script>
+        let castingSystem = null;
+        let gameState = null;
+        let botPlayer = null;
+        let testCard = null;
+        let testCharacter = null;
+
+        // 动态加载脚本
+        async function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const existingScript = document.querySelector(`script[src="${src}"]`);
+                if (existingScript) {
+                    resolve();
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        // 初始化测试环境
+        async function initializeTest() {
+            try {
+                // 加载必要的脚本
+                await loadScript('../js/CastingSystem.js');
+                await loadScript('../js/Character.js');
+                await loadScript('../js/Card.js');
+                await loadScript('../js/CardConfig.js');
+                await loadScript('../js/ConfigManager.js');
+                await loadScript('../js/GameState.js');
+                await loadScript('../js/BotPlayer.js');
+
+                // 加载配置
+                await ConfigManager.loadAllConfigs();
+                await CardConfigManager.loadCardConfigs();
+
+                // 创建测试对象
+                castingSystem = new CastingSystem();
+                testCharacter = new Character("测试角色", "法师");
+                testCard = new Card("火球术", "法师", 2, 1, "吟唱", "吟唱1秒后，对单体目标造成8点伤害", "DAMAGE_8", 8, 0, 0);
+
+                showResult('castingTestResult', '测试环境初始化完成', 'success');
+
+            } catch (error) {
+                showResult('castingTestResult', `初始化失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试CastingSystem基础功能
+        function testCastingSystem() {
+            try {
+                if (!castingSystem) {
+                    showResult('castingTestResult', 'CastingSystem未初始化', 'error');
+                    return;
+                }
+
+                let result = 'CastingSystem基础功能测试:\n\n';
+
+                // 测试初始状态
+                result += `1. 初始状态测试:\n`;
+                result += `   isCurrentlyCasting(): ${castingSystem.isCurrentlyCasting()}\n`;
+                result += `   getCastingInfo(): ${JSON.stringify(castingSystem.getCastingInfo(), null, 2)}\n\n`;
+
+                // 测试开始吟唱
+                result += `2. 开始吟唱测试:\n`;
+                const startResult = castingSystem.startCasting(testCard, testCharacter, testCharacter);
+                result += `   startCasting(): ${startResult}\n`;
+                result += `   isCurrentlyCasting(): ${castingSystem.isCurrentlyCasting()}\n`;
+                result += `   getCastingInfo(): ${JSON.stringify(castingSystem.getCastingInfo(), null, 2)}\n\n`;
+
+                // 测试更新吟唱
+                result += `3. 更新吟唱测试:\n`;
+                const updateResult = castingSystem.updateCasting(0.5);
+                result += `   updateCasting(0.5): ${updateResult}\n`;
+                result += `   getCastProgress(): ${castingSystem.getCastProgress().toFixed(1)}%\n`;
+                result += `   getRemainingCastTime(): ${castingSystem.getRemainingCastTime().toFixed(1)}s\n\n`;
+
+                // 测试完成吟唱
+                result += `4. 完成吟唱测试:\n`;
+                const completeResult = castingSystem.updateCasting(0.6);
+                result += `   updateCasting(0.6): ${completeResult}\n`;
+                result += `   isCurrentlyCasting(): ${castingSystem.isCurrentlyCasting()}\n\n`;
+
+                showResult('castingTestResult', result, 'success');
+
+            } catch (error) {
+                showResult('castingTestResult', `测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试方法调用
+        function testCastingMethods() {
+            try {
+                if (!castingSystem) {
+                    showResult('castingTestResult', 'CastingSystem未初始化', 'error');
+                    return;
+                }
+
+                let result = '方法调用测试:\n\n';
+
+                // 测试所有方法是否存在
+                const methods = [
+                    'isCurrentlyCasting',
+                    'startCasting',
+                    'updateCasting',
+                    'interruptCasting',
+                    'resetCasting',
+                    'getCastProgress',
+                    'getRemainingCastTime',
+                    'getCastingInfo'
+                ];
+
+                result += '检查方法存在性:\n';
+                methods.forEach(method => {
+                    const exists = typeof castingSystem[method] === 'function';
+                    result += `   ${method}(): ${exists ? '✓' : '✗'}\n`;
+                });
+
+                result += '\n测试方法调用:\n';
+                
+                // 测试isCurrentlyCasting
+                try {
+                    const isCasting = castingSystem.isCurrentlyCasting();
+                    result += `   isCurrentlyCasting() 调用成功: ${isCasting}\n`;
+                } catch (error) {
+                    result += `   isCurrentlyCasting() 调用失败: ${error.message}\n`;
+                }
+
+                // 测试getCastingInfo
+                try {
+                    const info = castingSystem.getCastingInfo();
+                    result += `   getCastingInfo() 调用成功\n`;
+                    result += `   返回对象包含: ${Object.keys(info).join(', ')}\n`;
+                } catch (error) {
+                    result += `   getCastingInfo() 调用失败: ${error.message}\n`;
+                }
+
+                showResult('castingTestResult', result, 'success');
+
+            } catch (error) {
+                showResult('castingTestResult', `方法测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试游戏状态集成
+        function testGameStateIntegration() {
+            try {
+                if (!gameState) {
+                    gameState = new GameState();
+                }
+
+                let result = '游戏状态集成测试:\n\n';
+
+                // 测试吟唱系统集成
+                result += `1. 吟唱系统集成:\n`;
+                result += `   playerCastingSystem: ${gameState.playerCastingSystem ? '✓' : '✗'}\n`;
+                result += `   computerCastingSystem: ${gameState.computerCastingSystem ? '✓' : '✗'}\n`;
+
+                if (gameState.playerCastingSystem) {
+                    result += `   playerCastingSystem.isCurrentlyCasting(): ${gameState.playerCastingSystem.isCurrentlyCasting()}\n`;
+                }
+
+                if (gameState.computerCastingSystem) {
+                    result += `   computerCastingSystem.isCurrentlyCasting(): ${gameState.computerCastingSystem.isCurrentlyCasting()}\n`;
+                }
+
+                result += '\n2. 游戏状态更新测试:\n';
+                try {
+                    gameState.update();
+                    result += `   gameState.update() 调用成功\n`;
+                } catch (error) {
+                    result += `   gameState.update() 调用失败: ${error.message}\n`;
+                }
+
+                showResult('integrationTestResult', result, 'success');
+
+            } catch (error) {
+                showResult('integrationTestResult', `集成测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试AI集成
+        function testBotPlayerIntegration() {
+            try {
+                if (!gameState) {
+                    gameState = new GameState();
+                }
+
+                if (!botPlayer) {
+                    botPlayer = new BotPlayer(gameState);
+                }
+
+                let result = 'AI集成测试:\n\n';
+
+                // 测试AI方法调用
+                result += `1. AI方法调用测试:\n`;
+                
+                try {
+                    const aiResult = botPlayer.executeTurn();
+                    result += `   botPlayer.executeTurn() 调用成功: ${aiResult}\n`;
+                } catch (error) {
+                    result += `   botPlayer.executeTurn() 调用失败: ${error.message}\n`;
+                }
+
+                // 测试吟唱相关方法
+                try {
+                    const hasCasting = botPlayer.hasCastingOpportunity();
+                    result += `   botPlayer.hasCastingOpportunity() 调用成功: ${hasCasting}\n`;
+                } catch (error) {
+                    result += `   botPlayer.hasCastingOpportunity() 调用失败: ${error.message}\n`;
+                }
+
+                result += '\n2. 吟唱状态处理测试:\n';
+                try {
+                    const castingResult = botPlayer.handleCastingTurn();
+                    result += `   botPlayer.handleCastingTurn() 调用成功: ${castingResult}\n`;
+                } catch (error) {
+                    result += `   botPlayer.handleCastingTurn() 调用失败: ${error.message}\n`;
+                }
+
+                showResult('integrationTestResult', result, 'success');
+
+            } catch (error) {
+                showResult('integrationTestResult', `AI集成测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 开始吟唱
+        function startCasting() {
+            if (!castingSystem || !testCard || !testCharacter) {
+                alert('请先初始化测试环境');
+                return;
+            }
+
+            const success = castingSystem.startCasting(testCard, testCharacter, testCharacter);
+            if (success) {
+                updateCastingDisplay();
+                showResult('castingTestResult', '吟唱开始成功', 'success');
+            } else {
+                showResult('castingTestResult', '吟唱开始失败', 'error');
+            }
+        }
+
+        // 中断吟唱
+        function interruptCasting() {
+            if (!castingSystem) {
+                alert('请先初始化测试环境');
+                return;
+            }
+
+            castingSystem.interruptCasting('手动中断');
+            updateCastingDisplay();
+            showResult('castingTestResult', '吟唱已中断', 'warning');
+        }
+
+        // 更新吟唱
+        function updateCasting() {
+            if (!castingSystem) {
+                alert('请先初始化测试环境');
+                return;
+            }
+
+            const completed = castingSystem.updateCasting(0.2);
+            updateCastingDisplay();
+            
+            if (completed) {
+                showResult('castingTestResult', '吟唱完成', 'success');
+            } else {
+                showResult('castingTestResult', '吟唱更新', 'info');
+            }
+        }
+
+        // 更新吟唱显示
+        function updateCastingDisplay() {
+            if (!castingSystem) return;
+
+            const info = castingSystem.getCastingInfo();
+            const progressBar = document.getElementById('castingProgress');
+            const castingText = document.getElementById('castingText');
+
+            if (info.isCasting) {
+                progressBar.style.width = `${info.progressPercentage}%`;
+                castingText.textContent = `吟唱中: ${info.cardName} (剩余 ${info.remainingTime.toFixed(1)}s)`;
+            } else {
+                progressBar.style.width = '0%';
+                castingText.textContent = '未在吟唱';
+            }
+        }
+
+        // 测试错误情况
+        function testErrorCases() {
+            try {
+                let result = '错误情况测试:\n\n';
+
+                // 测试未初始化的对象
+                try {
+                    const invalidSystem = new CastingSystem();
+                    invalidSystem.isCurrentlyCasting();
+                    result += `1. 未初始化对象测试: ✓\n`;
+                } catch (error) {
+                    result += `1. 未初始化对象测试: ✗ ${error.message}\n`;
+                }
+
+                // 测试无效参数
+                try {
+                    if (castingSystem) {
+                        castingSystem.startCasting(null, null, null);
+                        result += `2. 无效参数测试: ✓\n`;
+                    }
+                } catch (error) {
+                    result += `2. 无效参数测试: ✗ ${error.message}\n`;
+                }
+
+                // 测试重复调用
+                try {
+                    if (castingSystem && testCard && testCharacter) {
+                        castingSystem.startCasting(testCard, testCharacter, testCharacter);
+                        const duplicateResult = castingSystem.startCasting(testCard, testCharacter, testCharacter);
+                        result += `3. 重复调用测试: ${duplicateResult ? '✗' : '✓'}\n`;
+                    }
+                } catch (error) {
+                    result += `3. 重复调用测试: ✗ ${error.message}\n`;
+                }
+
+                showResult('errorTestResult', result, 'info');
+
+            } catch (error) {
+                showResult('errorTestResult', `错误测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 显示结果
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `test-result ${type}`;
+        }
+
+        // 页面加载完成后初始化
+        window.addEventListener('load', () => {
+            setTimeout(initializeTest, 100);
+        });
+    </script>
+</body>
+</html> 

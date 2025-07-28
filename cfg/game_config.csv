@@ -1,0 +1,10 @@
+ConfigKey,Value,Description
+InitialHandSize,4,初始手牌数量
+MaxHandSize,10,最大手牌数量
+DrawInterval,3,抽卡间隔（秒）
+MaxDeckSize,30,牌组最大数量
+EnergyPerTurn,1,每回合能量恢复
+MaxEnergy,10,最大能量值
+GameVersion,1.8.1,游戏版本
+DefaultPlayerClass,战士,默认玩家职业
+DefaultComputerClass,法师,默认电脑职业 
