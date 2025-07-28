@@ -7,6 +7,10 @@ class GameState {
         this.playerCharacter = new Character("玩家", "战士");
         this.computerCharacter = new Character("电脑", "法师");
         
+        // 为角色设置游戏状态引用
+        this.playerCharacter.gameState = this;
+        this.computerCharacter.gameState = this;
+        
         // 创建吟唱系统
         this.playerCastingSystem = new CastingSystem();
         this.computerCastingSystem = new CastingSystem();
@@ -28,16 +32,23 @@ class GameState {
         this.computerDiscardPile = [];
         
         // 游戏状态
-        this.currentTurn = 1;
-        this.isPlayerTurn = true;
         this.gameOver = false;
         this.winner = null;
         
         // 时间系统
         this.lastUpdateTime = Date.now();
+        this.gameStartTime = Date.now();
+        
+        // 抽牌时间系统
+        this.lastPlayerDrawTime = 0;
+        this.lastComputerDrawTime = 0;
+        this.drawInterval = 3; // 每3秒抽一张牌
         
         // 初始化牌组
         this.initializeDeck();
+        
+        // UI引用（将在Game.js中设置）
+        this.gameUI = null;
     }
 
     /**
@@ -147,25 +158,11 @@ class GameState {
     }
 
     /**
-     * 开始新回合
+     * 开始新回合（已废弃，改为基于时间的抽牌系统）
+     * @deprecated 使用updateTimeBasedDrawing替代
      */
     startNewTurn() {
-        this.currentTurn++;
-        
-        // 能量恢复逻辑：每回合能量值等于回合数，最高10点
-        const maxEnergy = Math.min(this.currentTurn, 10);
-        
-        // 新回合开始时，双方都恢复能量
-        this.playerCharacter.gainEnergy(maxEnergy);
-        this.computerCharacter.gainEnergy(maxEnergy);
-        
-        // 同步状态到旧系统（兼容性）
-        this.playerEnergy = this.playerCharacter.currentEnergy;
-        this.computerEnergy = this.computerCharacter.currentEnergy;
-        
-        // 双方都抽牌
-        this.drawCards(this.playerDeck, this.playerHand, 1, true);
-        this.drawCards(this.computerDeck, this.computerHand, 1, false);
+        console.warn('startNewTurn已废弃，游戏现在使用基于时间的抽牌系统');
     }
     
     /**
@@ -194,8 +191,46 @@ class GameState {
         this.playerCharacter.stealthSystem.updateStealth(deltaTime);
         this.computerCharacter.stealthSystem.updateStealth(deltaTime);
         
+        // 基于时间的抽牌系统
+        this.updateTimeBasedDrawing(currentTime);
+        
         // 检查游戏结束
         this.checkGameEnd();
+    }
+    
+    /**
+     * 基于时间的抽牌系统
+     * @param {number} currentTime - 当前时间戳
+     */
+    updateTimeBasedDrawing(currentTime) {
+        const gameTime = (currentTime - this.gameStartTime) / 1000; // 游戏进行时间（秒）
+        
+        // 玩家抽牌检查
+        if (gameTime - this.lastPlayerDrawTime >= this.drawInterval) {
+            this.drawCards(this.playerDeck, this.playerHand, 1, true);
+            this.lastPlayerDrawTime = gameTime;
+            console.log(`玩家自动抽牌，游戏时间: ${gameTime.toFixed(1)}秒`);
+        }
+        
+        // 电脑抽牌检查
+        if (gameTime - this.lastComputerDrawTime >= this.drawInterval) {
+            this.drawCards(this.computerDeck, this.computerHand, 1, false);
+            this.lastComputerDrawTime = gameTime;
+            console.log(`电脑自动抽牌，游戏时间: ${gameTime.toFixed(1)}秒`);
+            
+            // 电脑AI决策（在抽牌后）
+            setTimeout(() => {
+                if (!this.gameOver) {
+                    const aiResult = this.computerTurn();
+                    console.log(`电脑AI决策: ${aiResult}`);
+                    
+                    // 通知UI显示AI决策结果
+                    if (this.gameUI) {
+                        this.gameUI.showAIResult(aiResult);
+                    }
+                }
+            }, 500); // 延迟500ms执行AI决策
+        }
     }
 
     /**
@@ -294,8 +329,8 @@ class GameState {
     }
 
     /**
-     * 电脑AI回合
-     * @returns {string} 回合结果描述
+     * 电脑AI决策
+     * @returns {string} AI决策结果描述
      */
     computerTurn() {
         // 使用BotPlayer进行智能决策
@@ -330,24 +365,39 @@ class GameState {
      * 重置游戏状态
      */
     reset() {
-        this.playerHealth = 30;
-        this.playerEnergy = 1; // 第1回合1点能量
-        this.playerArmor = 0; // 重置玩家护甲
+        // 重置角色状态
+        this.playerCharacter = new Character("玩家", "战士");
+        this.computerCharacter = new Character("电脑", "法师");
+        
+        // 为角色设置游戏状态引用
+        this.playerCharacter.gameState = this;
+        this.computerCharacter.gameState = this;
+        
+        // 重置玩家状态
+        this.playerHealth = this.playerCharacter.currentHealth;
+        this.playerEnergy = this.playerCharacter.currentEnergy;
+        this.playerArmor = 0;
         this.playerDeck = [];
         this.playerHand = [];
         this.playerDiscardPile = [];
 
-        this.computerHealth = 30;
-        this.computerEnergy = 1; // 第1回合1点能量
-        this.computerArmor = 0; // 重置电脑护甲
+        // 重置电脑状态
+        this.computerHealth = this.computerCharacter.currentHealth;
+        this.computerEnergy = this.computerCharacter.currentEnergy;
+        this.computerArmor = 0;
         this.computerDeck = [];
         this.computerHand = [];
         this.computerDiscardPile = [];
 
-        this.currentTurn = 1;
-        this.isPlayerTurn = true;
+        // 重置游戏状态
         this.gameOver = false;
         this.winner = null;
+        
+        // 重置时间系统
+        this.lastUpdateTime = Date.now();
+        this.gameStartTime = Date.now();
+        this.lastPlayerDrawTime = 0;
+        this.lastComputerDrawTime = 0;
 
         // 重置BotPlayer
         if (this.botPlayer) {
@@ -363,6 +413,7 @@ class GameState {
      * @returns {object} 游戏状态信息
      */
     getGameInfo() {
+        const gameTime = (Date.now() - this.gameStartTime) / 1000;
         return {
             playerHealth: this.playerHealth,
             playerEnergy: this.playerEnergy,
@@ -378,8 +429,8 @@ class GameState {
             computerHandCount: this.computerHand.length,
             computerDiscardCount: this.computerDiscardPile.length,
             
-            currentTurn: this.currentTurn,
-            isPlayerTurn: this.isPlayerTurn,
+            gameTime: gameTime,
+            drawInterval: this.drawInterval,
             gameOver: this.gameOver,
             winner: this.winner
         };

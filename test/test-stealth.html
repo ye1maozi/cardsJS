@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StealthSystem 测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .status {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>StealthSystem 测试</h1>
+    
+    <div class="test-container">
+        <h2>StealthSystem 基础测试</h2>
+        <button class="test-button" onclick="testStealthSystem()">测试 StealthSystem</button>
+        <button class="test-button" onclick="testCharacterStealth()">测试 Character Stealth</button>
+        <button class="test-button" onclick="clearLog()">清空日志</button>
+        
+        <div id="status" class="status">
+            <strong>状态:</strong> <span id="statusText">未初始化</span>
+        </div>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <script src="../js/CastingSystem.js?v=1"></script>
+    <script src="../js/Character.js?v=1"></script>
+    
+    <script>
+        let stealthSystem = null;
+        let character = null;
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateStatus(text) {
+            document.getElementById('statusText').textContent = text;
+        }
+        
+        function testStealthSystem() {
+            try {
+                log("=== 开始测试 StealthSystem ===");
+                
+                // 创建 StealthSystem 实例
+                stealthSystem = new StealthSystem();
+                log("✓ StealthSystem 创建成功");
+                
+                // 测试进入潜行
+                const enterResult = stealthSystem.enterStealth(10);
+                log(`进入潜行结果: ${enterResult}`);
+                
+                // 检查状态
+                const info = stealthSystem.getStealthInfo();
+                log(`潜行信息: ${JSON.stringify(info)}`);
+                
+                // 测试更新
+                stealthSystem.updateStealth(1);
+                log("✓ 更新潜行状态成功");
+                
+                // 再次检查状态
+                const info2 = stealthSystem.getStealthInfo();
+                log(`更新后潜行信息: ${JSON.stringify(info2)}`);
+                
+                updateStatus("StealthSystem 测试完成");
+                log("=== StealthSystem 测试完成 ===");
+                
+            } catch (error) {
+                log(`❌ StealthSystem 测试失败: ${error.message}`);
+                console.error(error);
+            }
+        }
+        
+        function testCharacterStealth() {
+            try {
+                log("=== 开始测试 Character Stealth ===");
+                
+                // 创建 Character 实例
+                character = new Character("测试角色", "盗贼");
+                log("✓ Character 创建成功");
+                
+                // 检查 stealthSystem 是否存在
+                if (character.stealthSystem) {
+                    log("✓ Character.stealthSystem 存在");
+                    
+                    // 测试进入潜行
+                    const enterResult = character.stealthSystem.enterStealth(5);
+                    log(`进入潜行结果: ${enterResult}`);
+                    
+                    // 检查状态
+                    const info = character.stealthSystem.getStealthInfo();
+                    log(`潜行信息: ${JSON.stringify(info)}`);
+                    
+                    // 测试更新
+                    character.stealthSystem.updateStealth(1);
+                    log("✓ 更新潜行状态成功");
+                    
+                    // 再次检查状态
+                    const info2 = character.stealthSystem.getStealthInfo();
+                    log(`更新后潜行信息: ${JSON.stringify(info2)}`);
+                    
+                } else {
+                    log("❌ Character.stealthSystem 不存在");
+                }
+                
+                updateStatus("Character Stealth 测试完成");
+                log("=== Character Stealth 测试完成 ===");
+                
+            } catch (error) {
+                log(`❌ Character Stealth 测试失败: ${error.message}`);
+                console.error(error);
+            }
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            updateStatus("日志已清空");
+        }
+        
+        // 页面加载完成后自动测试
+        window.addEventListener('load', function() {
+            log("页面加载完成，StealthSystem 测试页面已准备就绪");
+            updateStatus("准备就绪");
+        });
+    </script>
+</body>
+</html> 

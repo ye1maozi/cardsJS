@@ -55,8 +55,8 @@ class BotPlayer {
     }
 
     /**
-     * 执行电脑回合
-     * @returns {string} 回合结果描述
+     * 执行电脑AI决策
+     * @returns {string} AI决策结果描述
      */
     executeTurn() {
         this.updateMemory();

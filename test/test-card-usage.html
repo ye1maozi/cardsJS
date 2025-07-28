@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>卡牌使用功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .card {
+            display: inline-block;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 5px;
+            background: #fff;
+            cursor: pointer;
+            min-width: 120px;
+        }
+        .card:hover {
+            border-color: #007bff;
+        }
+        .card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>卡牌使用功能测试</h1>
+        
+        <div class="test-section">
+            <h3>游戏状态</h3>
+            <div class="status">
+                <div>玩家生命: <span id="playerHealth">-</span></div>
+                <div>玩家能量: <span id="playerEnergy">-</span></div>
+                <div>电脑生命: <span id="computerHealth">-</span></div>
+                <div>电脑能量: <span id="computerEnergy">-</span></div>
+                <div>游戏时间: <span id="gameTime">-</span></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>玩家手牌</h3>
+            <div id="playerHand"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>测试操作</h3>
+            <button class="test-button" onclick="testCardUsage()">测试卡牌使用</button>
+            <button class="test-button" onclick="testEnergyCheck()">测试能量检查</button>
+            <button class="test-button" onclick="resetGame()">重置游戏</button>
+        </div>
+
+        <div class="test-section">
+            <h3>测试日志</h3>
+            <div id="testLog" class="log"></div>
+        </div>
+    </div>
+
+    <!-- JavaScript文件 -->
+    <script src="../js/Character.js?v=2"></script>
+    <script src="../js/CastingSystem.js?v=2"></script>
+    <script src="../js/Card.js?v=2"></script>
+    <script src="../js/CardConfig.js?v=2"></script>
+    <script src="../js/BotPlayer.js?v=2"></script>
+    <script src="../js/GameState.js?v=2"></script>
+    <script src="../js/GameUI.js?v=2"></script>
+    <script src="../js/Game.js?v=2"></script>
+
+    <script>
+        let game = null;
+        let gameState = null;
+        let gameUI = null;
+
+        // 初始化游戏
+        async function initializeGame() {
+            try {
+                log('开始初始化游戏...');
+                
+                // 创建游戏状态
+                gameState = new GameState();
+                await gameState.initializeDeck();
+                gameState.dealInitialCards();
+                
+                // 创建游戏UI
+                gameUI = new GameUI(gameState);
+                gameState.gameUI = gameUI;
+                
+                log('游戏初始化完成');
+                updateStatus();
+                updatePlayerHand();
+                
+            } catch (error) {
+                log('游戏初始化失败: ' + error.message);
+                console.error(error);
+            }
+        }
+
+        // 更新状态显示
+        function updateStatus() {
+            if (!gameState) return;
+            
+            const info = gameState.getGameInfo();
+            document.getElementById('playerHealth').textContent = info.playerHealth;
+            document.getElementById('playerEnergy').textContent = info.playerEnergy;
+            document.getElementById('computerHealth').textContent = info.computerHealth;
+            document.getElementById('computerEnergy').textContent = info.computerEnergy;
+            document.getElementById('gameTime').textContent = info.gameTime.toFixed(1) + '秒';
+        }
+
+        // 更新玩家手牌显示
+        function updatePlayerHand() {
+            if (!gameState) return;
+            
+            const handContainer = document.getElementById('playerHand');
+            handContainer.innerHTML = '';
+            
+            gameState.playerHand.forEach((card, index) => {
+                const cardElement = createCardElement(card, index);
+                handContainer.appendChild(cardElement);
+            });
+        }
+
+        // 创建卡牌元素
+        function createCardElement(card, index) {
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'card';
+            
+            const canPlay = card.canPlay(gameState.playerEnergy);
+            if (!canPlay) {
+                cardDiv.classList.add('disabled');
+            }
+            
+            cardDiv.innerHTML = `
+                <div><strong>${card.name}</strong></div>
+                <div>费用: ${card.energyCost}</div>
+                <div>${card.effect}</div>
+            `;
+            
+            cardDiv.addEventListener('click', () => {
+                testCardClick(card, index);
+            });
+            
+            return cardDiv;
+        }
+
+        // 测试卡牌点击
+        function testCardClick(card, index) {
+            log(`点击卡牌: ${card.name} (费用: ${card.energyCost})`);
+            log(`当前玩家能量: ${gameState.playerEnergy}`);
+            
+            const canPlay = card.canPlay(gameState.playerEnergy);
+            log(`可以打出: ${canPlay}`);
+            
+            if (canPlay) {
+                const result = gameState.useCard(card, true);
+                log(`使用结果: ${JSON.stringify(result)}`);
+                
+                if (result.success) {
+                    updateStatus();
+                    updatePlayerHand();
+                }
+            } else {
+                log('能量不足，无法使用卡牌');
+            }
+        }
+
+        // 测试卡牌使用
+        function testCardUsage() {
+            log('=== 开始测试卡牌使用 ===');
+            
+            if (!gameState || gameState.playerHand.length === 0) {
+                log('没有可用的卡牌');
+                return;
+            }
+            
+            const card = gameState.playerHand[0];
+            log(`测试使用卡牌: ${card.name}`);
+            
+            const result = gameState.useCard(card, true);
+            log(`使用结果: ${JSON.stringify(result)}`);
+            
+            updateStatus();
+            updatePlayerHand();
+            
+            log('=== 卡牌使用测试完成 ===');
+        }
+
+        // 测试能量检查
+        function testEnergyCheck() {
+            log('=== 开始测试能量检查 ===');
+            
+            if (!gameState) {
+                log('游戏状态未初始化');
+                return;
+            }
+            
+            log(`当前玩家能量: ${gameState.playerEnergy}`);
+            
+            gameState.playerHand.forEach((card, index) => {
+                const canPlay = card.canPlay(gameState.playerEnergy);
+                log(`卡牌 ${card.name} (费用: ${card.energyCost}) - 可以打出: ${canPlay}`);
+            });
+            
+            log('=== 能量检查测试完成 ===');
+        }
+
+        // 重置游戏
+        function resetGame() {
+            log('重置游戏...');
+            if (gameState) {
+                gameState.reset();
+                gameState.gameUI = gameUI;
+                updateStatus();
+                updatePlayerHand();
+                log('游戏重置完成');
+            }
+        }
+
+        // 添加日志
+        function log(message) {
+            const logContainer = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+
+        // 页面加载完成后初始化
+        window.addEventListener('load', () => {
+            log('页面加载完成，开始初始化游戏...');
+            initializeGame();
+        });
+    </script>
+</body>
+</html> 

@@ -29,6 +29,9 @@ class Character {
         // 状态效果
         this.statusEffects = [];
         
+        // 潜行系统
+        this.stealthSystem = new StealthSystem();
+        
         // 时间相关
         this.lastHealthRegen = 0;
         this.lastEnergyRegen = 0;

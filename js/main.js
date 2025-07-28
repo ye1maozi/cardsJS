@@ -46,16 +46,6 @@ function setupKeyboardShortcuts() {
         }
         
         switch(event.key) {
-            case 'Enter':
-            case ' ':
-                // 回车键或空格键结束回合
-                event.preventDefault();
-                const endTurnBtn = document.getElementById('endTurnBtn');
-                if (endTurnBtn && !endTurnBtn.disabled) {
-                    endTurnBtn.click();
-                }
-                break;
-                
             case 'r':
             case 'R':
                 // R键重新开始游戏

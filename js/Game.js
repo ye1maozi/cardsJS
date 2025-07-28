@@ -26,6 +26,9 @@ class Game {
 
             // 创建游戏UI
             this.gameUI = new GameUI(this.gameState);
+            
+            // 设置GameState的UI引用
+            this.gameState.gameUI = this.gameUI;
 
             // 启动游戏循环
             this.startGameLoop();
@@ -85,6 +88,10 @@ class Game {
 
         console.log('重新开始游戏');
         this.gameState.reset();
+        
+        // 重新设置GameState的UI引用
+        this.gameState.gameUI = this.gameUI;
+        
         this.gameUI.clearGameLog();
         this.gameUI.addGameLog('游戏重新开始！');
         this.gameUI.updateUI();

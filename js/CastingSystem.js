@@ -32,6 +32,7 @@ class CastingSystem {
         this.castProgress = 0;
         this.castTarget = target;
         this.castCard = card;
+        this.caster = caster; // 保存施法者信息
         this.castStartTime = Date.now();
         this.castInterrupted = false;
         
@@ -71,8 +72,20 @@ class CastingSystem {
         console.log(`吟唱完成: ${this.castCard.name}`);
         
         // 执行卡牌效果
-        if (this.castCard && this.castTarget) {
-            this.castCard.executeEffect(this.castTarget.gameState, this.castTarget.isPlayer);
+        if (this.castCard && this.caster) {
+            // 从施法者获取游戏状态和玩家标识
+            const gameState = this.caster.gameState;
+            if (!gameState) {
+                console.error('无法获取游戏状态，吟唱效果无法执行');
+                this.resetCasting();
+                return;
+            }
+            
+            const isPlayer = (this.caster === gameState.playerCharacter);
+            console.log(`执行吟唱效果: ${this.castCard.name}, 施法者: ${this.caster.name}, 是否玩家: ${isPlayer}`);
+            
+            const effectResult = this.castCard.executeEffect(gameState, isPlayer);
+            console.log(`吟唱效果执行: ${this.castCard.name} -> ${effectResult}`);
         }
         
         this.resetCasting();
@@ -101,6 +114,7 @@ class CastingSystem {
         this.castProgress = 0;
         this.castTarget = null;
         this.castCard = null;
+        this.caster = null;
         this.castStartTime = 0;
         this.castInterrupted = false;
     }

@@ -59,7 +59,7 @@ class CardConfigManager {
                 return false;
             }
             
-            const response = await fetch('cards.csv');
+            const response = await fetch('../cfg/cards.csv');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }

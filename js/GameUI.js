@@ -20,14 +20,6 @@ class GameUI {
      * 绑定事件
      */
     bindEvents() {
-        // 结束回合按钮
-        const endTurnBtn = document.getElementById('endTurnBtn');
-        if (endTurnBtn) {
-            endTurnBtn.addEventListener('click', () => {
-                this.onEndTurnClicked();
-            });
-        }
-
         // 新游戏按钮
         const newGameBtn = document.getElementById('newGameBtn');
         if (newGameBtn) {
@@ -83,8 +75,9 @@ class GameUI {
         document.getElementById('computerDeckCount').textContent = info.computerDeckCount;
         document.getElementById('computerDiscardCount').textContent = info.computerDiscardCount;
 
-        // 更新回合信息
-        document.getElementById('turnInfo').textContent = `第${info.currentTurn}回合`;
+        // 更新游戏时间信息
+        const gameTime = info.gameTime || 0;
+        document.getElementById('turnInfo').textContent = `游戏时间: ${gameTime.toFixed(1)}秒`;
         
         // 更新吟唱进度条
         this.updateCastingBars();
@@ -275,12 +268,7 @@ class GameUI {
      * 更新按钮状态
      */
     updateButtons() {
-        const endTurnBtn = document.getElementById('endTurnBtn');
         const newGameBtn = document.getElementById('newGameBtn');
-
-        if (endTurnBtn) {
-            endTurnBtn.disabled = this.gameState.gameOver || !this.gameState.isPlayerTurn;
-        }
 
         if (newGameBtn) {
             newGameBtn.disabled = false;
@@ -318,7 +306,7 @@ class GameUI {
      * @param {number} index - 卡牌索引
      */
     onCardClicked(card, index) {
-        if (this.gameState.gameOver || !this.gameState.isPlayerTurn) {
+        if (this.gameState.gameOver) {
             return;
         }
 
@@ -344,60 +332,26 @@ class GameUI {
                 this.showGameOverModal(gameEndResult.message);
                 return;
             }
-            
-            // 如果能量耗尽，提示玩家
-            if (this.gameState.playerEnergy <= 0) {
-                this.addGameLog("玩家能量耗尽，请点击'结束回合'按钮");
-            }
         } else {
             this.addGameLog(useResult.message);
         }
     }
 
     /**
-     * 开始电脑回合
+     * 显示AI决策结果
+     * @param {string} result - AI决策结果
      */
-    startComputerTurn() {
-        this.gameState.isPlayerTurn = false;
+    showAIResult(result) {
+        this.addGameLog(result);
         this.updateUI();
-        
-        // 延迟执行电脑回合，让玩家看到状态变化
-        setTimeout(() => {
-            const computerTurnResult = this.gameState.computerTurn();
-            this.addGameLog(computerTurnResult);
-            
-            // 更新UI
-            this.updateUI();
-            
-            // 检查游戏是否结束
-            const gameEndResult = this.gameState.checkGameEnd();
-            if (gameEndResult.isOver) {
-                this.showGameOverModal(gameEndResult.message);
-                return;
-            }
-            
-            // 开始新回合
-            this.gameState.startNewTurn();
-            this.gameState.isPlayerTurn = true;
-            
-            // 合并抽牌消息
-            const drawMessage = `第${this.gameState.currentTurn}回合开始，玩家和电脑各抽1张牌`;
-            this.addGameLog(drawMessage);
-            
-            this.updateUI();
-        }, 1000);
     }
 
     /**
-     * 结束回合按钮点击事件
+     * 结束回合按钮点击事件（已废弃）
+     * @deprecated 游戏不再使用回合制
      */
     onEndTurnClicked() {
-        if (this.gameState.gameOver || !this.gameState.isPlayerTurn) {
-            return;
-        }
-
-        this.addGameLog("玩家结束回合");
-        this.startComputerTurn();
+        console.warn('onEndTurnClicked已废弃，游戏不再使用回合制');
     }
 
     /**
