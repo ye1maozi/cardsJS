@@ -32,10 +32,10 @@ function showStartScreen() {
     if (!gameContainer) return;
     
     // 获取版本号（如果配置已加载则使用配置中的版本号，否则使用默认值）
-    let version = 'v1.8.0'; // 默认版本号
+    let version = 'v2.1.0'; // 默认版本号
     try {
         if (typeof ConfigManager !== 'undefined' && ConfigManager.isLoaded) {
-            version = 'v' + ConfigManager.getGameConfig('GameVersion', '1.8.0');
+            version = 'v' + ConfigManager.getGameConfig('GameVersion', '2.1.0');
         }
     } catch (error) {
         console.warn('无法获取配置版本号，使用默认版本号:', error);
@@ -427,7 +427,7 @@ function isMobileDevice() {
 function updateVersionInfo() {
     try {
         // 获取配置中的版本号
-        const gameVersion = ConfigManager.getGameConfig('GameVersion', '1.8.0');
+        const gameVersion = ConfigManager.getGameConfig('GameVersion', '2.1.0');
         const versionText = `v${gameVersion}`;
         
         // 更新HTML中的版本信息

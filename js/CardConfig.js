@@ -13,6 +13,15 @@ class CardConfig {
         this.value1 = value1;
         this.value2 = value2;
         this.value3 = value3;
+        
+        // 支持新的配置字段
+        this.damage = null;
+        this.heal = null;
+        this.armor = null;
+        this.buff = null;
+        this.baseDamage = null;
+        this.healthCost = null;
+        this.requiresStealth = false;
     }
 }
 
@@ -76,6 +85,16 @@ class CardConfigManager {
                     item.value2,
                     item.value3
                 );
+                
+                // 设置新的配置字段
+                if (item.damage !== undefined) config.damage = item.damage;
+                if (item.heal !== undefined) config.heal = item.heal;
+                if (item.armor !== undefined) config.armor = item.armor;
+                if (item.buff !== undefined) config.buff = item.buff;
+                if (item.baseDamage !== undefined) config.baseDamage = item.baseDamage;
+                if (item.healthCost !== undefined) config.healthCost = item.healthCost;
+                if (item.requiresStealth !== undefined) config.requiresStealth = item.requiresStealth;
+                
                 this.cardConfigs.push(config);
             }
             
@@ -168,18 +187,29 @@ class CardConfigManager {
         }
 
         try {
-            const card = new Card(
-                config.name,
-                config.class,
-                config.energyCost,
-                config.castTime,
-                config.castType,
-                config.effect,
-                config.effectCode,
-                config.value1,
-                config.value2,
-                config.value3
-            );
+            // 将CardConfig对象转换为配置对象
+            const cardConfig = {
+                name: config.name,
+                class: config.class,
+                energyCost: config.energyCost,
+                castTime: config.castTime,
+                castType: config.castType,
+                effect: config.effect,
+                effectCode: config.effectCode,
+                value1: config.value1,
+                value2: config.value2,
+                value3: config.value3,
+                // 添加新的配置字段
+                damage: config.damage,
+                heal: config.heal,
+                armor: config.armor,
+                buff: config.buff,
+                baseDamage: config.baseDamage,
+                healthCost: config.healthCost,
+                requiresStealth: config.requiresStealth
+            };
+            
+            const card = Card.fromConfig(cardConfig);
             
             // 设置消耗卡牌
             this.setExhaustCards(card);

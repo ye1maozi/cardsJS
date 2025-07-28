@@ -5,6 +5,7 @@ class GameUI {
     constructor(gameState) {
         this.gameState = gameState;
         this.gameLog = [];
+        this.gameOverModalShown = false; // 添加游戏结束弹窗显示标志
         this.initializeUI();
     }
 
@@ -135,6 +136,20 @@ class GameUI {
         document.getElementById('computerEnergyPercent').textContent = info.computerEnergyPercent + '%';
         document.getElementById('computerExhaustCount').textContent = info.computerExhaustCount;
 
+        // 更新玩家属性
+        document.getElementById('playerStrength').textContent = this.gameState.playerCharacter.strength;
+        document.getElementById('playerAgility').textContent = this.gameState.playerCharacter.agility;
+        document.getElementById('playerSpirit').textContent = this.gameState.playerCharacter.spirit;
+        document.getElementById('playerHealthRegen').textContent = this.gameState.playerCharacter.healthRegenRate.toFixed(1);
+        document.getElementById('playerEnergyRegen').textContent = this.gameState.playerCharacter.energyRegenRate.toFixed(1);
+
+        // 更新电脑属性
+        document.getElementById('computerStrength').textContent = this.gameState.computerCharacter.strength;
+        document.getElementById('computerAgility').textContent = this.gameState.computerCharacter.agility;
+        document.getElementById('computerSpirit').textContent = this.gameState.computerCharacter.spirit;
+        document.getElementById('computerHealthRegen').textContent = this.gameState.computerCharacter.healthRegenRate.toFixed(1);
+        document.getElementById('computerEnergyRegen').textContent = this.gameState.computerCharacter.energyRegenRate.toFixed(1);
+
         // 更新百分比样式（超过100%时高亮显示）
         const playerHealthPercent = document.getElementById('playerHealthPercent');
         const playerEnergyPercent = document.getElementById('playerEnergyPercent');
@@ -196,54 +211,66 @@ class GameUI {
         // 玩家吟唱进度
         const playerCastingInfo = this.gameState.playerCastingSystem.getCastingInfo();
         if (playerCastingInfo.isCasting) {
-            // 显示玩家吟唱进度条
-            this.showCastingBar('player', playerCastingInfo);
+            // 在player-field中显示吟唱中的卡牌
+            this.showCastingCardInField('player', playerCastingInfo);
         } else {
-            this.hideCastingBar('player');
+            this.hideCastingCardInField('player');
         }
         
         // 电脑吟唱进度
         const computerCastingInfo = this.gameState.computerCastingSystem.getCastingInfo();
         if (computerCastingInfo.isCasting) {
-            // 显示电脑吟唱进度条
-            this.showCastingBar('computer', computerCastingInfo);
+            // 在computer-field中显示吟唱中的卡牌
+            this.showCastingCardInField('computer', computerCastingInfo);
         } else {
-            this.hideCastingBar('computer');
+            this.hideCastingCardInField('computer');
         }
     }
     
     /**
-     * 显示吟唱进度条
+     * 在场上显示吟唱中的卡牌
      */
-    showCastingBar(target, castingInfo) {
-        let castingBar = document.getElementById(`${target}CastingBar`);
-        if (!castingBar) {
-            castingBar = document.createElement('div');
-            castingBar.id = `${target}CastingBar`;
-            castingBar.className = 'casting-bar';
-            castingBar.innerHTML = `
-                <div class="casting-progress"></div>
-                <div class="casting-text">${castingInfo.cardName}</div>
-            `;
-            
-            const targetArea = target === 'player' ? 'player-area' : 'computer-area';
-            document.querySelector(`.${targetArea}`).appendChild(castingBar);
-        }
+    showCastingCardInField(target, castingInfo) {
+        const fieldId = target === 'player' ? 'playerField' : 'computerField';
+        const field = document.getElementById(fieldId);
         
-        const progressBar = castingBar.querySelector('.casting-progress');
-        progressBar.style.width = `${castingInfo.progressPercentage}%`;
+        if (!field) return;
         
-        const textElement = castingBar.querySelector('.casting-text');
-        textElement.textContent = `${castingInfo.cardName} (${castingInfo.remainingTime.toFixed(1)}s)`;
+        // 清空场上内容
+        field.innerHTML = '';
+        
+        // 创建吟唱中的卡牌元素
+        const castingCard = document.createElement('div');
+        castingCard.className = `card casting-card ${castingInfo.cardClass.toLowerCase()}`;
+        castingCard.innerHTML = `
+            <div class="card-cost">${castingInfo.energyCost}</div>
+            <div class="card-name">${castingInfo.cardName}</div>
+            <div class="card-effect">${castingInfo.cardEffect}</div>
+            <div class="card-info-row">
+                <span class="card-class">${castingInfo.cardClass}</span>
+                <div class="card-cast-info">
+                    <span class="card-cast-time">${castingInfo.castTime}s</span>
+                    <span class="card-cast-type">吟唱</span>
+                </div>
+            </div>
+            <div class="casting-progress-bar">
+                <div class="casting-progress-fill" style="width: ${castingInfo.progressPercentage}%"></div>
+                <div class="casting-time-remaining">${castingInfo.remainingTime.toFixed(1)}s</div>
+            </div>
+        `;
+        
+        field.appendChild(castingCard);
     }
     
     /**
-     * 隐藏吟唱进度条
+     * 隐藏场上的吟唱卡牌
      */
-    hideCastingBar(target) {
-        const castingBar = document.getElementById(`${target}CastingBar`);
-        if (castingBar) {
-            castingBar.remove();
+    hideCastingCardInField(target) {
+        const fieldId = target === 'player' ? 'playerField' : 'computerField';
+        const field = document.getElementById(fieldId);
+        
+        if (field) {
+            field.innerHTML = '';
         }
     }
     
@@ -264,34 +291,120 @@ class GameUI {
      * 更新状态效果显示
      */
     updateStatusEffectsDisplay(target, effects) {
-        let effectsContainer = document.getElementById(`${target}Effects`);
-        if (!effectsContainer) {
-            effectsContainer = document.createElement('div');
-            effectsContainer.id = `${target}Effects`;
-            effectsContainer.className = 'status-effects';
-            
-            const targetArea = target === 'player' ? 'player-area' : 'computer-area';
-            document.querySelector(`.${targetArea}`).appendChild(effectsContainer);
+        let effectsContainer;
+        
+        if (target === 'player') {
+            // 玩家效果显示在player-effects区域
+            effectsContainer = document.getElementById('playerEffects');
+        } else if (target === 'computer') {
+            // 电脑效果显示在computer-effects区域
+            effectsContainer = document.getElementById('computerEffects');
+        } else {
+            // 其他情况保持原有逻辑
+            effectsContainer = document.getElementById(`${target}Effects`);
+            if (!effectsContainer) {
+                effectsContainer = document.createElement('div');
+                effectsContainer.id = `${target}Effects`;
+                effectsContainer.className = 'status-effects';
+                
+                const targetArea = target === 'player' ? 'player-area' : 'computer-area';
+                const areaElement = document.querySelector(`.${targetArea}`);
+                if (areaElement) {
+                    areaElement.appendChild(effectsContainer);
+                } else {
+                    console.error(`找不到目标区域: .${targetArea}`);
+                    return;
+                }
+            }
         }
         
+        if (!effectsContainer) {
+            console.error(`找不到${target}状态效果容器`);
+            return;
+        }
+        
+        // 添加调试信息
+        console.log(`更新${target}状态效果显示，效果数量: ${effects.length}`);
+        if (effects.length > 0) {
+            console.log(`效果详情:`, effects.map(effect => `${effect.type} (${effect.duration.toFixed(1)}s)`));
+        }
+        
+        // 清空容器
         effectsContainer.innerHTML = '';
         
+        // 如果没有效果，显示提示信息
+        if (effects.length === 0) {
+            const noEffectElement = document.createElement('div');
+            noEffectElement.className = 'no-effects';
+            noEffectElement.textContent = '无状态效果';
+            noEffectElement.style.cssText = 'color: #999; font-size: 12px; font-style: italic;';
+            effectsContainer.appendChild(noEffectElement);
+            return;
+        }
+        
+        // 添加效果元素
         effects.forEach(effect => {
-            const effectElement = document.createElement('div');
-            effectElement.className = `effect ${effect.type}`;
-            effectElement.innerHTML = `
-                <span class="effect-name">${effect.description}</span>
-                <span class="effect-duration">${effect.duration.toFixed(1)}s</span>
-            `;
-            effectsContainer.appendChild(effectElement);
+            try {
+                const effectElement = document.createElement('div');
+                effectElement.className = `effect ${effect.type}`;
+                effectElement.innerHTML = `
+                    <span class="effect-name">${effect.description || effect.type}</span>
+                    <span class="effect-duration">${effect.duration.toFixed(1)}s</span>
+                `;
+                
+                // 确保效果元素可见
+                effectElement.style.cssText = `
+                    padding: 2px 6px;
+                    border-radius: 10px;
+                    font-size: 10px;
+                    font-weight: bold;
+                    color: white;
+                    display: inline-block;
+                    margin: 2px;
+                    background: ${this.getEffectColor(effect.type)};
+                `;
+                
+                effectsContainer.appendChild(effectElement);
+                console.log(`添加效果元素: ${effect.type}`);
+            } catch (error) {
+                console.error(`创建效果元素失败: ${error.message}`, effect);
+            }
         });
+    }
+    
+    /**
+     * 获取效果颜色
+     */
+    getEffectColor(effectType) {
+        const colors = {
+            'poison': '#8b4513',
+            'slow': '#4169e1',
+            'stealth': '#2f4f4f',
+            'default': '#666'
+        };
+        return colors[effectType] || colors.default;
     }
     
     /**
      * 更新UI（每帧调用）
      */
     update() {
-        this.updateStatusDisplay();
+        // 如果游戏已结束，只更新基本的UI显示，不更新游戏时间
+        if (this.gameState.gameOver) {
+            // 游戏结束时只更新手牌和日志显示
+            this.updatePlayerHand();
+            this.updateGameLog();
+            
+            // 检查是否需要显示游戏结束弹窗
+            if (this.gameState.winner && !this.gameOverModalShown) {
+                const message = this.gameState.winner === "玩家" ? "玩家获胜！" : "电脑获胜！";
+                this.showGameOverModal(message);
+                this.gameOverModalShown = true;
+            }
+        } else {
+            // 游戏进行中，正常更新所有UI
+            this.updateStatusDisplay();
+        }
     }
 
     /**
@@ -329,12 +442,21 @@ class GameUI {
             cardDiv.classList.add('disabled');
         }
 
+        // 构建吟唱信息
+        const castInfo = card.castTime > 0 ? `${card.castTime}s` : '';
+        const castType = card.castType || '瞬发';
+
         cardDiv.innerHTML = `
             <div class="card-cost">${card.energyCost}</div>
             <div class="card-name">${card.name}</div>
-            <div class="card-class">${card.class}</div>
             <div class="card-effect">${card.effect}</div>
-            <div class="card-type">${card.castType}</div>
+            <div class="card-info-row">
+                <span class="card-class">${card.class}</span>
+                <div class="card-cast-info">
+                    ${castInfo ? `<span class="card-cast-time">${castInfo}</span>` : ''}
+                    <span class="card-cast-type">${castType}</span>
+                </div>
+            </div>
         `;
 
         // 添加点击事件
@@ -346,7 +468,7 @@ class GameUI {
     }
 
     /**
-     * 更新游戏日志
+     * 更新游戏日志显示
      */
     updateGameLog() {
         const gameLogContainer = document.getElementById('gameLog');
@@ -355,16 +477,21 @@ class GameUI {
         // 清空日志区域
         gameLogContainer.innerHTML = '';
 
+        // 只显示最近的日志条目（限制显示数量）
+        const recentLogs = this.gameLog.slice(-20); // 只显示最近20条
+
         // 添加日志条目
-        this.gameLog.forEach(logEntry => {
+        recentLogs.forEach(logEntry => {
             const logDiv = document.createElement('div');
             logDiv.className = 'log-entry';
             logDiv.textContent = logEntry;
             gameLogContainer.appendChild(logDiv);
         });
 
-        // 滚动到底部
-        gameLogContainer.scrollTop = gameLogContainer.scrollHeight;
+        // 平滑滚动到底部
+        setTimeout(() => {
+            gameLogContainer.scrollTop = gameLogContainer.scrollHeight;
+        }, 10);
     }
 
     /**
@@ -387,9 +514,9 @@ class GameUI {
         const logEntry = `${timestamp} - ${message}`;
         this.gameLog.push(logEntry);
         
-        // 限制日志数量
-        if (this.gameLog.length > 50) {
-            this.gameLog.shift();
+        // 限制日志总数量
+        if (this.gameLog.length > 100) {
+            this.gameLog = this.gameLog.slice(-80); // 保留最近80条
         }
         
         this.updateGameLog();
@@ -478,6 +605,7 @@ class GameUI {
      */
     onNewGameClicked() {
         this.gameState.reset();
+        this.gameOverModalShown = false; // 重置游戏结束弹窗显示标志
         this.clearGameLog();
         this.addGameLog("游戏开始！");
         this.updateUI();
@@ -488,6 +616,7 @@ class GameUI {
      */
     onRestartClicked() {
         this.hideGameOverModal();
+        this.gameOverModalShown = false; // 重置游戏结束弹窗显示标志
         this.onNewGameClicked();
     }
 
@@ -496,6 +625,7 @@ class GameUI {
      * @param {string} message - 结束消息
      */
     showGameOverModal(message) {
+        console.log(`显示游戏结束弹窗: ${message}`);
         const modal = document.getElementById('gameOverModal');
         const title = document.getElementById('gameOverTitle');
         const messageElement = document.getElementById('gameOverMessage');
@@ -533,17 +663,13 @@ class GameUI {
     bindCloseModalEvent() {
         const closeModalBtn = document.getElementById('closeModalBtn');
         if (closeModalBtn) {
-            // 移除所有现有的事件监听器
-            const newCloseBtn = closeModalBtn.cloneNode(true);
-            closeModalBtn.parentNode.replaceChild(newCloseBtn, closeModalBtn);
-            
-            // 重新绑定事件
-            newCloseBtn.addEventListener('click', (e) => {
+            // 直接绑定点击事件
+            closeModalBtn.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('关闭按钮被点击');
                 this.hideGameOverModal();
-            });
+            };
             
             // 也支持ESC键关闭
             const handleEscKey = (e) => {
@@ -593,6 +719,24 @@ class GameUI {
             } else {
                 skillCooldownElement.textContent = '可用';
                 computerSkillDisplay.className = 'hero-skill-display available';
+            }
+        }
+        
+        // 更新玩家英雄技能按钮
+        const heroSkillBtn = document.getElementById('heroSkillBtn');
+        if (heroSkillBtn && info.playerHeroSkill) {
+            const skill = info.playerHeroSkill;
+            
+            if (skill.currentCooldown > 0) {
+                // 技能在冷却中，显示倒计时并变灰
+                heroSkillBtn.textContent = `${skill.name} (${skill.currentCooldown.toFixed(1)}s)`;
+                heroSkillBtn.disabled = true;
+                heroSkillBtn.classList.add('cooldown');
+            } else {
+                // 技能可用
+                heroSkillBtn.textContent = skill.name;
+                heroSkillBtn.disabled = false;
+                heroSkillBtn.classList.remove('cooldown');
             }
         }
     }

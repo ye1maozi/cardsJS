@@ -432,7 +432,7 @@ class ConfigManager {
             "MaxDeckSize": 30,
             "EnergyPerTurn": 1,
             "MaxEnergy": 10,
-            "GameVersion": "2.0.0",
+            "GameVersion": "2.1.0",
             "DefaultPlayerClass": "战士",
             "DefaultComputerClass": "法师"
         };

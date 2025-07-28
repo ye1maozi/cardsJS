@@ -22,63 +22,66 @@ body {
     flex-direction: column;
 }
 
-/* 游戏标题 */
-.game-header {
-    text-align: center;
-    margin-bottom: 20px;
-    position: relative;
-}
-
-.game-header h1 {
-    color: #fff;
-    font-size: 2.5em;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-    margin-bottom: 10px;
-}
-
-.version-info {
-    color: #ccc;
-    font-size: 0.9em;
-    position: absolute;
-    top: 10px;
-    right: 10px;
-}
-
-/* 游戏状态栏 */
+/* 游戏状态栏 - 三列布局 */
 .game-status {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    display: grid;
+    grid-template-columns: minmax(300px, 1fr) minmax(200px, auto) minmax(300px, 1fr);
+    gap: 15px;
     background: rgba(255,255,255,0.1);
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 20px;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 15px;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.2);
+    align-items: center;
+    min-height: 60px;
 }
 
-.player-status, .computer-status {
+/* 左侧：电脑状态 */
+.computer-status {
     display: flex;
-    gap: 20px;
+    gap: 10px;
+    justify-content: flex-start;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
-.status-item {
+/* 右侧：玩家状态 */
+.player-status {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* 中间：游戏时间和倒计时 */
+.center-status {
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-width: 80px;
+    justify-content: center;
+    gap: 8px;
+    min-width: 200px;
+    max-width: 250px;
+    height: 100%;
 }
 
-.status-item .label {
-    font-size: 0.8em;
-    color: #ccc;
-    margin-bottom: 5px;
+.game-time {
+    text-align: center;
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 6px 12px;
+    border: 1px solid rgba(255,255,255,0.2);
+    width: 100%;
 }
 
-.status-item .value {
-    font-size: 1.2em;
-    font-weight: bold;
+.game-time span {
     color: #fff;
+    font-size: 0.9em;
+    font-weight: bold;
 }
 
 .turn-indicator {
@@ -87,44 +90,45 @@ body {
 
 .turn-indicator span {
     color: #fff;
-    font-size: 1.1em;
+    font-size: 0.9em;
     font-weight: bold;
     background: rgba(255,255,255,0.2);
-    padding: 8px 16px;
-    border-radius: 20px;
+    padding: 6px 12px;
+    border-radius: 15px;
 }
 
 /* 倒计时显示 */
 .countdown-display {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
     background: rgba(255,255,255,0.1);
-    border-radius: 8px;
-    padding: 10px;
+    border-radius: 6px;
+    padding: 6px;
     border: 1px solid rgba(255,255,255,0.2);
+    width: 100%;
 }
 
 .countdown-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    min-width: 150px;
+    padding: 2px 4px;
 }
 
 .countdown-label {
     color: #ccc;
-    font-size: 0.9em;
+    font-size: 0.75em;
 }
 
 .countdown-value {
     color: #fff;
-    font-size: 1em;
+    font-size: 0.8em;
     font-weight: bold;
     background: rgba(255,255,255,0.2);
-    padding: 4px 8px;
-    border-radius: 4px;
-    min-width: 50px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    min-width: 40px;
     text-align: center;
 }
 
@@ -133,18 +137,18 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
+    gap: 1px;
 }
 
 .skill-name {
     color: #fff;
-    font-size: 0.8em;
+    font-size: 0.65em;
     font-weight: bold;
 }
 
 .skill-cooldown {
     color: #ccc;
-    font-size: 0.7em;
+    font-size: 0.6em;
 }
 
 .hero-skill-display.available .skill-name {
@@ -160,30 +164,40 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 15px;
+}
+
+/* 中央区域 */
+.center-area {
+    flex: 1;
+    min-height: 180px;
+}
+
+/* 下方区域：电脑和玩家并排 */
+.bottom-areas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    min-height: 250px;
 }
 
 .computer-area, .player-area {
-    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .computer-field, .player-field {
-    min-height: 100px;
+    min-height: 80px;
     background: rgba(255,255,255,0.05);
     border: 2px dashed rgba(255,255,255,0.3);
-    border-radius: 10px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #ccc;
     font-style: italic;
-}
-
-.center-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+    font-size: 0.9em;
 }
 
 /* 游戏日志 */
@@ -191,43 +205,95 @@ body {
     background: rgba(0,0,0,0.7);
     border-radius: 10px;
     padding: 15px;
-    max-height: 200px;
+    height: 180px; /* 固定高度，精确显示8行文字 */
     overflow-y: auto;
     border: 1px solid rgba(255,255,255,0.2);
+    font-family: 'Courier New', monospace; /* 等宽字体，便于阅读 */
+    scroll-behavior: smooth; /* 平滑滚动 */
 }
 
 .log-entry {
     color: #fff;
-    margin-bottom: 8px;
-    padding: 5px 0;
+    margin-bottom: 6px; /* 减少行间距 */
+    padding: 3px 0;
     border-bottom: 1px solid rgba(255,255,255,0.1);
-    font-size: 0.9em;
+    font-size: 0.85em;
+    line-height: 1.3; /* 调整行高 */
+    word-wrap: break-word;
+    animation: fadeIn 0.3s ease-in; /* 新消息淡入动画 */
+    white-space: normal; /* 允许换行 */
+    overflow: visible; /* 允许内容溢出 */
 }
 
 .log-entry:last-child {
     border-bottom: none;
+    margin-bottom: 0;
+}
+
+/* 新消息淡入动画 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 滚动条样式优化 */
+.game-log::-webkit-scrollbar {
+    width: 6px;
+}
+
+.game-log::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+}
+
+.game-log::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.3);
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.game-log::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.5);
+}
+
+/* 日志区域悬停时显示滚动条 */
+.game-log:hover::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.4);
+}
+
+/* 日志区域焦点样式 */
+.game-log:focus {
+    outline: none;
+    border-color: rgba(255,255,255,0.4);
 }
 
 /* 玩家手牌 */
 .player-hand {
     display: flex;
-    gap: 10px;
+    gap: 4px; /* 从8px缩小到4px */
     flex-wrap: wrap;
     justify-content: center;
-    min-height: 150px;
+    min-height: 120px;
     background: rgba(255,255,255,0.05);
-    border-radius: 10px;
-    padding: 15px;
+    border-radius: 8px;
+    padding: 8px; /* 从10px缩小到8px */
     border: 1px solid rgba(255,255,255,0.2);
+    align-content: flex-start; /* 确保卡牌从顶部开始排列 */
 }
 
 /* 卡牌样式 */
 .card {
-    width: 120px;
-    height: 160px;
+    width: 80px; /* 从120px缩小到80px */
+    height: 110px; /* 从160px缩小到110px */
     background: linear-gradient(145deg, #f0f0f0, #e0e0e0);
-    border-radius: 10px;
-    padding: 10px;
+    border-radius: 8px; /* 从10px缩小到8px */
+    padding: 6px; /* 从10px缩小到6px */
     cursor: pointer;
     transition: all 0.3s ease;
     border: 2px solid #ddd;
@@ -239,8 +305,8 @@ body {
 }
 
 .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    transform: translateY(-3px); /* 从-5px调整到-3px */
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
     border-color: #4CAF50;
 }
 
@@ -252,51 +318,78 @@ body {
 
 .card-name {
     font-weight: bold;
-    font-size: 0.9em;
+    font-size: 0.7em;
     text-align: center;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
     color: #333;
 }
 
 .card-class {
-    font-size: 0.7em;
+    font-size: 0.6em;
     color: #666;
     text-align: center;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
 }
 
 .card-cost {
     position: absolute;
-    top: 5px;
-    left: 5px;
+    top: 3px;
+    left: 3px;
     background: #4CAF50;
     color: white;
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8em;
+    font-size: 0.7em;
     font-weight: bold;
 }
 
 .card-effect {
-    font-size: 0.7em;
+    font-size: 0.5em; /* 从0.6em缩小到0.5em */
     color: #555;
     text-align: center;
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    line-height: 1.2;
+    line-height: 1.1;
 }
 
 .card-type {
-    font-size: 0.6em;
+    font-size: 0.5em;
     color: #888;
     text-align: center;
-    margin-top: 5px;
+    margin-top: 3px;
+}
+
+/* 新增：卡牌信息行样式 */
+.card-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.5em;
+    color: #888;
+    margin-top: 3px;
+    gap: 4px;
+}
+
+.card-cast-info {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.card-cast-time {
+    color: #ff6b6b;
+    font-weight: bold;
+}
+
+.card-cast-type {
+    color: #4CAF50;
+    font-weight: bold;
 }
 
 /* 职业颜色 */
@@ -413,39 +506,130 @@ body {
         padding: 10px;
     }
     
-    .game-header h1 {
-        font-size: 2em;
-    }
-    
     .game-status {
-        flex-direction: column;
-        gap: 15px;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        min-height: auto;
     }
     
-    .player-status, .computer-status {
-        gap: 15px;
+    .center-status {
+        min-width: auto;
+        max-width: none;
+        width: 100%;
+        order: -1; /* 在小屏幕上将中间区域放在最前面 */
+    }
+    
+    .computer-status, .player-status {
+        justify-content: center;
+        gap: 8px;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .hero-skill-btn {
+        padding: 6px 12px;
+        font-size: 0.8em;
+        min-width: 80px;
+        height: 35px;
+    }
+    
+    .deck-info-grid {
+        min-width: 80px;
+        gap: 3px;
+        padding: 4px;
+        min-height: 40px;
+    }
+    
+    .deck-label {
+        font-size: 0.5em;
+    }
+    
+    .deck-value {
+        font-size: 0.7em;
+    }
+    
+    .attributes-grid {
+        min-width: 80px;
+        gap: 1px; /* 从2px调整到1px */
+        padding: 4px;
+        min-height: 40px;
+    }
+    
+    .attribute-label {
+        font-size: 0.4em; /* 从0.45em缩小到0.4em */
+    }
+    
+    .attribute-value {
+        font-size: 0.6em; /* 从0.65em缩小到0.6em */
+    }
+    
+    .bottom-areas {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        min-height: 200px;
     }
     
     .player-hand {
-        gap: 8px;
+        gap: 3px; /* 进一步缩小间距 */
+        min-height: 100px;
+        padding: 6px;
     }
     
     .card {
-        width: 100px;
-        height: 140px;
+        width: 70px; /* 在小屏幕上进一步缩小 */
+        height: 95px;
     }
     
-    .btn {
-        padding: 10px 20px;
+    .card-name {
+        font-size: 0.6em;
+    }
+    
+    .card-effect {
+        font-size: 0.4em; /* 进一步缩小描述字体 */
+    }
+    
+    .card-info-row {
+        font-size: 0.4em; /* 缩小信息行字体 */
+        gap: 2px;
+    }
+    
+    .bottom-controls {
+        padding: 10px;
+        margin-top: 15px;
+    }
+    
+    .bottom-controls .btn {
+        padding: 10px 25px;
         font-size: 0.9em;
+    }
+
+    .player-effects {
+        gap: 3px;
+        padding: 6px;
+        min-height: 35px;
+    }
+    
+    .computer-effects {
+        gap: 3px;
+        padding: 6px;
+        min-height: 35px;
+    }
+    
+    .casting-card {
+        width: 70px;
+        height: 95px;
+    }
+    
+    .casting-progress-bar {
+        height: 6px;
+    }
+    
+    .casting-time-remaining {
+        font-size: 0.5em;
     }
 }
 
 @media (max-width: 480px) {
-    .game-header h1 {
-        font-size: 1.5em;
-    }
-    
     .card {
         width: 80px;
         height: 120px;
@@ -506,6 +690,34 @@ body {
     font-weight: bold;
     font-size: 12px;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* 玩家状态效果区域 */
+.player-effects {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.2);
+    min-height: 40px;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* 电脑状态效果区域 */
+.computer-effects {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.2);
+    min-height: 40px;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 /* 状态效果 */
@@ -894,4 +1106,210 @@ body {
     .opponent-stats {
         grid-template-columns: 1fr;
     }
+} 
+
+/* 状态项样式 */
+.status-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 50px;
+    padding: 3px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+.status-item:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.status-item .label {
+    font-size: 0.65em;
+    color: #ccc;
+    margin-bottom: 2px;
+    text-align: center;
+}
+
+.status-item .value {
+    font-size: 0.95em;
+    font-weight: bold;
+    color: #fff;
+    text-align: center;
+} 
+
+/* 牌堆信息网格 - 2x2布局 */
+.deck-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 6px;
+    border: 1px solid rgba(255,255,255,0.2);
+    min-width: 90px;
+    min-height: 45px;
+}
+
+.deck-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.deck-item:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.deck-label {
+    font-size: 0.55em;
+    color: #ccc;
+    margin-bottom: 1px;
+    text-align: center;
+}
+
+.deck-value {
+    font-size: 0.75em;
+    font-weight: bold;
+    color: #fff;
+    text-align: center;
+}
+
+/* 属性信息网格 - 5个属性竖排显示 */
+.attributes-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1px; /* 从2px缩小到1px */
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 6px;
+    border: 1px solid rgba(255,255,255,0.2);
+    min-width: 90px;
+    min-height: 45px; /* 与deck-info-grid保持一致 */
+}
+
+.attribute-item {
+    display: flex;
+    flex-direction: row; /* 改为水平布局 */
+    align-items: center;
+    justify-content: space-between; /* 标签和数值分别靠左右 */
+    padding: 1px 3px; /* 增加水平内边距 */
+    background: rgba(255,255,255,0.05);
+    border-radius: 3px;
+    transition: background 0.3s ease;
+    flex: 1;
+}
+
+.attribute-item:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.attribute-label {
+    font-size: 0.45em;
+    color: #ccc;
+    margin-bottom: 0px;
+    text-align: left; /* 改为左对齐 */
+    line-height: 1.0;
+    flex: 1; /* 占据剩余空间 */
+}
+
+.attribute-value {
+    font-size: 0.65em;
+    font-weight: bold;
+    color: #fff;
+    text-align: right; /* 改为右对齐 */
+    margin-left: 4px; /* 与标签保持间距 */
+}
+
+/* 英雄技能按钮样式 */
+.hero-skill-btn {
+    padding: 4px 8px;
+    font-size: 0.7em;
+    border-radius: 4px;
+    min-width: 60px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.hero-skill-btn.cooldown {
+    opacity: 0.6;
+    background: #666 !important;
+    color: #ccc !important;
+    cursor: not-allowed;
+}
+
+.hero-skill-btn.cooldown:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* 底部控制区域 */
+.bottom-controls {
+    display: flex;
+    justify-content: center;
+    padding: 15px;
+    margin-top: 20px;
+}
+
+.bottom-controls .btn {
+    padding: 12px 30px;
+    font-size: 1em;
+    border-radius: 25px;
+} 
+
+/* 吟唱中的卡牌样式 */
+.casting-card {
+    position: relative;
+    border: 2px solid #ff6b6b;
+    box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+    animation: casting-pulse 2s infinite;
+}
+
+@keyframes casting-pulse {
+    0%, 100% { 
+        box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+    }
+    50% { 
+        box-shadow: 0 0 20px rgba(255, 107, 107, 0.8);
+    }
+}
+
+/* 吟唱进度条 */
+.casting-progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+}
+
+.casting-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff6b6b, #ff8e8e);
+    transition: width 0.1s ease;
+    border-radius: 0 0 8px 8px;
+}
+
+.casting-time-remaining {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 0.6em;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    z-index: 1;
 } 

@@ -161,6 +161,9 @@ class CastingSystem {
             progressPercentage: this.getCastProgress(),
             remainingTime: this.getRemainingCastTime(),
             cardName: this.castCard ? this.castCard.name : null,
+            cardClass: this.castCard ? this.castCard.class : null,
+            cardEffect: this.castCard ? this.castCard.effect : null,
+            energyCost: this.castCard ? this.castCard.energyCost : null,
             targetName: this.castTarget ? this.castTarget.name : null,
             isInterrupted: this.castInterrupted
         };

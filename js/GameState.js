@@ -211,18 +211,7 @@ class GameState {
             const basicCards = [];
             
             for (const config of defaultConfigs) {
-                const card = new Card(
-                    config.name,
-                    config.class,
-                    config.energyCost,
-                    config.castTime,
-                    config.castType,
-                    config.effect,
-                    config.effectCode,
-                    config.value1,
-                    config.value2,
-                    config.value3
-                );
+                const card = Card.fromConfig(config);
                 basicCards.push(card);
             }
             
@@ -307,9 +296,10 @@ class GameState {
         // 基于时间的抽牌系统
         this.updateTimeBasedDrawing(currentTime);
         
-        // 检查游戏结束
+        // 检查游戏结束 - 在游戏逻辑更新后检查
         const gameEndResult = this.checkGameEnd();
-        if (gameEndResult.isOver && this.gameUI) {
+        if (gameEndResult.isOver && this.gameUI && !this.gameOver) {
+            this.gameOver = true; // 设置游戏结束标志
             this.gameUI.showGameOverModal(gameEndResult.message);
         }
     }
@@ -322,14 +312,23 @@ class GameState {
         // 使用已经更新的gameTime，而不是重新计算
         const gameTime = this.gameTime;
         
-        // 玩家抽牌检查（考虑敏捷属性）
+        // 获取最大手牌数量配置
+        const maxHandSize = ConfigManager.getGameConfig('MaxHandSize', 10);
+        
+        // 玩家抽牌检查（考虑敏捷属性和手牌数量限制）
         const playerDrawInterval = this.calculatePlayerDrawInterval();
         if (gameTime - this.lastPlayerDrawTime >= playerDrawInterval) {
-            this.drawCards(this.playerDeck, this.playerHand, 1, true);
-            this.lastPlayerDrawTime = gameTime;
+            // 检查手牌数量限制
+            if (this.playerHand.length < maxHandSize) {
+                this.drawCards(this.playerDeck, this.playerHand, 1, true);
+                this.lastPlayerDrawTime = gameTime;
+            } else {
+                // 手牌已满，更新时间但不抽卡
+                this.lastPlayerDrawTime = gameTime;
+            }
         }
         
-        // 电脑抽牌检查（考虑敏捷属性）
+        // 电脑抽牌检查（考虑敏捷属性和手牌数量限制）
         const computerDrawInterval = this.computerCharacter.calculateDrawInterval(this.baseDrawInterval);
         const timeSinceLastComputerDraw = gameTime - this.lastComputerDrawTime;
         
@@ -339,24 +338,31 @@ class GameState {
         }
         
         if (timeSinceLastComputerDraw >= computerDrawInterval) {
-            console.log('电脑开始抽牌...');
-            this.drawCards(this.computerDeck, this.computerHand, 1, false);
-            this.lastComputerDrawTime = gameTime;
-            
-            console.log(`电脑抽牌完成，游戏时间: ${this.gameTime.toFixed(1)}s, 手牌数量: ${this.computerHand.length}`);
-            
-            // 电脑AI决策（在抽牌后）
-            setTimeout(() => {
-                if (!this.gameOver) {
-                    console.log('开始电脑AI决策...');
-                    const aiResult = this.computerTurn();
-                    
-                    // 通知UI显示AI决策结果
-                    if (this.gameUI) {
-                        this.gameUI.showAIResult(aiResult);
+            // 检查电脑手牌数量限制
+            if (this.computerHand.length < maxHandSize) {
+                console.log('电脑开始抽牌...');
+                this.drawCards(this.computerDeck, this.computerHand, 1, false);
+                this.lastComputerDrawTime = gameTime;
+                
+                console.log(`电脑抽牌完成，游戏时间: ${this.gameTime.toFixed(1)}s, 手牌数量: ${this.computerHand.length}`);
+                
+                // 电脑AI决策（在抽牌后）
+                setTimeout(() => {
+                    if (!this.gameOver) {
+                        console.log('开始电脑AI决策...');
+                        const aiResult = this.computerTurn();
+                        
+                        // 通知UI显示AI决策结果
+                        if (this.gameUI) {
+                            this.gameUI.showAIResult(aiResult);
+                        }
                     }
-                }
-            }, 500); // 延迟500ms执行AI决策
+                }, 500); // 延迟500ms执行AI决策
+            } else {
+                // 电脑手牌已满，更新时间但不抽卡
+                this.lastComputerDrawTime = gameTime;
+                console.log(`电脑手牌已满 (${this.computerHand.length}/${maxHandSize})，跳过时间抽卡`);
+            }
         }
     }
 
@@ -366,11 +372,25 @@ class GameState {
      * @param {Card[]} hand - 手牌
      * @param {number} count - 抽牌数量
      * @param {boolean} isPlayer - 是否为玩家
+     * @param {boolean} checkHandLimit - 是否检查手牌数量限制（默认true）
      */
-    drawCards(deck, hand, count, isPlayer) {
+    drawCards(deck, hand, count, isPlayer, checkHandLimit = true) {
         const character = isPlayer ? this.playerCharacter : this.computerCharacter;
+        const maxHandSize = ConfigManager.getGameConfig('MaxHandSize', 10);
+        
+        // 如果检查手牌限制且手牌已满，则不抽卡
+        if (checkHandLimit && hand.length >= maxHandSize) {
+            console.log(`${character.name} 手牌已满 (${hand.length}/${maxHandSize})，无法抽卡`);
+            return;
+        }
         
         for (let i = 0; i < count; i++) {
+            // 如果检查手牌限制且手牌已满，停止抽卡
+            if (checkHandLimit && hand.length >= maxHandSize) {
+                console.log(`${character.name} 手牌已满，停止抽卡`);
+                break;
+            }
+            
             if (deck.length === 0) {
                 // 如果牌组为空，将弃牌堆洗入牌组
                 this.shuffleDiscardPileIntoDeck(deck, hand, isPlayer);
@@ -382,6 +402,12 @@ class GameState {
             
             // 检查额外抽卡概率
             if (character.extraDrawChance > 0 && Math.random() < character.extraDrawChance / 100) {
+                // 额外抽卡也要检查手牌限制
+                if (checkHandLimit && hand.length >= maxHandSize) {
+                    console.log(`${character.name} 手牌已满，跳过额外抽卡`);
+                    break;
+                }
+                
                 if (deck.length === 0) {
                     this.shuffleDiscardPileIntoDeck(deck, hand, isPlayer);
                 }
@@ -560,6 +586,7 @@ class GameState {
     checkGameEnd() {
         // 检查玩家生命值
         if (this.playerHealth <= 0 || this.playerCharacter.currentHealth <= 0) {
+            console.log(`游戏结束检查: 玩家生命值 ${this.playerHealth}/${this.playerCharacter.currentHealth}，游戏结束`);
             this.gameOver = true;
             this.winner = "电脑";
             return { isOver: true, winner: "电脑", message: "电脑获胜！" };
@@ -567,6 +594,7 @@ class GameState {
         
         // 检查电脑生命值
         if (this.computerHealth <= 0 || this.computerCharacter.currentHealth <= 0) {
+            console.log(`游戏结束检查: 电脑生命值 ${this.computerHealth}/${this.computerCharacter.currentHealth}，游戏结束`);
             this.gameOver = true;
             this.winner = "玩家";
             return { isOver: true, winner: "玩家", message: "玩家获胜！" };

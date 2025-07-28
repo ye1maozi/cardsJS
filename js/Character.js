@@ -229,7 +229,9 @@ class Character {
      * @param {StatusEffect} effect - 状态效果
      */
     addStatusEffect(effect) {
+        console.log(`为${this.name}添加状态效果: ${effect.type}, 描述: ${effect.description}, 持续时间: ${effect.duration}s`);
         this.statusEffects.push(effect);
+        console.log(`${this.name}当前状态效果数量: ${this.statusEffects.length}`);
     }
     
     /**

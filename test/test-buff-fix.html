@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buff显示修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .game-area {
+            display: flex;
+            gap: 20px;
+        }
+        .player-area, .computer-area {
+            flex: 1;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .player-effects, .computer-effects {
+            min-height: 60px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 4px;
+            background: white;
+            margin-bottom: 10px;
+        }
+        .effect {
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+            display: inline-block;
+            margin: 2px;
+        }
+        .effect.poison {
+            background: #8b4513;
+        }
+        .effect.slow {
+            background: #4169e1;
+        }
+        .effect.stealth {
+            background: #2f4f4f;
+        }
+        .no-effects {
+            color: #999;
+            font-size: 12px;
+            font-style: italic;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Buff显示修复测试</h1>
+    
+    <div class="test-section">
+        <h2>游戏区域</h2>
+        <div class="game-area">
+            <div class="player-area">
+                <h3>玩家区域</h3>
+                <div class="player-effects" id="playerEffects">
+                    <div class="no-effects">无状态效果</div>
+                </div>
+                <div>
+                    <p>生命值: <span id="playerHealth">30</span></p>
+                    <p>能量: <span id="playerEnergy">10</span></p>
+                    <p>状态效果数量: <span id="playerEffectCount">0</span></p>
+                </div>
+            </div>
+            <div class="computer-area">
+                <h3>电脑区域</h3>
+                <div class="computer-effects" id="computerEffects">
+                    <div class="no-effects">无状态效果</div>
+                </div>
+                <div>
+                    <p>生命值: <span id="computerHealth">30</span></p>
+                    <p>能量: <span id="computerEnergy">10</span></p>
+                    <p>状态效果数量: <span id="computerEffectCount">0</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>测试操作</h2>
+        <button onclick="testAddPoison()">添加中毒效果</button>
+        <button onclick="testAddSlow()">添加减速效果</button>
+        <button onclick="testAddStealth()">添加潜行效果</button>
+        <button onclick="testCardBuff()">测试卡牌Buff</button>
+        <button onclick="clearAllEffects()">清除所有效果</button>
+        <button onclick="testUIUpdate()">测试UI更新</button>
+    </div>
+
+    <div class="test-section">
+        <h2>测试日志</h2>
+        <div id="testLog" class="log"></div>
+        <button onclick="clearLog()">清除日志</button>
+    </div>
+
+    <script src="../js/Character.js"></script>
+    <script src="../js/StealthSystem.js"></script>
+    <script src="../js/CastingSystem.js"></script>
+    <script src="../js/ConfigData.js"></script>
+    <script src="../js/Card.js"></script>
+    <script src="../js/GameState.js"></script>
+    <script src="../js/GameUI.js"></script>
+
+    <script>
+        let playerCharacter = null;
+        let computerCharacter = null;
+        let gameState = null;
+        let gameUI = null;
+
+        // 初始化
+        function initialize() {
+            playerCharacter = new Character("测试玩家", "战士");
+            computerCharacter = new Character("测试电脑", "法师");
+            
+            gameState = {
+                playerCharacter: playerCharacter,
+                computerCharacter: computerCharacter,
+                playerHealth: playerCharacter.currentHealth,
+                playerEnergy: playerCharacter.currentEnergy,
+                computerHealth: computerCharacter.currentHealth,
+                computerEnergy: computerCharacter.currentEnergy
+            };
+            
+            // 为角色设置gameState引用
+            playerCharacter.gameState = gameState;
+            computerCharacter.gameState = gameState;
+            
+            // 创建GameUI实例
+            gameUI = new GameUI(gameState);
+            gameState.gameUI = gameUI;
+            
+            updateDisplay();
+            log('初始化完成');
+        }
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '';
+        }
+
+        function updateDisplay() {
+            // 更新角色状态
+            document.getElementById('playerHealth').textContent = playerCharacter.currentHealth;
+            document.getElementById('playerEnergy').textContent = playerCharacter.currentEnergy;
+            document.getElementById('playerEffectCount').textContent = playerCharacter.statusEffects.length;
+            
+            document.getElementById('computerHealth').textContent = computerCharacter.currentHealth;
+            document.getElementById('computerEnergy').textContent = computerCharacter.currentEnergy;
+            document.getElementById('computerEffectCount').textContent = computerCharacter.statusEffects.length;
+            
+            // 更新状态效果显示
+            gameUI.updateStatusEffects();
+        }
+
+        // 测试添加中毒效果
+        function testAddPoison() {
+            log('测试添加中毒效果...');
+            
+            try {
+                const poisonEffect = new PoisonEffect(3, 5);
+                playerCharacter.addStatusEffect(poisonEffect);
+                
+                updateDisplay();
+                
+                log(`✓ 中毒效果添加成功: ${poisonEffect.description}`);
+                
+            } catch (error) {
+                log(`✗ 中毒效果添加失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试添加减速效果
+        function testAddSlow() {
+            log('测试添加减速效果...');
+            
+            try {
+                const slowEffect = new SlowEffect(2, 4);
+                computerCharacter.addStatusEffect(slowEffect);
+                
+                updateDisplay();
+                
+                log(`✓ 减速效果添加成功: ${slowEffect.description}`);
+                
+            } catch (error) {
+                log(`✗ 减速效果添加失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试添加潜行效果
+        function testAddStealth() {
+            log('测试添加潜行效果...');
+            
+            try {
+                const stealthEffect = new StealthEffect(6);
+                playerCharacter.addStatusEffect(stealthEffect);
+                
+                updateDisplay();
+                
+                log(`✓ 潜行效果添加成功: ${stealthEffect.description}`);
+                
+            } catch (error) {
+                log(`✗ 潜行效果添加失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试卡牌Buff
+        function testCardBuff() {
+            log('测试卡牌Buff效果...');
+            
+            try {
+                // 创建带有buff配置的卡牌
+                const cardConfig = {
+                    name: "测试毒刃",
+                    class: "盗贼",
+                    energyCost: 1,
+                    castTime: 0,
+                    castType: "瞬发",
+                    effect: "造成3点伤害并中毒",
+                    effectCode: "DAMAGE_WITH_BUFF",
+                    damage: 3,
+                    buff: {
+                        type: "poison",
+                        value: 2,
+                        duration: 4
+                    }
+                };
+                
+                const card = Card.fromConfig(cardConfig);
+                log(`创建测试卡牌: ${card.name}`);
+                
+                // 执行卡牌效果
+                const result = card.executeEffect(gameState, true);
+                log(`卡牌效果执行结果: ${result}`);
+                
+                updateDisplay();
+                
+                log('✓ 卡牌Buff测试成功');
+                
+            } catch (error) {
+                log(`✗ 卡牌Buff测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 清除所有效果
+        function clearAllEffects() {
+            log('清除所有效果...');
+            
+            try {
+                playerCharacter.statusEffects = [];
+                computerCharacter.statusEffects = [];
+                
+                updateDisplay();
+                
+                log('✓ 所有效果已清除');
+                
+            } catch (error) {
+                log(`✗ 清除效果失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试UI更新
+        function testUIUpdate() {
+            log('测试UI更新机制...');
+            
+            try {
+                // 模拟游戏循环中的状态更新
+                const deltaTime = 0.1; // 100ms
+                
+                // 更新角色状态
+                playerCharacter.update(deltaTime);
+                computerCharacter.update(deltaTime);
+                
+                // 更新显示
+                updateDisplay();
+                
+                log('✓ UI更新测试成功');
+                log(`玩家效果数量: ${playerCharacter.statusEffects.length}`);
+                log(`电脑效果数量: ${computerCharacter.statusEffects.length}`);
+                
+            } catch (error) {
+                log(`✗ UI更新测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 页面加载完成后初始化
+        window.addEventListener('load', () => {
+            initialize();
+            log('页面加载完成，开始测试...');
+        });
+    </script>
+</body>
+</html> 

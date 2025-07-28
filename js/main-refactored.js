@@ -516,7 +516,7 @@ function showSuccess(message) {
  * 获取游戏版本
  */
 function getGameVersion() {
-    return '2.0.0-refactored';
+    return '2.1.0-refactored';
 }
 
 /**

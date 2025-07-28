@@ -13,7 +13,9 @@ class CardEffectStrategy {
 class DamageEffectStrategy extends CardEffectStrategy {
     execute(gameState, isPlayer, card) {
         const character = isPlayer ? gameState.playerCharacter : gameState.computerCharacter;
-        const damage = card.calculateActualDamage(card.value1, character);
+        // 支持新的damage字段和兼容旧的value1字段
+        const damageValue = card.damage || card.value1;
+        const damage = card.calculateActualDamage(damageValue, character);
         
         if (isPlayer) {
             gameState.computerCharacter.takeDamage(damage);
@@ -32,15 +34,18 @@ class DamageEffectStrategy extends CardEffectStrategy {
  */
 class HealEffectStrategy extends CardEffectStrategy {
     execute(gameState, isPlayer, card) {
+        // 支持新的heal字段和兼容旧的value1字段
+        const healValue = card.heal || card.value1;
+        
         if (isPlayer) {
-            gameState.playerCharacter.heal(card.value1);
+            gameState.playerCharacter.heal(healValue);
             gameState.playerHealth = gameState.playerCharacter.currentHealth;
         } else {
-            gameState.computerCharacter.heal(card.value1);
+            gameState.computerCharacter.heal(healValue);
             gameState.computerHealth = gameState.computerCharacter.currentHealth;
         }
         
-        return card.formatEffect(card.value1);
+        return card.formatEffect(healValue);
     }
 }
 
@@ -56,13 +61,17 @@ class DamagePoisonEffectStrategy extends CardEffectStrategy {
             gameState.computerCharacter.takeDamage(damage);
             gameState.computerHealth = gameState.computerCharacter.currentHealth;
             if (gameState.computerCharacter) {
-                gameState.computerCharacter.addStatusEffect(new PoisonEffect(card.value2, 5));
+                const poisonEffect = new PoisonEffect(card.value2, 5);
+                gameState.computerCharacter.addStatusEffect(poisonEffect);
+                console.log(`添加中毒效果到电脑: ${poisonEffect.description}, 持续时间: ${poisonEffect.duration}s`);
             }
         } else {
             gameState.playerCharacter.takeDamage(damage);
             gameState.playerHealth = gameState.playerCharacter.currentHealth;
             if (gameState.playerCharacter) {
-                gameState.playerCharacter.addStatusEffect(new PoisonEffect(card.value2, 5));
+                const poisonEffect = new PoisonEffect(card.value2, 5);
+                gameState.playerCharacter.addStatusEffect(poisonEffect);
+                console.log(`添加中毒效果到玩家: ${poisonEffect.description}, 持续时间: ${poisonEffect.duration}s`);
             }
         }
         
@@ -82,13 +91,17 @@ class DamageSlowEffectStrategy extends CardEffectStrategy {
             gameState.computerCharacter.takeDamage(damage);
             gameState.computerHealth = gameState.computerCharacter.currentHealth;
             if (gameState.computerCharacter) {
-                gameState.computerCharacter.addStatusEffect(new SlowEffect(card.value2, card.value3));
+                const slowEffect = new SlowEffect(card.value2, card.value3);
+                gameState.computerCharacter.addStatusEffect(slowEffect);
+                console.log(`添加减速效果到电脑: ${slowEffect.description}, 持续时间: ${slowEffect.duration}s`);
             }
         } else {
             gameState.playerCharacter.takeDamage(damage);
             gameState.playerHealth = gameState.playerCharacter.currentHealth;
             if (gameState.playerCharacter) {
-                gameState.playerCharacter.addStatusEffect(new SlowEffect(card.value2, card.value3));
+                const slowEffect = new SlowEffect(card.value2, card.value3);
+                gameState.playerCharacter.addStatusEffect(slowEffect);
+                console.log(`添加减速效果到玩家: ${slowEffect.description}, 持续时间: ${slowEffect.duration}s`);
             }
         }
         
@@ -102,19 +115,194 @@ class DamageSlowEffectStrategy extends CardEffectStrategy {
 class DamageArmorEffectStrategy extends CardEffectStrategy {
     execute(gameState, isPlayer, card) {
         const character = isPlayer ? gameState.playerCharacter : gameState.computerCharacter;
-        const damage = card.calculateActualDamage(card.value1, character);
+        // 支持新的damage字段和兼容旧的value1字段
+        const damageValue = card.damage || card.value1;
+        const damage = card.calculateActualDamage(damageValue, character);
+        // 支持新的armor字段和兼容旧的value2字段
+        const armorValue = card.armor || card.value2;
         
         if (isPlayer) {
             gameState.computerCharacter.takeDamage(damage);
             gameState.computerHealth = gameState.computerCharacter.currentHealth;
-            gameState.playerArmor += card.value2;
+            gameState.playerArmor += armorValue;
         } else {
             gameState.playerCharacter.takeDamage(damage);
             gameState.playerHealth = gameState.playerCharacter.currentHealth;
-            gameState.computerArmor += card.value2;
+            gameState.computerArmor += armorValue;
         }
         
-        return card.formatEffect(damage, card.value2);
+        return card.formatEffect(damage, armorValue);
+    }
+}
+
+/**
+ * 伤害+Buff效果策略
+ */
+class DamageWithBuffEffectStrategy extends CardEffectStrategy {
+    execute(gameState, isPlayer, card) {
+        console.log('卡牌buff字段：', card.buff, card);
+        const character = isPlayer ? gameState.playerCharacter : gameState.computerCharacter;
+        // 支持新的damage字段和兼容旧的value1字段
+        const damageValue = card.damage || card.value1;
+        const damage = card.calculateActualDamage(damageValue, character);
+        
+        if (isPlayer) {
+            gameState.computerCharacter.takeDamage(damage);
+            gameState.computerHealth = gameState.computerCharacter.currentHealth;
+            
+            // 应用buff效果
+            if (card.buff && gameState.computerCharacter) {
+                this.applyBuff(gameState.computerCharacter, card.buff);
+            }
+        } else {
+            gameState.playerCharacter.takeDamage(damage);
+            gameState.playerHealth = gameState.playerCharacter.currentHealth;
+            
+            // 应用buff效果
+            if (card.buff && gameState.playerCharacter) {
+                this.applyBuff(gameState.playerCharacter, card.buff);
+            }
+        }
+        
+        return this.formatBuffEffect(damage, card.buff);
+    }
+    
+    applyBuff(character, buff) {
+        if (!character || !buff) {
+            console.warn('applyBuff: 角色或buff配置为空');
+            return;
+        }
+        
+        console.log(`应用buff到角色 ${character.name}:`, buff);
+        
+        switch (buff.type) {
+            case 'poison':
+                const poisonEffect = new PoisonEffect(buff.value, buff.duration);
+                character.addStatusEffect(poisonEffect);
+                console.log(`✓ 添加中毒效果: ${poisonEffect.description}, 持续时间: ${poisonEffect.duration}s`);
+                console.log(`角色当前状态效果数量: ${character.statusEffects.length}`);
+                break;
+            case 'slow':
+                const slowEffect = new SlowEffect(buff.value, buff.duration);
+                character.addStatusEffect(slowEffect);
+                console.log(`✓ 添加减速效果: ${slowEffect.description}, 持续时间: ${slowEffect.duration}s`);
+                console.log(`角色当前状态效果数量: ${character.statusEffects.length}`);
+                break;
+            case 'stealth':
+                const stealthEffect = new StealthEffect(buff.duration);
+                character.addStatusEffect(stealthEffect);
+                console.log(`✓ 添加潜行效果: ${stealthEffect.description}, 持续时间: ${stealthEffect.duration}s`);
+                console.log(`角色当前状态效果数量: ${character.statusEffects.length}`);
+                break;
+            default:
+                console.warn(`未知的buff类型: ${buff.type}`);
+        }
+        
+        // 强制触发UI更新
+        if (character.gameState && character.gameState.gameUI) {
+            console.log('触发UI更新...');
+            character.gameState.gameUI.updateStatusEffects();
+        }
+    }
+    
+    formatBuffEffect(damage, buff) {
+        if (!buff) return `造成${damage}点伤害`;
+        
+        switch (buff.type) {
+            case 'poison':
+                return `造成${damage}点伤害，并使目标获得${buff.value}层中毒，持续${buff.duration}秒`;
+            case 'slow':
+                return `造成${damage}点伤害，并使目标速度降低${buff.value}点，持续${buff.duration}秒`;
+            case 'stealth':
+                return `造成${damage}点伤害，并使目标进入潜行状态，持续${buff.duration}秒`;
+            default:
+                return `造成${damage}点伤害`;
+        }
+    }
+}
+
+/**
+ * 全目标伤害+Buff效果策略
+ */
+class DamageAllWithBuffEffectStrategy extends CardEffectStrategy {
+    execute(gameState, isPlayer, card) {
+        const character = isPlayer ? gameState.playerCharacter : gameState.computerCharacter;
+        // 支持新的damage字段和兼容旧的value1字段
+        const damageValue = card.damage || card.value1;
+        const damage = card.calculateActualDamage(damageValue, character);
+        
+        if (isPlayer) {
+            gameState.computerCharacter.takeDamage(damage);
+            gameState.computerHealth = gameState.computerCharacter.currentHealth;
+            
+            // 应用buff效果到所有敌人（这里只有电脑）
+            if (card.buff && gameState.computerCharacter) {
+                this.applyBuff(gameState.computerCharacter, card.buff);
+            }
+        } else {
+            gameState.playerCharacter.takeDamage(damage);
+            gameState.playerHealth = gameState.playerCharacter.currentHealth;
+            
+            // 应用buff效果到所有敌人（这里只有玩家）
+            if (card.buff && gameState.playerCharacter) {
+                this.applyBuff(gameState.playerCharacter, card.buff);
+            }
+        }
+        
+        return this.formatBuffEffect(damage, card.buff);
+    }
+    
+    applyBuff(character, buff) {
+        if (!character || !buff) {
+            console.warn('applyBuff: 角色或buff配置为空');
+            return;
+        }
+        
+        console.log(`应用buff到角色 ${character.name}:`, buff);
+        
+        switch (buff.type) {
+            case 'poison':
+                const poisonEffect = new PoisonEffect(buff.value, buff.duration);
+                character.addStatusEffect(poisonEffect);
+                console.log(`✓ 添加中毒效果: ${poisonEffect.description}, 持续时间: ${poisonEffect.duration}s`);
+                console.log(`角色当前状态效果数量: ${character.statusEffects.length}`);
+                break;
+            case 'slow':
+                const slowEffect = new SlowEffect(buff.value, buff.duration);
+                character.addStatusEffect(slowEffect);
+                console.log(`✓ 添加减速效果: ${slowEffect.description}, 持续时间: ${slowEffect.duration}s`);
+                console.log(`角色当前状态效果数量: ${character.statusEffects.length}`);
+                break;
+            case 'stealth':
+                const stealthEffect = new StealthEffect(buff.duration);
+                character.addStatusEffect(stealthEffect);
+                console.log(`✓ 添加潜行效果: ${stealthEffect.description}, 持续时间: ${stealthEffect.duration}s`);
+                console.log(`角色当前状态效果数量: ${character.statusEffects.length}`);
+                break;
+            default:
+                console.warn(`未知的buff类型: ${buff.type}`);
+        }
+        
+        // 强制触发UI更新
+        if (character.gameState && character.gameState.gameUI) {
+            console.log('触发UI更新...');
+            character.gameState.gameUI.updateStatusEffects();
+        }
+    }
+    
+    formatBuffEffect(damage, buff) {
+        if (!buff) return `对所有敌人造成${damage}点伤害`;
+        
+        switch (buff.type) {
+            case 'poison':
+                return `对所有敌人造成${damage}点伤害，并使其获得${buff.value}层中毒，持续${buff.duration}秒`;
+            case 'slow':
+                return `对所有敌人造成${damage}点伤害，并使其速度降低${buff.value}点，持续${buff.duration}秒`;
+            case 'stealth':
+                return `对所有敌人造成${damage}点伤害，并使其进入潜行状态，持续${buff.duration}秒`;
+            default:
+                return `对所有敌人造成${damage}点伤害`;
+        }
     }
 }
 
@@ -124,8 +312,8 @@ class DamageArmorEffectStrategy extends CardEffectStrategy {
 class ConsumeAllEnergyEffectStrategy extends CardEffectStrategy {
     execute(gameState, isPlayer, card) {
         const energy = isPlayer ? gameState.playerEnergy : gameState.computerEnergy;
-        // 修改伤害计算：基础伤害 + 额外消耗的能量
-        const baseDamage = card.value1 || 0; // 基础伤害，如果没有设置则默认为0
+        // 支持新的baseDamage字段和兼容旧的value1字段
+        const baseDamage = card.baseDamage || card.value1 || 0;
         const extraDamage = energy; // 额外消耗的能量直接转换为伤害
         const totalDamage = baseDamage + extraDamage;
         
@@ -186,12 +374,18 @@ class AmbushEffectStrategy extends CardEffectStrategy {
  */
 class StealthEffectStrategy extends CardEffectStrategy {
     execute(gameState, isPlayer, card) {
-        if (isPlayer && gameState.playerCharacter) {
-            gameState.playerCharacter.stealthSystem.enterStealth(card.value1);
-        } else if (!isPlayer && gameState.computerCharacter) {
-            gameState.computerCharacter.stealthSystem.enterStealth(card.value1);
+        // 支持新的buff配置和兼容旧的value1字段
+        let duration = card.value1;
+        if (card.buff && card.buff.duration) {
+            duration = card.buff.duration;
         }
-        return `进入潜行状态，持续${card.value1}秒`;
+        
+        if (isPlayer && gameState.playerCharacter) {
+            gameState.playerCharacter.stealthSystem.enterStealth(duration);
+        } else if (!isPlayer && gameState.computerCharacter) {
+            gameState.computerCharacter.stealthSystem.enterStealth(duration);
+        }
+        return `进入潜行状态，持续${duration}秒`;
     }
 }
 
@@ -201,38 +395,24 @@ class StealthEffectStrategy extends CardEffectStrategy {
 class DrawDiscardEffectStrategy extends CardEffectStrategy {
     execute(gameState, isPlayer, card) {
         if (isPlayer) {
-            const drawnCards = [];
-            for (let i = 0; i < card.value1; i++) {
-                if (gameState.playerDeck.length > 0) {
-                    drawnCards.push(gameState.playerDeck.pop());
-                }
-            }
+            // 使用drawCards方法，不检查手牌数量限制
+            gameState.drawCards(gameState.playerDeck, gameState.playerHand, card.value1, true, false);
             
             // 随机丢弃1张
-            if (drawnCards.length > 0) {
-                const discardIndex = Math.floor(Math.random() * drawnCards.length);
-                const discardedCard = drawnCards.splice(discardIndex, 1)[0];
+            if (gameState.playerHand.length > 0) {
+                const discardIndex = Math.floor(Math.random() * gameState.playerHand.length);
+                const discardedCard = gameState.playerHand.splice(discardIndex, 1)[0];
                 gameState.playerDiscardPile.push(discardedCard);
-                
-                // 将剩余的卡牌加入手牌
-                gameState.playerHand.push(...drawnCards);
             }
         } else {
-            const drawnCards = [];
-            for (let i = 0; i < card.value1; i++) {
-                if (gameState.computerDeck.length > 0) {
-                    drawnCards.push(gameState.computerDeck.pop());
-                }
-            }
+            // 使用drawCards方法，不检查手牌数量限制
+            gameState.drawCards(gameState.computerDeck, gameState.computerHand, card.value1, false, false);
             
             // 随机丢弃1张
-            if (drawnCards.length > 0) {
-                const discardIndex = Math.floor(Math.random() * drawnCards.length);
-                const discardedCard = drawnCards.splice(discardIndex, 1)[0];
+            if (gameState.computerHand.length > 0) {
+                const discardIndex = Math.floor(Math.random() * gameState.computerHand.length);
+                const discardedCard = gameState.computerHand.splice(discardIndex, 1)[0];
                 gameState.computerDiscardPile.push(discardedCard);
-                
-                // 将剩余的卡牌加入手牌
-                gameState.computerHand.push(...drawnCards);
             }
         }
         return `抽取${card.value1}张卡牌，随机丢弃1张`;
@@ -244,12 +424,24 @@ class DrawDiscardEffectStrategy extends CardEffectStrategy {
  */
 class DispelEffectStrategy extends CardEffectStrategy {
     execute(gameState, isPlayer, card) {
-        if (isPlayer && gameState.computerCharacter) {
-            gameState.computerCharacter.statusEffects = [];
-        } else if (!isPlayer && gameState.playerCharacter) {
-            gameState.playerCharacter.statusEffects = [];
+        const target = isPlayer ? gameState.playerCharacter : gameState.computerCharacter;
+        const targetName = isPlayer ? "玩家" : "电脑";
+        
+        // 记录驱散前的状态效果数量
+        const effectsBefore = target.statusEffects.length;
+        console.log(`驱散前 ${targetName} 的状态效果数量: ${effectsBefore}`);
+        if (effectsBefore > 0) {
+            console.log(`状态效果详情:`, target.statusEffects.map(effect => `${effect.type} (${effect.duration.toFixed(1)}s)`));
         }
-        return "移除所有负面效果";
+        
+        // 清空状态效果
+        target.statusEffects = [];
+        
+        // 记录驱散后的状态效果数量
+        const effectsAfter = target.statusEffects.length;
+        console.log(`驱散后 ${targetName} 的状态效果数量: ${effectsAfter}`);
+        
+        return `移除${targetName}身上的所有负面效果 (${effectsBefore}个效果被移除)`;
     }
 }
 
@@ -258,10 +450,14 @@ class DispelEffectStrategy extends CardEffectStrategy {
  */
 class BloodSacrificeEffectStrategy extends CardEffectStrategy {
     execute(gameState, isPlayer, card) {
-        // 设置生命消耗
-        card.healthCost = 2;
+        // 支持新的healthCost字段和兼容旧的固定值
+        const healthCost = card.healthCost || 2;
+        card.healthCost = healthCost;
+        
         const character = isPlayer ? gameState.playerCharacter : gameState.computerCharacter;
-        const damage = card.calculateActualDamage(card.value1, character);
+        // 支持新的damage字段和兼容旧的value1字段
+        const damageValue = card.damage || card.value1;
+        const damage = card.calculateActualDamage(damageValue, character);
         
         if (isPlayer) {
             gameState.computerCharacter.takeDamage(damage);
@@ -271,7 +467,7 @@ class BloodSacrificeEffectStrategy extends CardEffectStrategy {
             gameState.playerHealth = gameState.playerCharacter.currentHealth;
         }
         
-        return `${card.name} 消耗2点生命值，对${isPlayer ? "电脑" : "玩家"}造成${damage}点伤害`;
+        return `${card.name} 消耗${healthCost}点生命值，对${isPlayer ? "电脑" : "玩家"}造成${damage}点伤害`;
     }
 }
 
@@ -311,8 +507,48 @@ class Card {
         this.isLocked = false; // 是否已锁定目标（锁定后不受潜行影响）
         this.lockedTarget = null; // 锁定的目标
         
+        // 支持新的配置字段
+        this.damage = null;     // 伤害值
+        this.heal = null;       // 治疗值
+        this.armor = null;      // 护甲值
+        this.buff = null;       // buff配置
+        this.baseDamage = null; // 基础伤害（用于消耗能量类技能）
+        this.healthCost = null; // 生命消耗
+        this.requiresStealth = false; // 是否需要潜行状态
+        
         // 初始化效果策略
         this.effectStrategy = this.createEffectStrategy();
+    }
+
+    /**
+     * 从配置对象创建卡牌
+     * @param {Object} config - 卡牌配置对象
+     * @returns {Card} 卡牌实例
+     */
+    static fromConfig(config) {
+        const card = new Card(
+            config.name,
+            config.class,
+            config.energyCost,
+            config.castTime || 0,
+            config.castType || "瞬发",
+            config.effect,
+            config.effectCode || "",
+            config.value1 || 0,
+            config.value2 || 0,
+            config.value3 || 0
+        );
+        
+        // 设置新的配置字段
+        if (config.damage !== undefined) card.damage = config.damage;
+        if (config.heal !== undefined) card.heal = config.heal;
+        if (config.armor !== undefined) card.armor = config.armor;
+        if (config.buff !== undefined) card.buff = config.buff;
+        if (config.baseDamage !== undefined) card.baseDamage = config.baseDamage;
+        if (config.healthCost !== undefined) card.healthCost = config.healthCost;
+        if (config.requiresStealth !== undefined) card.requiresStealth = config.requiresStealth;
+        
+        return card;
     }
 
     /**
@@ -322,6 +558,24 @@ class Card {
         const effectCode = this.effectCode || this.name;
         
         const strategyMap = {
+            // 基础效果
+            'DAMAGE': new DamageEffectStrategy(),
+            'HEAL': new HealEffectStrategy(),
+            'HEAL_ALL': new HealEffectStrategy(),
+            
+            // 复合效果
+            'DAMAGE_WITH_ARMOR': new DamageArmorEffectStrategy(),
+            'DAMAGE_WITH_BUFF': new DamageWithBuffEffectStrategy(),
+            'DAMAGE_ALL_WITH_BUFF': new DamageAllWithBuffEffectStrategy(),
+            
+            // 特殊效果
+            'CONSUME_ALL_ENERGY': new ConsumeAllEnergyEffectStrategy(),
+            'STEALTH': new StealthEffectStrategy(),
+            'DRAW_3_DISCARD_1': new DrawDiscardEffectStrategy(),
+            'DISPEL': new DispelEffectStrategy(),
+            'BLOOD_SACRIFICE': new BloodSacrificeEffectStrategy(),
+            
+            // 兼容旧版本的effectCode
             'DAMAGE_6': new DamageEffectStrategy(),
             'DAMAGE_8': new DamageEffectStrategy(),
             'DAMAGE_9': new DamageEffectStrategy(),
@@ -330,13 +584,7 @@ class Card {
             'DAMAGE_3_SLOW': new DamageSlowEffectStrategy(),
             'DAMAGE_4_ARMOR': new DamageArmorEffectStrategy(),
             'DAMAGE_4_ALL_SLOW': new DamageSlowEffectStrategy(),
-            'CONSUME_ALL_ENERGY': new ConsumeAllEnergyEffectStrategy(),
-            'DAMAGE_15': new AmbushEffectStrategy(),
-            'STEALTH': new StealthEffectStrategy(),
-            'DRAW_3_DISCARD_1': new DrawDiscardEffectStrategy(),
-            'HEAL_4_ALL': new HealEffectStrategy(),
-            'DISPEL': new DispelEffectStrategy(),
-            'BLOOD_SACRIFICE': new BloodSacrificeEffectStrategy()
+            'DAMAGE_15': new AmbushEffectStrategy()
         };
         
         return strategyMap[effectCode] || new DefaultEffectStrategy();

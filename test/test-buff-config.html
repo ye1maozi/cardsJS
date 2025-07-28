@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buff配置机制测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+        .card-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .card {
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            background: #f9f9f9;
+            min-width: 200px;
+        }
+        .buff-config {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-family: monospace;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Buff配置机制测试</h1>
+    
+    <div class="test-section">
+        <h2>测试说明</h2>
+        <p>此测试验证新的buff配置机制是否正常工作，包括：</p>
+        <ul>
+            <li>新的配置字段（damage, heal, armor, buff等）</li>
+            <li>Card.fromConfig静态方法</li>
+            <li>新的效果策略（DamageWithBuffEffectStrategy等）</li>
+            <li>buff配置的解析和应用</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>配置数据测试</h2>
+        <div id="config-test-results"></div>
+        <button onclick="testConfigData()">测试配置数据</button>
+    </div>
+
+    <div class="test-section">
+        <h2>卡牌创建测试</h2>
+        <div id="card-creation-results"></div>
+        <button onclick="testCardCreation()">测试卡牌创建</button>
+    </div>
+
+    <div class="test-section">
+        <h2>效果执行测试</h2>
+        <div id="effect-execution-results"></div>
+        <button onclick="testEffectExecution()">测试效果执行</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Buff应用测试</h2>
+        <div id="buff-application-results"></div>
+        <button onclick="testBuffApplication()">测试Buff应用</button>
+    </div>
+
+    <div class="test-section">
+        <h2>测试日志</h2>
+        <div id="testLog" class="log"></div>
+        <button onclick="clearLog()">清除日志</button>
+    </div>
+
+    <script src="../js/Character.js"></script>
+    <script src="../js/StealthSystem.js"></script>
+    <script src="../js/CastingSystem.js"></script>
+    <script src="../js/ConfigData.js"></script>
+    <script src="../js/Card.js"></script>
+    <script src="../js/GameState.js"></script>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '';
+        }
+
+        function addResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = message;
+            container.appendChild(div);
+        }
+
+        function clearResults(containerId) {
+            document.getElementById(containerId).innerHTML = '';
+        }
+
+        // 测试配置数据
+        function testConfigData() {
+            clearResults('config-test-results');
+            log('开始测试配置数据...');
+
+            try {
+                if (typeof window.ConfigData === 'undefined') {
+                    throw new Error('ConfigData未定义');
+                }
+
+                const cardConfigs = window.ConfigData.CARD_CONFIG_DATA;
+                if (!Array.isArray(cardConfigs)) {
+                    throw new Error('CARD_CONFIG_DATA不是数组');
+                }
+
+                addResult('config-test-results', `✓ 配置数据加载成功，共${cardConfigs.length}张卡牌`, 'success');
+
+                // 检查新的配置字段
+                let hasNewFields = 0;
+                let hasBuffConfig = 0;
+
+                cardConfigs.forEach((config, index) => {
+                    if (config.damage !== undefined) hasNewFields++;
+                    if (config.heal !== undefined) hasNewFields++;
+                    if (config.armor !== undefined) hasNewFields++;
+                    if (config.buff !== undefined) {
+                        hasBuffConfig++;
+                        log(`发现buff配置: ${config.name} - ${JSON.stringify(config.buff)}`);
+                    }
+                });
+
+                addResult('config-test-results', `✓ 新配置字段: ${hasNewFields}个`, 'success');
+                addResult('config-test-results', `✓ Buff配置: ${hasBuffConfig}个`, 'success');
+
+                // 显示一些示例配置
+                const examples = cardConfigs.filter(config => config.buff).slice(0, 3);
+                examples.forEach(config => {
+                    const configDiv = document.createElement('div');
+                    configDiv.className = 'buff-config';
+                    configDiv.innerHTML = `
+                        <strong>${config.name}</strong><br>
+                        effectCode: ${config.effectCode}<br>
+                        damage: ${config.damage}<br>
+                        buff: ${JSON.stringify(config.buff, null, 2)}
+                    `;
+                    document.getElementById('config-test-results').appendChild(configDiv);
+                });
+
+            } catch (error) {
+                addResult('config-test-results', `✗ 配置数据测试失败: ${error.message}`, 'error');
+                log(`配置数据测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试卡牌创建
+        function testCardCreation() {
+            clearResults('card-creation-results');
+            log('开始测试卡牌创建...');
+
+            try {
+                const cardConfigs = window.ConfigData.CARD_CONFIG_DATA;
+                
+                // 测试使用Card.fromConfig创建卡牌
+                const testCards = [];
+                const buffCards = [];
+
+                cardConfigs.forEach(config => {
+                    const card = Card.fromConfig(config);
+                    testCards.push(card);
+                    
+                    if (config.buff) {
+                        buffCards.push(card);
+                    }
+                });
+
+                addResult('card-creation-results', `✓ 成功创建${testCards.length}张卡牌`, 'success');
+                addResult('card-creation-results', `✓ 其中${buffCards.length}张包含buff配置`, 'success');
+
+                // 验证新字段是否正确设置
+                const damageCards = testCards.filter(card => card.damage !== null);
+                const healCards = testCards.filter(card => card.heal !== null);
+                const armorCards = testCards.filter(card => card.armor !== null);
+
+                addResult('card-creation-results', `✓ damage字段: ${damageCards.length}张`, 'success');
+                addResult('card-creation-results', `✓ heal字段: ${healCards.length}张`, 'success');
+                addResult('card-creation-results', `✓ armor字段: ${armorCards.length}张`, 'success');
+
+                // 显示一些示例卡牌
+                const cardDisplay = document.createElement('div');
+                cardDisplay.className = 'card-display';
+                
+                buffCards.slice(0, 3).forEach(card => {
+                    const cardDiv = document.createElement('div');
+                    cardDiv.className = 'card';
+                    cardDiv.innerHTML = `
+                        <strong>${card.name}</strong><br>
+                        职业: ${card.class}<br>
+                        能量: ${card.energyCost}<br>
+                        伤害: ${card.damage || 'N/A'}<br>
+                        治疗: ${card.heal || 'N/A'}<br>
+                        护甲: ${card.armor || 'N/A'}<br>
+                        Buff: ${card.buff ? JSON.stringify(card.buff) : 'N/A'}
+                    `;
+                    cardDisplay.appendChild(cardDiv);
+                });
+                
+                document.getElementById('card-creation-results').appendChild(cardDisplay);
+
+            } catch (error) {
+                addResult('card-creation-results', `✗ 卡牌创建测试失败: ${error.message}`, 'error');
+                log(`卡牌创建测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试效果执行
+        function testEffectExecution() {
+            clearResults('effect-execution-results');
+            log('开始测试效果执行...');
+
+            try {
+                const gameState = new GameState();
+                gameState.playerCharacter = new Character("测试玩家", "战士");
+                gameState.computerCharacter = new Character("测试电脑", "法师");
+
+                const cardConfigs = window.ConfigData.CARD_CONFIG_DATA;
+                const buffCards = cardConfigs.filter(config => config.buff).slice(0, 3);
+
+                buffCards.forEach(config => {
+                    const card = Card.fromConfig(config);
+                    log(`测试卡牌: ${card.name}`);
+                    
+                    try {
+                        const result = card.executeEffect(gameState, true);
+                        addResult('effect-execution-results', `✓ ${card.name}: ${result}`, 'success');
+                        log(`效果执行成功: ${result}`);
+                    } catch (error) {
+                        addResult('effect-execution-results', `✗ ${card.name}: ${error.message}`, 'error');
+                        log(`效果执行失败: ${error.message}`, 'error');
+                    }
+                });
+
+            } catch (error) {
+                addResult('effect-execution-results', `✗ 效果执行测试失败: ${error.message}`, 'error');
+                log(`效果执行测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试Buff应用
+        function testBuffApplication() {
+            clearResults('buff-application-results');
+            log('开始测试Buff应用...');
+
+            try {
+                const character = new Character("测试角色", "战士");
+                const gameState = new GameState();
+                gameState.computerCharacter = character;
+
+                // 测试不同类型的buff
+                const testConfigs = [
+                    {
+                        name: "测试中毒",
+                        effectCode: "DAMAGE_WITH_BUFF",
+                        damage: 3,
+                        buff: { type: "poison", value: 2, duration: 5 }
+                    },
+                    {
+                        name: "测试减速",
+                        effectCode: "DAMAGE_WITH_BUFF",
+                        damage: 2,
+                        buff: { type: "slow", value: 3, duration: 4 }
+                    },
+                    {
+                        name: "测试潜行",
+                        effectCode: "STEALTH",
+                        buff: { type: "stealth", duration: 6 }
+                    }
+                ];
+
+                testConfigs.forEach(config => {
+                    const card = Card.fromConfig(config);
+                    log(`测试buff: ${config.name}`);
+                    
+                    try {
+                        const result = card.executeEffect(gameState, true);
+                        addResult('buff-application-results', `✓ ${config.name}: ${result}`, 'success');
+                        
+                        // 检查状态效果是否正确添加
+                        const effects = character.statusEffects;
+                        addResult('buff-application-results', `  状态效果数量: ${effects.length}`, 'info');
+                        
+                        effects.forEach(effect => {
+                            addResult('buff-application-results', `  - ${effect.type}: ${effect.duration.toFixed(1)}s`, 'info');
+                        });
+                        
+                    } catch (error) {
+                        addResult('buff-application-results', `✗ ${config.name}: ${error.message}`, 'error');
+                        log(`Buff应用失败: ${error.message}`, 'error');
+                    }
+                });
+
+            } catch (error) {
+                addResult('buff-application-results', `✗ Buff应用测试失败: ${error.message}`, 'error');
+                log(`Buff应用测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 页面加载完成后自动运行一些基础测试
+        window.addEventListener('load', () => {
+            log('页面加载完成，准备开始测试...');
+        });
+    </script>
+</body>
+</html> 

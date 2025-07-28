@@ -93,7 +93,7 @@ class CardSystem {
                 throw new Error(`卡牌配置不存在: ${cardName}`);
             }
             
-            return new Card(config, this);
+            return Card.fromConfig(config);
         } catch (error) {
             this.errorHandler.handleError(error, {
                 type: 'card',

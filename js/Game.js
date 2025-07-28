@@ -58,11 +58,15 @@ class Game {
             
             // 检查游戏状态是否有效
             if (this.gameState && this.gameUI) {
-                // 更新游戏状态
-                this.gameState.update();
-                
-                // 更新UI
-                this.gameUI.update();
+                // 如果游戏已结束，只更新UI显示，不更新游戏逻辑
+                if (this.gameState.gameOver) {
+                    // 游戏结束时只更新UI显示，不更新游戏逻辑
+                    this.gameUI.update();
+                } else {
+                    // 游戏进行中，正常更新
+                    this.gameState.update();
+                    this.gameUI.update();
+                }
             }
             
             // 继续循环
@@ -229,7 +233,7 @@ class Game {
      */
     getVersionInfo() {
         return {
-            version: '1.1.0',
+            version: '2.1.0',
             buildDate: '2025-07-28',
             features: [
                 '完整的卡牌对战系统',

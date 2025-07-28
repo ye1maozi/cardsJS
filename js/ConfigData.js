@@ -12,7 +12,9 @@ const CARD_CONFIG_DATA = [
         castTime: 0,
         castType: "瞬发",
         effect: "对单体目标造成6点伤害",
-        effectCode: "DAMAGE_6",
+        effectCode: "DAMAGE",
+        damage: 6,
+        // 兼容旧版本的value字段
         value1: 6,
         value2: 0,
         value3: 0
@@ -24,7 +26,14 @@ const CARD_CONFIG_DATA = [
         castTime: 0,
         castType: "瞬发",
         effect: "对单体目标造成3点伤害，并使目标速度降低3点，持续5秒",
-        effectCode: "DAMAGE_3_SLOW",
+        effectCode: "DAMAGE_WITH_BUFF",
+        damage: 3,
+        buff: {
+            type: "slow",
+            value: 3,
+            duration: 5
+        },
+        // 兼容旧版本的value字段
         value1: 3,
         value2: 3,
         value3: 5
@@ -36,7 +45,10 @@ const CARD_CONFIG_DATA = [
         castTime: 0,
         castType: "瞬发",
         effect: "对单体目标造成4点伤害，并获得3点护甲",
-        effectCode: "DAMAGE_4_ARMOR",
+        effectCode: "DAMAGE_WITH_ARMOR",
+        damage: 4,
+        armor: 3,
+        // 兼容旧版本的value字段
         value1: 4,
         value2: 3,
         value3: 0
@@ -49,6 +61,9 @@ const CARD_CONFIG_DATA = [
         castType: "瞬发",
         effect: "消耗2点生命值，造成12点伤害",
         effectCode: "BLOOD_SACRIFICE",
+        damage: 12,
+        healthCost: 2,
+        // 兼容旧版本的value字段
         value1: 12,
         value2: 0,
         value3: 0
@@ -60,7 +75,9 @@ const CARD_CONFIG_DATA = [
         castTime: 1,
         castType: "吟唱",
         effect: "吟唱1秒后，对单体目标造成8点伤害",
-        effectCode: "DAMAGE_8",
+        effectCode: "DAMAGE",
+        damage: 8,
+        // 兼容旧版本的value字段
         value1: 8,
         value2: 0,
         value3: 0
@@ -72,7 +89,14 @@ const CARD_CONFIG_DATA = [
         castTime: 0,
         castType: "瞬发",
         effect: "对所有敌人造成4点伤害，并使其速度降低2点",
-        effectCode: "DAMAGE_4_ALL_SLOW",
+        effectCode: "DAMAGE_ALL_WITH_BUFF",
+        damage: 4,
+        buff: {
+            type: "slow",
+            value: 2,
+            duration: 3
+        },
+        // 兼容旧版本的value字段
         value1: 4,
         value2: 2,
         value3: 0
@@ -85,6 +109,8 @@ const CARD_CONFIG_DATA = [
         castType: "瞬发",
         effect: "消耗当前所有能量，对目标释放一次强力的奥术冲击",
         effectCode: "CONSUME_ALL_ENERGY",
+        baseDamage: 2,
+        // 兼容旧版本的value字段
         value1: 2,
         value2: 0,
         value3: 0
@@ -96,7 +122,14 @@ const CARD_CONFIG_DATA = [
         castTime: 0,
         castType: "瞬发",
         effect: "立刻攻击目标，造成6点伤害，并使其获得3层中毒",
-        effectCode: "DAMAGE_6_POISON",
+        effectCode: "DAMAGE_WITH_BUFF",
+        damage: 6,
+        buff: {
+            type: "poison",
+            value: 3,
+            duration: 5
+        },
+        // 兼容旧版本的value字段
         value1: 6,
         value2: 3,
         value3: 0
@@ -108,7 +141,10 @@ const CARD_CONFIG_DATA = [
         castTime: 0,
         castType: "瞬发",
         effect: "只能在潜行状态下使用，立刻攻击，造成15点伤害",
-        effectCode: "DAMAGE_15",
+        effectCode: "DAMAGE",
+        damage: 15,
+        requiresStealth: true,
+        // 兼容旧版本的value字段
         value1: 15,
         value2: 0,
         value3: 0
@@ -121,6 +157,11 @@ const CARD_CONFIG_DATA = [
         castType: "瞬发",
         effect: "立刻进入潜行状态，最多可持续10秒",
         effectCode: "STEALTH",
+        buff: {
+            type: "stealth",
+            duration: 10
+        },
+        // 兼容旧版本的value字段
         value1: 10,
         value2: 0,
         value3: 0
@@ -132,7 +173,9 @@ const CARD_CONFIG_DATA = [
         castTime: 0,
         castType: "瞬发",
         effect: "恢复6点生命值",
-        effectCode: "HEAL_6",
+        effectCode: "HEAL",
+        heal: 6,
+        // 兼容旧版本的value字段
         value1: 6,
         value2: 0,
         value3: 0
@@ -144,7 +187,9 @@ const CARD_CONFIG_DATA = [
         castTime: 0,
         castType: "瞬发",
         effect: "对所有友军恢复4点生命值",
-        effectCode: "HEAL_4_ALL",
+        effectCode: "HEAL_ALL",
+        heal: 4,
+        // 兼容旧版本的value字段
         value1: 4,
         value2: 0,
         value3: 0
@@ -157,6 +202,7 @@ const CARD_CONFIG_DATA = [
         castType: "瞬发",
         effect: "移除目标身上的所有负面效果",
         effectCode: "DISPEL",
+        // 兼容旧版本的value字段
         value1: 0,
         value2: 0,
         value3: 0
@@ -275,7 +321,7 @@ const GAME_CONFIG_DATA = {
     "MaxDeckSize": 30,
     "EnergyPerTurn": 1,
     "MaxEnergy": 10,
-    "GameVersion": "2.0.0",
+    "GameVersion": "2.1.0",
     "DefaultPlayerClass": "战士",
     "DefaultComputerClass": "法师"
 };
