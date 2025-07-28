@@ -77,6 +77,14 @@ class GameUI {
                 this.hideGameOverModal();
             });
         }
+        
+        // 英雄技能按钮
+        const heroSkillBtn = document.getElementById('heroSkillBtn');
+        if (heroSkillBtn) {
+            heroSkillBtn.addEventListener('click', () => {
+                this.onHeroSkillClicked();
+            });
+        }
     }
 
     /**
@@ -101,6 +109,9 @@ class GameUI {
         document.getElementById('playerEnergy').textContent = info.playerEnergy;
         document.getElementById('playerDeckCount').textContent = info.playerDeckCount;
         document.getElementById('playerDiscardCount').textContent = info.playerDiscardCount;
+        document.getElementById('playerHealthPercent').textContent = info.playerHealthPercent + '%';
+        document.getElementById('playerEnergyPercent').textContent = info.playerEnergyPercent + '%';
+        document.getElementById('playerExhaustCount').textContent = info.playerExhaustCount;
 
         // 更新电脑状态
         document.getElementById('computerHealth').textContent = info.computerHealth;
@@ -108,16 +119,63 @@ class GameUI {
         document.getElementById('computerEnergy').textContent = info.computerEnergy;
         document.getElementById('computerDeckCount').textContent = info.computerDeckCount;
         document.getElementById('computerDiscardCount').textContent = info.computerDiscardCount;
+        document.getElementById('computerHandCount').textContent = info.computerHandCount;
+        document.getElementById('computerHealthPercent').textContent = info.computerHealthPercent + '%';
+        document.getElementById('computerEnergyPercent').textContent = info.computerEnergyPercent + '%';
+        document.getElementById('computerExhaustCount').textContent = info.computerExhaustCount;
+
+        // 更新百分比样式（超过100%时高亮显示）
+        const playerHealthPercent = document.getElementById('playerHealthPercent');
+        const playerEnergyPercent = document.getElementById('playerEnergyPercent');
+        const computerHealthPercent = document.getElementById('computerHealthPercent');
+        const computerEnergyPercent = document.getElementById('computerEnergyPercent');
+
+        playerHealthPercent.className = info.playerHealthPercent > 100 ? 'percent over-100' : 'percent';
+        playerEnergyPercent.className = info.playerEnergyPercent > 100 ? 'percent over-100' : 'percent';
+        computerHealthPercent.className = info.computerHealthPercent > 100 ? 'percent over-100' : 'percent';
+        computerEnergyPercent.className = info.computerEnergyPercent > 100 ? 'percent over-100' : 'percent';
+
+        // 更新潜行状态显示
+        this.updateStealthDisplay();
 
         // 更新游戏时间信息
         const gameTime = info.gameTime || 0;
         document.getElementById('turnInfo').textContent = `游戏时间: ${gameTime.toFixed(1)}秒`;
+        
+        // 更新倒计时显示
+        document.getElementById('drawCountdown').textContent = `${info.drawCountdown.toFixed(1)}s`;
+        document.getElementById('energyCountdown').textContent = `${info.energyCountdown.toFixed(1)}s`;
+        
+        // 更新英雄技能显示
+        this.updateHeroSkillDisplay(info);
         
         // 更新吟唱进度条
         this.updateCastingBars();
         
         // 更新状态效果显示
         this.updateStatusEffects();
+    }
+
+    /**
+     * 更新潜行状态显示
+     */
+    updateStealthDisplay() {
+        const playerArea = document.querySelector('.player-area');
+        const computerArea = document.querySelector('.computer-area');
+
+        // 检查玩家潜行状态
+        if (this.gameState.playerCharacter.stealthSystem.isCurrentlyStealthed()) {
+            playerArea.classList.add('stealthed');
+        } else {
+            playerArea.classList.remove('stealthed');
+        }
+
+        // 检查电脑潜行状态
+        if (this.gameState.computerCharacter.stealthSystem.isCurrentlyStealthed()) {
+            computerArea.classList.add('stealthed');
+        } else {
+            computerArea.classList.remove('stealthed');
+        }
     }
     
     /**
@@ -335,17 +393,25 @@ class GameUI {
     }
 
     /**
-     * 卡牌点击事件
+     * 卡牌被点击
      * @param {Card} card - 被点击的卡牌
-     * @param {number} index - 卡牌索引
+     * @param {number} index - 卡牌在手牌中的索引
      */
     onCardClicked(card, index) {
         if (this.gameState.gameOver) {
             return;
         }
 
+        // 检查能量是否足够
         if (!card.canPlay(this.gameState.playerEnergy)) {
-            this.addGameLog(`能量不足，无法使用 ${card.name}`);
+            this.showError("能量不足！");
+            return;
+        }
+
+        // 检查目标是否可攻击（考虑潜行和锁定状态）
+        const target = this.gameState.computerCharacter;
+        if (this.gameState.isAttackCard(card) && !card.canAttackTarget(target)) {
+            this.showError('目标处于潜行，无法被选中！');
             return;
         }
 
@@ -353,24 +419,29 @@ class GameUI {
         card.handIndex = index;
 
         // 使用卡牌
-        const useResult = this.gameState.useCard(card, true);
+        const result = this.gameState.useCard(card, true);
         
-        if (useResult.success) {
-            // 合并使用和效果消息
-            const combinedMessage = `${useResult.message} → ${useResult.effectResult}`;
-            this.addGameLog(combinedMessage);
+        if (result.success) {
+            this.addGameLog(result.message);
+            if (result.effectResult) {
+                this.addGameLog(result.effectResult);
+            }
             
             // 更新UI
             this.updateUI();
             
+            // 如果是吟唱卡牌，显示吟唱进度
+            if (result.isCasting) {
+                this.addGameLog("开始吟唱...");
+            }
+            
             // 检查游戏是否结束
-            const gameEndResult = this.gameState.checkGameEnd();
-            if (gameEndResult.isOver) {
-                this.showGameOverModal(gameEndResult.message);
-                return;
+            if (result.gameOver) {
+                this.addGameLog(result.gameOverMessage);
+                this.showGameOverModal(result.gameOverMessage);
             }
         } else {
-            this.addGameLog(useResult.message);
+            this.showError(result.message);
         }
     }
 
@@ -451,5 +522,47 @@ class GameUI {
     showSuccess(message) {
         console.log(message);
         this.addGameLog(message);
+    }
+    
+    /**
+     * 更新英雄技能显示
+     */
+    updateHeroSkillDisplay(info) {
+        // 更新电脑英雄技能显示
+        const computerSkillDisplay = document.getElementById('computerHeroSkill');
+        if (computerSkillDisplay && info.computerHeroSkill) {
+            const skill = info.computerHeroSkill;
+            const skillNameElement = computerSkillDisplay.querySelector('.skill-name');
+            const skillCooldownElement = computerSkillDisplay.querySelector('.skill-cooldown');
+            
+            skillNameElement.textContent = skill.name;
+            
+            if (skill.currentCooldown > 0) {
+                skillCooldownElement.textContent = `${skill.currentCooldown.toFixed(1)}s`;
+                computerSkillDisplay.className = 'hero-skill-display cooldown';
+            } else {
+                skillCooldownElement.textContent = '可用';
+                computerSkillDisplay.className = 'hero-skill-display available';
+            }
+        }
+    }
+    
+    /**
+     * 英雄技能按钮点击事件
+     */
+    onHeroSkillClicked() {
+        const result = this.gameState.useHeroSkill(true);
+        
+        if (result.success) {
+            this.addGameLog(result.message);
+            if (result.effectResult) {
+                this.addGameLog(`效果: ${result.effectResult}`);
+            }
+        } else {
+            this.showError(result.message);
+        }
+        
+        // 更新UI
+        this.updateUI();
     }
 } 

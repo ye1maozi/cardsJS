@@ -15,6 +15,9 @@ class GameState {
         this.playerCastingSystem = new CastingSystem();
         this.computerCastingSystem = new CastingSystem();
         
+        // 创建英雄技能管理器
+        this.heroSkillManager = new HeroSkillManager();
+        
         // 玩家状态（兼容旧系统）
         this.playerHealth = this.playerCharacter.currentHealth;
         this.playerEnergy = this.playerCharacter.currentEnergy;
@@ -22,6 +25,7 @@ class GameState {
         this.playerDeck = [];
         this.playerHand = [];
         this.playerDiscardPile = [];
+        this.playerExhaustPile = [];
         
         // 电脑状态（兼容旧系统）
         this.computerHealth = this.computerCharacter.currentHealth;
@@ -30,6 +34,7 @@ class GameState {
         this.computerDeck = [];
         this.computerHand = [];
         this.computerDiscardPile = [];
+        this.computerExhaustPile = [];
         
         // 游戏状态
         this.gameOver = false;
@@ -42,7 +47,8 @@ class GameState {
         // 抽牌时间系统
         this.lastPlayerDrawTime = 0;
         this.lastComputerDrawTime = 0;
-        this.drawInterval = 3; // 每3秒抽一张牌
+        this.baseDrawInterval = 3; // 基础抽卡间隔（秒）
+        this.drawInterval = 3; // 当前抽卡间隔（秒）
         
         // 初始化牌组
         this.initializeDeck();
@@ -98,33 +104,31 @@ class GameState {
 
         this.playerDeck = [...playerCards];
         this.computerDeck = [...computerCards];
-        
-        console.log(`从配置加载了 ${this.playerDeck.length} 张卡牌`);
     }
 
     /**
      * 初始化默认牌组
      */
     initializeDefaultDeck() {
-        const defaultCards = [
-            new Card("打击", "战士", 1, 0, "瞬发", "对单体目标造成6点伤害", "DAMAGE_6", 6, 0, 0),
-            new Card("断筋", "战士", 1, 0, "瞬发", "对单体目标造成3点伤害，并使目标速度降低3点，持续5秒", "DAMAGE_3_SLOW", 3, 3, 5),
-            new Card("盾击", "战士", 2, 0, "瞬发", "对单体目标造成4点伤害，并获得3点护甲", "DAMAGE_4_ARMOR", 4, 3, 0),
-            new Card("火球术", "法师", 2, 0, "1秒", "对单体目标造成8点伤害", "DAMAGE_8", 8, 0, 0),
-            new Card("冰霜新星", "法师", 3, 0, "瞬发", "对所有敌人造成4点伤害，并使其速度降低2点", "DAMAGE_4_ALL_SLOW", 4, 2, 0),
-            new Card("奥术冲击", "法师", 1, 0, "瞬发", "消耗当前所有能量，对目标释放一次强力的奥术冲击", "CONSUME_ALL_ENERGY", 2, 0, 0),
-            new Card("毒刃", "盗贼", 1, 0, "瞬发", "立刻攻击目标，造成6点伤害，并使其获得3层中毒", "DAMAGE_6_POISON", 6, 3, 0),
-            new Card("伏击", "盗贼", 2, 0, "瞬发", "只能在潜行状态下使用，立刻攻击，造成15点伤害", "DAMAGE_15", 15, 0, 0),
-            new Card("疾跑", "盗贼", 1, 0, "瞬发", "立刻进入潜行状态，最多可持续10秒", "STEALTH", 10, 0, 0),
-            new Card("治疗术", "牧师", 1, 0, "瞬发", "恢复6点生命值", "HEAL_6", 6, 0, 0),
-            new Card("神圣新星", "牧师", 2, 0, "瞬发", "对所有友军恢复{0}点生命值", "HEAL_4_ALL", 4, 0, 0),
-            new Card("驱散", "牧师", 1, 0, "瞬发", "移除目标身上的所有负面效果", "DISPEL", 0, 0, 0)
-        ];
-
-        this.playerDeck = [...defaultCards];
-        this.computerDeck = [...defaultCards];
+        // 尝试从配置加载卡牌
+        this.loadCardsFromConfig();
         
-        console.log(`使用默认配置加载了 ${this.playerDeck.length} 张卡牌`);
+        // 如果配置为空，使用最小化基础卡牌
+        if (this.playerDeck.length === 0) {
+            console.warn('没有可用的卡牌配置，使用基础卡牌');
+            const basicCards = [
+                new Card("打击", "战士", 1, 0, "瞬发", "对单体目标造成6点伤害", "DAMAGE_6", 6, 0, 0),
+                new Card("火球术", "法师", 1, 0, "瞬发", "对单体目标造成8点伤害", "DAMAGE_8", 8, 0, 0),
+                new Card("治疗术", "牧师", 1, 0, "瞬发", "恢复6点生命值", "HEAL_6", 6, 0, 0),
+                new Card("毒刃", "盗贼", 1, 0, "瞬发", "立刻攻击目标，造成6点伤害，并使其获得3层中毒", "DAMAGE_6_POISON", 6, 3, 0)
+            ];
+            
+            this.playerDeck = [...basicCards];
+            this.computerDeck = [...basicCards];
+        }
+        
+        this.shuffleDeck(this.playerDeck);
+        this.shuffleDeck(this.computerDeck);
     }
 
     /**
@@ -157,13 +161,7 @@ class GameState {
         }
     }
 
-    /**
-     * 开始新回合（已废弃，改为基于时间的抽牌系统）
-     * @deprecated 使用updateTimeBasedDrawing替代
-     */
-    startNewTurn() {
-        console.warn('startNewTurn已废弃，游戏现在使用基于时间的抽牌系统');
-    }
+    // startNewTurn方法已删除，游戏现在使用基于时间的抽牌系统
     
     /**
      * 更新游戏状态（每帧调用）
@@ -187,6 +185,9 @@ class GameState {
         this.playerCastingSystem.updateCasting(deltaTime);
         this.computerCastingSystem.updateCasting(deltaTime);
         
+        // 更新英雄技能系统
+        this.heroSkillManager.update(deltaTime);
+        
         // 更新潜行系统
         this.playerCharacter.stealthSystem.updateStealth(deltaTime);
         this.computerCharacter.stealthSystem.updateStealth(deltaTime);
@@ -195,7 +196,10 @@ class GameState {
         this.updateTimeBasedDrawing(currentTime);
         
         // 检查游戏结束
-        this.checkGameEnd();
+        const gameEndResult = this.checkGameEnd();
+        if (gameEndResult.isOver && this.gameUI) {
+            this.gameUI.showGameOverModal(gameEndResult.message);
+        }
     }
     
     /**
@@ -205,24 +209,23 @@ class GameState {
     updateTimeBasedDrawing(currentTime) {
         const gameTime = (currentTime - this.gameStartTime) / 1000; // 游戏进行时间（秒）
         
-        // 玩家抽牌检查
-        if (gameTime - this.lastPlayerDrawTime >= this.drawInterval) {
+        // 玩家抽牌检查（考虑敏捷属性）
+        const playerDrawInterval = this.calculatePlayerDrawInterval();
+        if (gameTime - this.lastPlayerDrawTime >= playerDrawInterval) {
             this.drawCards(this.playerDeck, this.playerHand, 1, true);
             this.lastPlayerDrawTime = gameTime;
-            console.log(`玩家自动抽牌，游戏时间: ${gameTime.toFixed(1)}秒`);
         }
         
-        // 电脑抽牌检查
-        if (gameTime - this.lastComputerDrawTime >= this.drawInterval) {
+        // 电脑抽牌检查（考虑敏捷属性）
+        const computerDrawInterval = this.computerCharacter.calculateDrawInterval(this.baseDrawInterval);
+        if (gameTime - this.lastComputerDrawTime >= computerDrawInterval) {
             this.drawCards(this.computerDeck, this.computerHand, 1, false);
             this.lastComputerDrawTime = gameTime;
-            console.log(`电脑自动抽牌，游戏时间: ${gameTime.toFixed(1)}秒`);
             
             // 电脑AI决策（在抽牌后）
             setTimeout(() => {
                 if (!this.gameOver) {
                     const aiResult = this.computerTurn();
-                    console.log(`电脑AI决策: ${aiResult}`);
                     
                     // 通知UI显示AI决策结果
                     if (this.gameUI) {
@@ -241,6 +244,8 @@ class GameState {
      * @param {boolean} isPlayer - 是否为玩家
      */
     drawCards(deck, hand, count, isPlayer) {
+        const character = isPlayer ? this.playerCharacter : this.computerCharacter;
+        
         for (let i = 0; i < count; i++) {
             if (deck.length === 0) {
                 // 如果牌组为空，将弃牌堆洗入牌组
@@ -249,6 +254,18 @@ class GameState {
             
             if (deck.length > 0) {
                 hand.push(deck.pop());
+            }
+            
+            // 检查额外抽卡概率
+            if (character.extraDrawChance > 0 && Math.random() < character.extraDrawChance / 100) {
+                if (deck.length === 0) {
+                    this.shuffleDiscardPileIntoDeck(deck, hand, isPlayer);
+                }
+                
+                if (deck.length > 0) {
+                    hand.push(deck.pop());
+                    console.log(`${character.name} 触发额外抽卡概率！`);
+                }
             }
         }
     }
@@ -285,12 +302,33 @@ class GameState {
         if (!character.consumeEnergy(card.energyCost)) {
             return { success: false, message: "能量不足" };
         }
+        
+        // 检查生命消耗（如果有）
+        if (card.healthCost > 0) {
+            if (character.currentHealth <= card.healthCost) {
+                return { success: false, message: "生命值不足" };
+            }
+            character.takeDamage(card.healthCost);
+            
+            // 同步生命值状态
+            if (isPlayer) {
+                this.playerHealth = character.currentHealth;
+            } else {
+                this.computerHealth = character.currentHealth;
+            }
+        }
 
         // 同步能量状态
         if (isPlayer) {
             this.playerEnergy = character.currentEnergy;
         } else {
             this.computerEnergy = character.currentEnergy;
+        }
+
+        // 锁定目标（对于攻击卡牌）
+        if (this.isAttackCard(card)) {
+            const target = isPlayer ? this.computerCharacter : this.playerCharacter;
+            card.lockTarget(target);
         }
 
         // 从手牌移除卡牌（使用索引确保移除正确的卡牌）
@@ -322,12 +360,34 @@ class GameState {
             // 瞬发卡牌，直接执行效果
             const effectResult = card.executeEffect(this, isPlayer);
             
-            // 将卡牌加入弃牌堆
-            discardPile.push(card);
+            // 如果是攻击卡牌，潜行状态下会脱离潜行
+            if (this.isAttackCard(card) && character.stealthSystem.isCurrentlyStealthed()) {
+                character.stealthSystem.exitStealth();
+            }
+            
+            // 消耗型卡牌进入消耗堆，否则进弃牌堆
+            if (card.isExhaust) {
+                (isPlayer ? this.playerExhaustPile : this.computerExhaustPile).push(card);
+            } else {
+                discardPile.push(card);
+            }
+
+            // 检查游戏是否结束
+            const gameEndResult = this.checkGameEnd();
+            if (gameEndResult.isOver) {
+                return {
+                    success: true,
+                    message: `${character.name} 使用了 ${card.name}`,
+                    effectResult: effectResult,
+                    gameOver: true,
+                    winner: gameEndResult.winner,
+                    gameOverMessage: gameEndResult.message
+                };
+            }
 
             return {
                 success: true,
-                message: `${isPlayer ? '玩家' : '电脑'}使用了 ${card.name}`,
+                message: `${character.name} 使用了 ${card.name}`,
                 effectResult: effectResult
             };
         }
@@ -351,13 +411,15 @@ class GameState {
      * @returns {object} 游戏结束状态
      */
     checkGameEnd() {
-        if (this.playerHealth <= 0) {
+        // 检查玩家生命值
+        if (this.playerHealth <= 0 || this.playerCharacter.currentHealth <= 0) {
             this.gameOver = true;
             this.winner = "电脑";
             return { isOver: true, winner: "电脑", message: "电脑获胜！" };
         }
         
-        if (this.computerHealth <= 0) {
+        // 检查电脑生命值
+        if (this.computerHealth <= 0 || this.computerCharacter.currentHealth <= 0) {
             this.gameOver = true;
             this.winner = "玩家";
             return { isOver: true, winner: "玩家", message: "玩家获胜！" };
@@ -385,6 +447,7 @@ class GameState {
         this.playerDeck = [];
         this.playerHand = [];
         this.playerDiscardPile = [];
+        this.playerExhaustPile = [];
 
         // 重置电脑状态
         this.computerHealth = this.computerCharacter.currentHealth;
@@ -393,6 +456,7 @@ class GameState {
         this.computerDeck = [];
         this.computerHand = [];
         this.computerDiscardPile = [];
+        this.computerExhaustPile = [];
 
         // 重置游戏状态
         this.gameOver = false;
@@ -419,6 +483,11 @@ class GameState {
      */
     getGameInfo() {
         const gameTime = (Date.now() - this.gameStartTime) / 1000;
+        
+        // 计算倒计时
+        const drawCountdown = this.calculateDrawCountdown(gameTime);
+        const energyCountdown = this.calculateEnergyCountdown();
+        
         return {
             playerHealth: this.playerHealth,
             playerEnergy: this.playerEnergy,
@@ -426,6 +495,9 @@ class GameState {
             playerDeckCount: this.playerDeck.length,
             playerHandCount: this.playerHand.length,
             playerDiscardCount: this.playerDiscardPile.length,
+            playerExhaustCount: this.playerExhaustPile.length,
+            playerHealthPercent: Math.round(this.playerCharacter.getHealthPercentage()),
+            playerEnergyPercent: Math.round(this.playerCharacter.getEnergyPercentage()),
             
             computerHealth: this.computerHealth,
             computerEnergy: this.computerEnergy,
@@ -433,11 +505,99 @@ class GameState {
             computerDeckCount: this.computerDeck.length,
             computerHandCount: this.computerHand.length,
             computerDiscardCount: this.computerDiscardPile.length,
+            computerExhaustCount: this.computerExhaustPile.length,
+            computerHealthPercent: Math.round(this.computerCharacter.getHealthPercentage()),
+            computerEnergyPercent: Math.round(this.computerCharacter.getEnergyPercentage()),
             
             gameTime: gameTime,
             drawInterval: this.drawInterval,
             gameOver: this.gameOver,
-            winner: this.winner
+            winner: this.winner,
+            
+            // 倒计时信息
+            drawCountdown: drawCountdown,
+            energyCountdown: energyCountdown,
+            
+            // 英雄技能信息
+            playerHeroSkill: this.heroSkillManager.getSkill(this.playerCharacter.characterClass),
+            computerHeroSkill: this.heroSkillManager.getSkill(this.computerCharacter.characterClass)
         };
+    }
+    
+    /**
+     * 计算抽卡倒计时
+     * @param {number} gameTime - 游戏时间
+     * @returns {number} 倒计时秒数
+     */
+    calculateDrawCountdown(gameTime) {
+        // 计算玩家实际抽卡间隔（考虑敏捷属性）
+        const playerDrawInterval = this.calculatePlayerDrawInterval();
+        const timeSinceLastDraw = gameTime - this.lastPlayerDrawTime;
+        const countdown = playerDrawInterval - timeSinceLastDraw;
+        return Math.max(0, countdown);
+    }
+    
+    /**
+     * 计算玩家实际抽卡间隔（考虑敏捷属性）
+     * @returns {number} 实际抽卡间隔
+     */
+    calculatePlayerDrawInterval() {
+        return this.playerCharacter.calculateDrawInterval(this.baseDrawInterval);
+    }
+    
+    /**
+     * 计算能量恢复倒计时
+     * @returns {number} 倒计时秒数
+     */
+    calculateEnergyCountdown() {
+        if (this.playerCharacter.currentEnergy >= this.playerCharacter.maxEnergy) {
+            return 0; // 能量已满
+        }
+        
+        const timeSinceLastRegen = this.playerCharacter.lastEnergyRegen;
+        const regenInterval = 1.0 / this.playerCharacter.energyRegenRate; // 每恢复1点能量需要的时间
+        const countdown = regenInterval - timeSinceLastRegen;
+        return Math.max(0, countdown);
+    }
+    
+    /**
+     * 判断是否为攻击卡牌
+     * @param {Card} card - 卡牌
+     * @returns {boolean} 是否为攻击卡牌
+     */
+    isAttackCard(card) {
+        const attackEffects = [
+            "DAMAGE_6", "DAMAGE_9", "DAMAGE_6_POISON", "DAMAGE_3_SLOW", 
+            "DAMAGE_4_ARMOR", "DAMAGE_4_ALL_SLOW", "CONSUME_ALL_ENERGY", "DAMAGE_15"
+        ];
+        return attackEffects.includes(card.effectCode);
+    }
+    
+    /**
+     * 使用英雄技能
+     * @param {boolean} isPlayer - 是否为玩家使用
+     * @returns {object} 使用结果
+     */
+    useHeroSkill(isPlayer) {
+        const character = isPlayer ? this.playerCharacter : this.computerCharacter;
+        const skill = this.heroSkillManager.getSkill(character.characterClass);
+        
+        if (!skill) {
+            return {
+                success: false,
+                message: "没有可用的英雄技能"
+            };
+        }
+        
+        const result = skill.use(character, this);
+        
+        // 同步状态
+        if (isPlayer) {
+            this.playerEnergy = character.currentEnergy;
+        } else {
+            this.computerEnergy = character.currentEnergy;
+        }
+        
+        return result;
     }
 } 

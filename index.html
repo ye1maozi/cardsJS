@@ -11,7 +11,7 @@
         <!-- 游戏标题 -->
         <header class="game-header">
             <h1>卡牌对战游戏</h1>
-            <div class="version-info">v1.4.7</div>
+            <div class="version-info">v1.6.0</div>
         </header>
 
         <!-- 游戏状态栏 -->
@@ -20,6 +20,7 @@
                 <div class="status-item">
                     <span class="label">玩家生命:</span>
                     <span id="playerHealth" class="value">30</span>
+                    <span id="playerHealthPercent" class="percent">100%</span>
                 </div>
                 <div class="status-item">
                     <span class="label">玩家护甲:</span>
@@ -28,6 +29,7 @@
                 <div class="status-item">
                     <span class="label">玩家能量:</span>
                     <span id="playerEnergy" class="value">3</span>
+                    <span id="playerEnergyPercent" class="percent">100%</span>
                 </div>
                 <div class="status-item">
                     <span class="label">牌组:</span>
@@ -37,16 +39,33 @@
                     <span class="label">弃牌堆:</span>
                     <span id="playerDiscardCount" class="value">0</span>
                 </div>
+                <div class="status-item">
+                    <span class="label">消耗堆:</span>
+                    <span id="playerExhaustCount" class="value">0</span>
+                </div>
             </div>
             
             <div class="turn-indicator">
                 <span id="turnInfo">ready</span>
             </div>
             
+            <!-- 倒计时显示区域 -->
+            <div class="countdown-display">
+                <div class="countdown-item">
+                    <span class="countdown-label">抽卡倒计时:</span>
+                    <span id="drawCountdown" class="countdown-value">3.0s</span>
+                </div>
+                <div class="countdown-item">
+                    <span class="countdown-label">回蓝倒计时:</span>
+                    <span id="energyCountdown" class="countdown-value">1.0s</span>
+                </div>
+            </div>
+            
             <div class="computer-status">
                 <div class="status-item">
                     <span class="label">电脑生命:</span>
                     <span id="computerHealth" class="value">30</span>
+                    <span id="computerHealthPercent" class="percent">100%</span>
                 </div>
                 <div class="status-item">
                     <span class="label">电脑护甲:</span>
@@ -55,6 +74,7 @@
                 <div class="status-item">
                     <span class="label">电脑能量:</span>
                     <span id="computerEnergy" class="value">3</span>
+                    <span id="computerEnergyPercent" class="percent">100%</span>
                 </div>
                 <div class="status-item">
                     <span class="label">牌组:</span>
@@ -63,6 +83,21 @@
                 <div class="status-item">
                     <span class="label">弃牌堆:</span>
                     <span id="computerDiscardCount" class="value">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">手牌:</span>
+                    <span id="computerHandCount" class="value">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">消耗堆:</span>
+                    <span id="computerExhaustCount" class="value">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">英雄技能:</span>
+                    <div id="computerHeroSkill" class="hero-skill-display">
+                        <span class="skill-name">-</span>
+                        <span class="skill-cooldown">-</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -92,6 +127,7 @@
                     <!-- 玩家手牌 -->
                 </div>
                 <div class="player-controls">
+                    <button id="heroSkillBtn" class="btn btn-primary">英雄技能</button>
                     <button id="newGameBtn" class="btn btn-secondary">新游戏</button>
                 </div>
             </div>
@@ -109,14 +145,15 @@
     </div>
 
     <!-- JavaScript文件 -->
-    <script src="js/Character.js?v=4"></script>
-    <script src="js/CastingSystem.js?v=4"></script>
-    <script src="js/Card.js?v=4"></script>
-    <script src="js/CardConfig.js?v=4"></script>
-    <script src="js/BotPlayer.js?v=4"></script>
-    <script src="js/GameState.js?v=4"></script>
-    <script src="js/GameUI.js?v=4"></script>
-    <script src="js/Game.js?v=4"></script>
-    <script src="js/main.js?v=4"></script>
+    <script src="js/Character.js?v=5"></script>
+    <script src="js/CastingSystem.js?v=5"></script>
+    <script src="js/Card.js?v=5"></script>
+    <script src="js/CardConfig.js?v=5"></script>
+    <script src="js/HeroSkill.js?v=5"></script>
+    <script src="js/BotPlayer.js?v=5"></script>
+    <script src="js/GameState.js?v=5"></script>
+    <script src="js/GameUI.js?v=5"></script>
+    <script src="js/Game.js?v=5"></script>
+    <script src="js/main.js?v=5"></script>
 </body>
 </html> 

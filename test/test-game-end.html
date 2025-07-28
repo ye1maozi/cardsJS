@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏结束功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .test-result.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-result.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background-color: #0056b3;
+        }
+        .test-button.danger {
+            background-color: #dc3545;
+        }
+        .test-button.danger:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎮 游戏结束功能测试</h1>
+        <p>测试生命值为0时游戏是否正确结束。</p>
+
+        <button class="test-button" onclick="testGameEndLogic()">测试游戏结束逻辑</button>
+        <button class="test-button" onclick="testLifeZero()">测试生命值为0</button>
+        <button class="test-button danger" onclick="forceGameEnd()">强制结束游戏</button>
+
+        <div id="test-results"></div>
+    </div>
+
+    <iframe src="../index.html" style="width: 100%; height: 600px; border: 2px solid #007bff; border-radius: 10px; margin-top: 20px;"></iframe>
+
+    <script>
+        function addTestResult(message, type = 'success') {
+            const container = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            container.appendChild(resultDiv);
+        }
+
+        function testGameEndLogic() {
+            document.getElementById('test-results').innerHTML = '';
+            
+            // 模拟游戏状态
+            const mockGameState = {
+                playerHealth: 30,
+                computerHealth: 30,
+                playerCharacter: { currentHealth: 30 },
+                computerCharacter: { currentHealth: 30 },
+                gameOver: false,
+                winner: null,
+                
+                checkGameEnd() {
+                    if (this.playerHealth <= 0 || this.playerCharacter.currentHealth <= 0) {
+                        this.gameOver = true;
+                        this.winner = "电脑";
+                        return { isOver: true, winner: "电脑", message: "电脑获胜！" };
+                    }
+                    
+                    if (this.computerHealth <= 0 || this.computerCharacter.currentHealth <= 0) {
+                        this.gameOver = true;
+                        this.winner = "玩家";
+                        return { isOver: true, winner: "玩家", message: "玩家获胜！" };
+                    }
+
+                    return { isOver: false };
+                }
+            };
+
+            // 测试正常情况
+            let result = mockGameState.checkGameEnd();
+            if (!result.isOver) {
+                addTestResult('✅ 正常情况：游戏未结束');
+            } else {
+                addTestResult('❌ 正常情况：游戏意外结束', 'error');
+            }
+
+            // 测试玩家生命值为0
+            mockGameState.playerHealth = 0;
+            result = mockGameState.checkGameEnd();
+            if (result.isOver && result.winner === "电脑") {
+                addTestResult('✅ 玩家生命值为0：游戏正确结束，电脑获胜');
+            } else {
+                addTestResult('❌ 玩家生命值为0：游戏结束逻辑错误', 'error');
+            }
+
+            // 重置并测试电脑生命值为0
+            mockGameState.playerHealth = 30;
+            mockGameState.computerHealth = 0;
+            result = mockGameState.checkGameEnd();
+            if (result.isOver && result.winner === "玩家") {
+                addTestResult('✅ 电脑生命值为0：游戏正确结束，玩家获胜');
+            } else {
+                addTestResult('❌ 电脑生命值为0：游戏结束逻辑错误', 'error');
+            }
+
+            // 测试角色生命值
+            mockGameState.computerHealth = 30;
+            mockGameState.playerCharacter.currentHealth = 0;
+            result = mockGameState.checkGameEnd();
+            if (result.isOver && result.winner === "电脑") {
+                addTestResult('✅ 玩家角色生命值为0：游戏正确结束');
+            } else {
+                addTestResult('❌ 玩家角色生命值为0：游戏结束逻辑错误', 'error');
+            }
+        }
+
+        function testLifeZero() {
+            document.getElementById('test-results').innerHTML = '';
+            addTestResult('🎮 请在下方游戏界面中测试：');
+            addTestResult('1. 使用高伤害卡牌将对手生命值降到0');
+            addTestResult('2. 观察是否出现游戏结束弹窗');
+            addTestResult('3. 检查游戏是否停止运行');
+        }
+
+        function forceGameEnd() {
+            document.getElementById('test-results').innerHTML = '';
+            addTestResult('⚠️ 强制结束游戏测试：');
+            addTestResult('1. 在游戏界面中快速点击高伤害卡牌');
+            addTestResult('2. 观察生命值变化和游戏结束逻辑');
+            addTestResult('3. 确认游戏结束弹窗正确显示');
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最终功能验证测试</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-button.success {
+            background: #28a745;
+        }
+        .test-button.error {
+            background: #dc3545;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        .log-entry.success {
+            color: #28a745;
+        }
+        .log-entry.error {
+            color: #dc3545;
+        }
+        .log-entry.info {
+            color: #007bff;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎮 最终功能验证测试</h1>
+        <p>此页面用于验证所有核心功能是否正常工作</p>
+
+        <div class="test-section">
+            <h2>📋 测试概览</h2>
+            <div id="testOverview" class="status info">
+                准备开始测试...
+            </div>
+            <button class="test-button" onclick="runAllTests()">运行所有测试</button>
+            <button class="test-button" onclick="clearLog()">清空日志</button>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 核心功能测试</h2>
+            <button class="test-button" onclick="testCoreSystems()">测试核心系统</button>
+            <button class="test-button" onclick="testCharacterSystem()">测试角色系统</button>
+            <button class="test-button" onclick="testCardSystem()">测试卡牌系统</button>
+            <button class="test-button" onclick="testCastingSystem()">测试吟唱系统</button>
+            <button class="test-button" onclick="testStealthSystem()">测试潜行系统</button>
+            <button class="test-button" onclick="testHeroSkills()">测试英雄技能</button>
+        </div>
+
+        <div class="test-section">
+            <h2>🎮 游戏机制测试</h2>
+            <button class="test-button" onclick="testGameMechanics()">测试游戏机制</button>
+            <button class="test-button" onclick="testTimeBasedSystems()">测试时间系统</button>
+            <button class="test-button" onclick="testUIComponents()">测试UI组件</button>
+            <button class="test-button" onclick="testStatusEffects()">测试状态效果</button>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 高级功能测试</h2>
+            <button class="test-button" onclick="testAdvancedFeatures()">测试高级功能</button>
+            <button class="test-button" onclick="testPerformance()">性能测试</button>
+            <button class="test-button" onclick="testErrorHandling()">错误处理测试</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 测试结果</h2>
+            <div id="testResults" class="status info">
+                等待测试结果...
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 测试日志</h2>
+            <div id="testLog" class="log"></div>
+        </div>
+    </div>
+
+    <!-- 引入游戏脚本 -->
+    <script src="../js/Character.js"></script>
+    <script src="../js/CastingSystem.js"></script>
+    <script src="../js/Card.js"></script>
+    <script src="../js/CardConfig.js"></script>
+    <script src="../js/HeroSkill.js"></script>
+    <script src="../js/BotPlayer.js"></script>
+    <script src="../js/GameState.js"></script>
+    <script src="../js/GameUI.js"></script>
+    <script src="../js/Game.js"></script>
+
+    <script>
+        let testResults = {
+            total: 0,
+            passed: 0,
+            failed: 0,
+            tests: []
+        };
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('testLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '';
+        }
+
+        function updateTestResults() {
+            const resultsDiv = document.getElementById('testResults');
+            const successRate = testResults.total > 0 ? (testResults.passed / testResults.total * 100).toFixed(1) : 0;
+            resultsDiv.innerHTML = `
+                总测试数: ${testResults.total} | 
+                通过: ${testResults.passed} | 
+                失败: ${testResults.failed} | 
+                成功率: ${successRate}%
+            `;
+            resultsDiv.className = `status ${testResults.failed === 0 ? 'success' : 'error'}`;
+        }
+
+        function runTest(testName, testFunction) {
+            testResults.total++;
+            try {
+                const result = testFunction();
+                if (result) {
+                    testResults.passed++;
+                    log(`✅ ${testName} - 通过`, 'success');
+                    return true;
+                } else {
+                    testResults.failed++;
+                    log(`❌ ${testName} - 失败`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                testResults.failed++;
+                log(`❌ ${testName} - 错误: ${error.message}`, 'error');
+                return false;
+            } finally {
+                updateTestResults();
+            }
+        }
+
+        function testCoreSystems() {
+            log('=== 开始测试核心系统 ===', 'info');
+            
+            runTest('Character类创建', () => {
+                const character = new Character('测试角色', '战士');
+                return character.name === '测试角色' && character.characterClass === '战士';
+            });
+
+            runTest('GameState类创建', () => {
+                const gameState = new GameState();
+                return gameState.playerCharacter && gameState.computerCharacter;
+            });
+
+            runTest('Card类创建', () => {
+                const card = new Card('测试卡牌', '战士', 1, 0, '瞬发', '测试效果');
+                return card.name === '测试卡牌' && card.class === '战士';
+            });
+
+            runTest('CastingSystem类创建', () => {
+                const castingSystem = new CastingSystem();
+                return !castingSystem.isCurrentlyCasting();
+            });
+
+            log('=== 核心系统测试完成 ===', 'info');
+        }
+
+        function testCharacterSystem() {
+            log('=== 开始测试角色系统 ===', 'info');
+            
+            runTest('角色属性初始化', () => {
+                const character = new Character('测试', '战士');
+                return character.maxHealth === 35 && character.strength === 2;
+            });
+
+            runTest('角色伤害计算', () => {
+                const character = new Character('测试', '战士');
+                const damage = character.calculateDamage(10);
+                return damage === 12; // 基础伤害10 + 强度2
+            });
+
+            runTest('角色治疗', () => {
+                const character = new Character('测试', '战士');
+                character.currentHealth = 20;
+                character.heal(10);
+                return character.currentHealth === 30;
+            });
+
+            runTest('角色能量消耗', () => {
+                const character = new Character('测试', '战士');
+                character.currentEnergy = 5;
+                const result = character.consumeEnergy(3);
+                return result && character.currentEnergy === 2;
+            });
+
+            log('=== 角色系统测试完成 ===', 'info');
+        }
+
+        function testCardSystem() {
+            log('=== 开始测试卡牌系统 ===', 'info');
+            
+            runTest('卡牌效果执行', () => {
+                const card = new Card('打击', '战士', 1, 0, '瞬发', '造成6点伤害', 'DAMAGE_6', 6, 0, 0);
+                const gameState = new GameState();
+                const result = card.executeEffect(gameState, true);
+                return result.includes('6点伤害');
+            });
+
+            runTest('卡牌能量检查', () => {
+                const card = new Card('火球术', '法师', 2, 1, '吟唱', '造成9点伤害', 'DAMAGE_9', 9, 0, 0);
+                return !card.canPlay(1) && card.canPlay(2);
+            });
+
+            runTest('伏击卡牌潜行检查', () => {
+                const card = new Card('伏击', '盗贼', 2, 0, '瞬发', '潜行状态使用', 'DAMAGE_15', 15, 0, 0);
+                const gameState = new GameState();
+                const result = card.executeEffect(gameState, true);
+                return result.includes('只能在潜行状态下使用');
+            });
+
+            log('=== 卡牌系统测试完成 ===', 'info');
+        }
+
+        function testCastingSystem() {
+            log('=== 开始测试吟唱系统 ===', 'info');
+            
+            runTest('吟唱开始', () => {
+                const castingSystem = new CastingSystem();
+                const card = new Card('火球术', '法师', 1, 1, '吟唱', '造成9点伤害');
+                const character = new Character('测试', '法师');
+                const result = castingSystem.startCasting(card, character, null);
+                return result && castingSystem.isCurrentlyCasting();
+            });
+
+            runTest('吟唱进度', () => {
+                const castingSystem = new CastingSystem();
+                const card = new Card('火球术', '法师', 1, 1, '吟唱', '造成9点伤害');
+                const character = new Character('测试', '法师');
+                castingSystem.startCasting(card, character, null);
+                castingSystem.updateCasting(0.5);
+                const progress = castingSystem.getCastProgress();
+                return progress > 0 && progress < 1;
+            });
+
+            runTest('吟唱中断', () => {
+                const castingSystem = new CastingSystem();
+                const card = new Card('火球术', '法师', 1, 1, '吟唱', '造成9点伤害');
+                const character = new Character('测试', '法师');
+                castingSystem.startCasting(card, character, null);
+                castingSystem.interruptCasting();
+                return !castingSystem.isCurrentlyCasting();
+            });
+
+            log('=== 吟唱系统测试完成 ===', 'info');
+        }
+
+        function testStealthSystem() {
+            log('=== 开始测试潜行系统 ===', 'info');
+            
+            runTest('进入潜行', () => {
+                const stealthSystem = new StealthSystem();
+                const result = stealthSystem.enterStealth(10);
+                return result && stealthSystem.isCurrentlyStealthed();
+            });
+
+            runTest('潜行时间更新', () => {
+                const stealthSystem = new StealthSystem();
+                stealthSystem.enterStealth(10);
+                stealthSystem.updateStealth(5);
+                const info = stealthSystem.getStealthInfo();
+                return info.duration === 5;
+            });
+
+            runTest('潜行中断', () => {
+                const stealthSystem = new StealthSystem();
+                stealthSystem.enterStealth(10);
+                stealthSystem.onTakeDamage(5);
+                return !stealthSystem.isCurrentlyStealthed();
+            });
+
+            log('=== 潜行系统测试完成 ===', 'info');
+        }
+
+        function testHeroSkills() {
+            log('=== 开始测试英雄技能 ===', 'info');
+            
+            runTest('英雄技能管理器', () => {
+                const manager = new HeroSkillManager();
+                const skill = manager.getSkill('战士');
+                return skill && skill.name === '狂暴';
+            });
+
+            runTest('技能冷却', () => {
+                const skill = new BerserkerRage();
+                skill.currentCooldown = 10;
+                skill.update(5);
+                return skill.currentCooldown === 5;
+            });
+
+            runTest('技能使用检查', () => {
+                const skill = new BerserkerRage();
+                const character = new Character('测试', '战士');
+                character.currentEnergy = 5;
+                return skill.canUse(character);
+            });
+
+            log('=== 英雄技能测试完成 ===', 'info');
+        }
+
+        function testGameMechanics() {
+            log('=== 开始测试游戏机制 ===', 'info');
+            
+            runTest('游戏状态更新', () => {
+                const gameState = new GameState();
+                gameState.update();
+                return gameState.playerHealth > 0 && gameState.computerHealth > 0;
+            });
+
+            runTest('抽卡机制', () => {
+                const gameState = new GameState();
+                const initialHandSize = gameState.playerHand.length;
+                gameState.drawCards(gameState.playerDeck, gameState.playerHand, 1, true);
+                return gameState.playerHand.length === initialHandSize + 1;
+            });
+
+            runTest('游戏结束检查', () => {
+                const gameState = new GameState();
+                gameState.playerHealth = 0;
+                gameState.checkGameEnd();
+                return gameState.gameOver && gameState.winner === '电脑';
+            });
+
+            log('=== 游戏机制测试完成 ===', 'info');
+        }
+
+        function testTimeBasedSystems() {
+            log('=== 开始测试时间系统 ===', 'info');
+            
+            runTest('抽卡间隔计算', () => {
+                const character = new Character('测试', '盗贼');
+                const interval = character.calculateDrawInterval(3);
+                return interval < 3; // 盗贼敏捷高，间隔应该更短
+            });
+
+            runTest('能量恢复计算', () => {
+                const character = new Character('测试', '法师');
+                const regenInterval = 1.0 / character.energyRegenRate;
+                return regenInterval > 0;
+            });
+
+            runTest('吟唱时间计算', () => {
+                const character = new Character('测试', '法师');
+                const castTime = character.calculateCastTime(2);
+                return castTime < 2; // 法师精神高，吟唱时间应该更短
+            });
+
+            log('=== 时间系统测试完成 ===', 'info');
+        }
+
+        function testUIComponents() {
+            log('=== 开始测试UI组件 ===', 'info');
+            
+            runTest('游戏信息获取', () => {
+                const gameState = new GameState();
+                const info = gameState.getGameInfo();
+                return info.playerHealth > 0 && info.computerHealth > 0;
+            });
+
+            runTest('倒计时计算', () => {
+                const gameState = new GameState();
+                const drawCountdown = gameState.calculateDrawCountdown(0);
+                const energyCountdown = gameState.calculateEnergyCountdown();
+                return drawCountdown >= 0 && energyCountdown >= 0;
+            });
+
+            log('=== UI组件测试完成 ===', 'info');
+        }
+
+        function testStatusEffects() {
+            log('=== 开始测试状态效果 ===', 'info');
+            
+            runTest('中毒效果', () => {
+                const character = new Character('测试', '战士');
+                const poisonEffect = new PoisonEffect(3, 5);
+                character.addStatusEffect(poisonEffect);
+                return character.statusEffects.length === 1;
+            });
+
+            runTest('减速效果', () => {
+                const character = new Character('测试', '战士');
+                const slowEffect = new SlowEffect(2, 3);
+                character.addStatusEffect(slowEffect);
+                return character.getStatusEffect('slow') === slowEffect;
+            });
+
+            runTest('状态效果移除', () => {
+                const character = new Character('测试', '战士');
+                const poisonEffect = new PoisonEffect(3, 5);
+                character.addStatusEffect(poisonEffect);
+                character.removeStatusEffect('poison');
+                return character.statusEffects.length === 0;
+            });
+
+            log('=== 状态效果测试完成 ===', 'info');
+        }
+
+        function testAdvancedFeatures() {
+            log('=== 开始测试高级功能 ===', 'info');
+            
+            runTest('护甲系统', () => {
+                const character = new Character('测试', '战士');
+                const damage = character.takeDamage(10);
+                return damage >= 0;
+            });
+
+            runTest('生命消耗卡牌', () => {
+                const card = new Card('血祭', '战士', 0, 0, '瞬发', '消耗生命造成伤害', 'BLOOD_SACRIFICE', 12, 0, 0);
+                card.healthCost = 2;
+                return card.healthCost === 2;
+            });
+
+            runTest('能量消耗降低', () => {
+                const character = new Character('测试', '战士');
+                character.energyCostReduction = 1;
+                const result = character.consumeEnergy(3);
+                return result && character.currentEnergy === 7; // 10 - (3-1) = 8
+            });
+
+            log('=== 高级功能测试完成 ===', 'info');
+        }
+
+        function testPerformance() {
+            log('=== 开始性能测试 ===', 'info');
+            
+            runTest('大量卡牌处理', () => {
+                const startTime = performance.now();
+                const cards = [];
+                for (let i = 0; i < 1000; i++) {
+                    cards.push(new Card(`卡牌${i}`, '战士', 1, 0, '瞬发', '测试效果'));
+                }
+                const endTime = performance.now();
+                return (endTime - startTime) < 100; // 应该在100ms内完成
+            });
+
+            runTest('游戏状态更新性能', () => {
+                const gameState = new GameState();
+                const startTime = performance.now();
+                for (let i = 0; i < 100; i++) {
+                    gameState.update();
+                }
+                const endTime = performance.now();
+                return (endTime - startTime) < 50; // 应该在50ms内完成
+            });
+
+            log('=== 性能测试完成 ===', 'info');
+        }
+
+        function testErrorHandling() {
+            log('=== 开始错误处理测试 ===', 'info');
+            
+            runTest('无效卡牌处理', () => {
+                try {
+                    const card = new Card('', '', -1, -1, '', '');
+                    return true; // 应该不会抛出异常
+                } catch (error) {
+                    return false;
+                }
+            });
+
+            runTest('空牌组处理', () => {
+                const gameState = new GameState();
+                gameState.playerDeck = [];
+                gameState.playerDiscardPile = [];
+                gameState.drawCards(gameState.playerDeck, gameState.playerHand, 1, true);
+                return gameState.playerHand.length === 0; // 应该无法抽牌
+            });
+
+            runTest('无效角色状态', () => {
+                const character = new Character('测试', '战士');
+                character.currentHealth = -10;
+                return character.isDead(); // 应该返回true
+            });
+
+            log('=== 错误处理测试完成 ===', 'info');
+        }
+
+        function runAllTests() {
+            log('🚀 开始运行所有测试...', 'info');
+            testResults = { total: 0, passed: 0, failed: 0, tests: [] };
+            
+            // 运行所有测试
+            testCoreSystems();
+            testCharacterSystem();
+            testCardSystem();
+            testCastingSystem();
+            testStealthSystem();
+            testHeroSkills();
+            testGameMechanics();
+            testTimeBasedSystems();
+            testUIComponents();
+            testStatusEffects();
+            testAdvancedFeatures();
+            testPerformance();
+            testErrorHandling();
+            
+            const successRate = (testResults.passed / testResults.total * 100).toFixed(1);
+            log(`🎉 所有测试完成！成功率: ${successRate}%`, 'success');
+            
+            if (testResults.failed === 0) {
+                log('🎊 恭喜！所有测试都通过了！', 'success');
+            } else {
+                log(`⚠️ 有 ${testResults.failed} 个测试失败，请检查相关功能`, 'error');
+            }
+        }
+
+        // 页面加载完成后的初始化
+        window.addEventListener('load', () => {
+            log('📋 最终功能验证测试页面已加载', 'info');
+            log('点击"运行所有测试"按钮开始全面测试', 'info');
+            updateTestResults();
+        });
+    </script>
+</body>
+</html> 

@@ -94,6 +94,67 @@ body {
     border-radius: 20px;
 }
 
+/* 倒计时显示 */
+.countdown-display {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.countdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-width: 150px;
+}
+
+.countdown-label {
+    color: #ccc;
+    font-size: 0.9em;
+}
+
+.countdown-value {
+    color: #fff;
+    font-size: 1em;
+    font-weight: bold;
+    background: rgba(255,255,255,0.2);
+    padding: 4px 8px;
+    border-radius: 4px;
+    min-width: 50px;
+    text-align: center;
+}
+
+/* 英雄技能显示 */
+.hero-skill-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.skill-name {
+    color: #fff;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.skill-cooldown {
+    color: #ccc;
+    font-size: 0.7em;
+}
+
+.hero-skill-display.available .skill-name {
+    color: #4CAF50;
+}
+
+.hero-skill-display.cooldown .skill-cooldown {
+    color: #f44336;
+}
+
 /* 游戏区域 */
 .game-area {
     flex: 1;
@@ -568,4 +629,64 @@ body {
     .start-buttons .btn {
         width: 200px;
     }
+} 
+
+/* 潜行状态样式 */
+.stealth-indicator {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #00ff00;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.7em;
+    font-weight: bold;
+    z-index: 10;
+    animation: stealth-pulse 2s infinite;
+}
+
+@keyframes stealth-pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+.character-area.stealthed {
+    position: relative;
+    border: 2px solid #00ff00;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+.character-area.stealthed::before {
+    content: "潜行";
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: #00ff00;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.8em;
+    font-weight: bold;
+    z-index: 10;
+}
+
+/* 百分比显示样式 */
+.percent {
+    font-size: 0.8em;
+    color: #aaa;
+    margin-left: 5px;
+}
+
+.percent.over-100 {
+    color: #ff6b6b;
+    font-weight: bold;
+}
+
+/* 消耗堆样式 */
+.exhaust-count {
+    color: #ff8c00;
+    font-weight: bold;
 } 

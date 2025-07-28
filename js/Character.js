@@ -109,8 +109,12 @@ class Character {
     updateEnergyRegeneration(deltaTime) {
         if (this.energyRegenRate > 0 && this.currentEnergy < this.maxEnergy) {
             this.lastEnergyRegen += deltaTime;
-            if (this.lastEnergyRegen >= 1.0) { // 每秒恢复一次
-                this.gainEnergy(this.energyRegenRate);
+            
+            // 计算每恢复1点能量需要的时间
+            const regenInterval = 1.0 / this.energyRegenRate;
+            
+            if (this.lastEnergyRegen >= regenInterval) {
+                this.gainEnergy(1); // 每次恢复1点
                 this.lastEnergyRegen = 0;
             }
         }
@@ -137,6 +141,11 @@ class Character {
      * @returns {number} 实际伤害
      */
     takeDamage(damage) {
+        // 潜行状态下受到伤害会脱离潜行
+        if (this.stealthSystem.isCurrentlyStealthed()) {
+            this.stealthSystem.exitStealth();
+        }
+        
         // 获取护甲值
         let armor = 0;
         if (this.gameState) {

@@ -528,4 +528,13 @@ class BotPlayer {
         };
         this.adjustPersonalityByDifficulty();
     }
+
+    chooseTarget(gameState) {
+        // 只选择未处于潜行状态的目标
+        const target = gameState.playerCharacter;
+        if (target.stealthSystem && target.stealthSystem.isCurrentlyStealthed()) {
+            return null; // 无法选中
+        }
+        return target;
+    }
 } 
