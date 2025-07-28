@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>选择对手功能测试</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-button {
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .test-button:hover {
+            background-color: #0056b3;
+        }
+        .test-result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>选择对手功能测试</h1>
+        <p>测试选择对手界面的功能：</p>
+        
+        <button class="test-button" onclick="testOpponentSelection()">测试选择对手界面</button>
+        <button class="test-button" onclick="testMonsterConfig()">测试Monster配置</button>
+        <button class="test-button" onclick="testGameWithOpponent()">测试游戏启动</button>
+        
+        <div id="testResult" class="test-result"></div>
+    </div>
+
+    <!-- 游戏结束对话框 -->
+    <div id="gameOverModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2 id="gameOverTitle">游戏结束</h2>
+            <p id="gameOverMessage">这是一个测试消息</p>
+            <button id="restartBtn" class="btn btn-primary">重新开始</button>
+            <button id="closeModalBtn" class="btn btn-secondary">关闭</button>
+        </div>
+    </div>
+
+    <!-- JavaScript文件 -->
+    <script src="../js/ConfigData.js"></script>
+    <script src="../js/Character.js"></script>
+    <script src="../js/CastingSystem.js"></script>
+    <script src="../js/Card.js"></script>
+    <script src="../js/CardConfig.js"></script>
+    <script src="../js/ConfigManager.js"></script>
+    <script src="../js/ConfigValidator.js"></script>
+    <script src="../js/HeroSkill.js"></script>
+    <script src="../js/BotPlayer.js"></script>
+    <script src="../js/MonsterConfigManager.js"></script>
+    <script src="../js/GameState.js"></script>
+    <script src="../js/GameUI.js"></script>
+    <script src="../js/Game.js"></script>
+
+    <script>
+        let game = null;
+        let gameUI = null;
+        let gameState = null;
+
+        // 初始化测试
+        async function initTest() {
+            try {
+                // 加载配置
+                await ConfigManager.loadAllConfigs();
+                
+                console.log('测试环境初始化完成');
+                document.getElementById('testResult').innerHTML = '<p style="color: green;">测试环境初始化完成</p>';
+                
+            } catch (error) {
+                console.error('测试初始化失败:', error);
+                document.getElementById('testResult').innerHTML = '<p style="color: red;">测试初始化失败: ' + error.message + '</p>';
+            }
+        }
+
+        // 测试选择对手界面
+        function testOpponentSelection() {
+            const monsters = ConfigData.MONSTER_CONFIG_DATA || [];
+            let result = '<h3>Monster配置列表：</h3>';
+            
+            monsters.forEach(monster => {
+                result += `
+                    <div style="margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                        <strong>${monster.name}</strong> (${monster.class})<br>
+                        难度: ${'★'.repeat(monster.difficulty)}<br>
+                        生命值: ${monster.maxHealth} | 能量: ${monster.maxEnergy}<br>
+                        描述: ${monster.description}
+                    </div>
+                `;
+            });
+            
+            document.getElementById('testResult').innerHTML = result;
+        }
+
+        // 测试Monster配置
+        function testMonsterConfig() {
+            const monsters = ConfigData.MONSTER_CONFIG_DATA || [];
+            if (monsters.length === 0) {
+                document.getElementById('testResult').innerHTML = '<p style="color: red;">没有找到Monster配置</p>';
+                return;
+            }
+            
+            const testMonster = monsters[0]; // 使用第一个monster进行测试
+            const characterConfig = MonsterConfigManager.createCharacterFromMonster(testMonster);
+            
+            let result = `
+                <h3>Monster配置测试结果：</h3>
+                <p><strong>原始配置:</strong></p>
+                <ul>
+                    <li>名称: ${testMonster.name}</li>
+                    <li>职业: ${testMonster.class}</li>
+                    <li>难度: ${testMonster.difficulty}</li>
+                    <li>最大生命值: ${testMonster.maxHealth}</li>
+                    <li>最大能量: ${testMonster.maxEnergy}</li>
+                </ul>
+                <p><strong>转换后的角色配置:</strong></p>
+                <ul>
+                    <li>职业: ${characterConfig.class}</li>
+                    <li>最大生命值: ${characterConfig.maxHealth}</li>
+                    <li>最大能量: ${characterConfig.maxEnergy}</li>
+                    <li>初始能量: ${characterConfig.initialEnergy}</li>
+                </ul>
+            `;
+            
+            document.getElementById('testResult').innerHTML = result;
+        }
+
+        // 测试游戏启动
+        async function testGameWithOpponent() {
+            try {
+                const monsters = ConfigData.MONSTER_CONFIG_DATA || [];
+                if (monsters.length === 0) {
+                    document.getElementById('testResult').innerHTML = '<p style="color: red;">没有找到Monster配置</p>';
+                    return;
+                }
+                
+                const testMonster = monsters[0]; // 使用第一个monster进行测试
+                
+                // 创建游戏实例
+                game = new Game(testMonster);
+                await game.initialize();
+                
+                // 创建游戏UI
+                gameUI = new GameUI(game.gameState);
+                
+                // 显示对手信息
+                gameUI.showOpponentInfo();
+                
+                let result = `
+                    <h3>游戏启动测试结果：</h3>
+                    <p><strong>对手信息:</strong></p>
+                    <ul>
+                        <li>名称: ${testMonster.name}</li>
+                        <li>职业: ${testMonster.class}</li>
+                        <li>难度: ${'★'.repeat(testMonster.difficulty)}</li>
+                        <li>描述: ${testMonster.description}</li>
+                    </ul>
+                    <p><strong>角色状态:</strong></p>
+                    <ul>
+                        <li>电脑生命值: ${game.gameState.computerCharacter.currentHealth}/${game.gameState.computerCharacter.maxHealth}</li>
+                        <li>电脑能量: ${game.gameState.computerCharacter.currentEnergy}/${game.gameState.computerCharacter.maxEnergy}</li>
+                        <li>电脑职业: ${game.gameState.computerCharacter.characterClass}</li>
+                    </ul>
+                    <p style="color: green;">游戏启动成功！</p>
+                `;
+                
+                document.getElementById('testResult').innerHTML = result;
+                
+            } catch (error) {
+                console.error('游戏启动测试失败:', error);
+                document.getElementById('testResult').innerHTML = '<p style="color: red;">游戏启动测试失败: ' + error.message + '</p>';
+            }
+        }
+
+        // 页面加载完成后初始化测试
+        document.addEventListener('DOMContentLoaded', initTest);
+    </script>
+</body>
+</html> 

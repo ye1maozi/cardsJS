@@ -2,10 +2,22 @@
  * 游戏状态类 - 对应C#版本的GameState类
  */
 class GameState {
-    constructor() {
+    constructor(monsterConfig = null) {
+        // 保存monster配置
+        this.monsterConfig = monsterConfig;
+        
         // 创建角色系统
         this.playerCharacter = new Character("玩家", "战士");
-        this.computerCharacter = new Character("电脑", "法师");
+        
+        // 根据monster配置创建电脑角色
+        if (this.monsterConfig) {
+            const characterConfig = MonsterConfigManager.createCharacterFromMonster(this.monsterConfig);
+            this.computerCharacter = new Character(this.monsterConfig.name, characterConfig.class, this.monsterConfig);
+            // 应用monster的属性配置
+            this.applyMonsterAttributes();
+        } else {
+            this.computerCharacter = new Character("电脑", "法师");
+        }
         
         // 为角色设置游戏状态引用
         this.playerCharacter.gameState = this;
@@ -46,6 +58,9 @@ class GameState {
         this.gameStartTime = Date.now();
         
         console.log('GameState初始化完成，gameStartTime:', this.gameStartTime);
+        if (this.monsterConfig) {
+            console.log(`使用monster配置: ${this.monsterConfig.name}`);
+        }
         
         // 抽牌时间系统
         this.lastPlayerDrawTime = 0;
@@ -98,15 +113,88 @@ class GameState {
             const classCards = CardConfigManager.getCardConfigsByClass(cardClass);
             for (let i = 0; i < 3 && i < classCards.length; i++) {
                 const card = CardConfigManager.createCard(classCards[i]);
-                if (card) {
-                    playerCards.push(card);
+                playerCards.push(card);
+            }
+        }
+
+        // 根据monster配置构建电脑牌组
+        if (this.monsterConfig) {
+            computerCards.push(...this.buildMonsterDeck());
+        } else {
+            // 使用默认牌组构建方式
+            for (const cardClass of classes) {
+                const classCards = CardConfigManager.getCardConfigsByClass(cardClass);
+                for (let i = 0; i < 3 && i < classCards.length; i++) {
+                    const card = CardConfigManager.createCard(classCards[i]);
                     computerCards.push(card);
                 }
             }
         }
 
+        // 设置牌组
         this.playerDeck = [...playerCards];
         this.computerDeck = [...computerCards];
+
+        // 洗牌
+        this.shuffleDeck(this.playerDeck);
+        this.shuffleDeck(this.computerDeck);
+
+        console.log(`牌组初始化完成 - 玩家: ${this.playerDeck.length}张, 电脑: ${this.computerDeck.length}张`);
+    }
+
+    /**
+     * 根据monster配置构建牌组
+     * @returns {Array} 电脑牌组
+     */
+    buildMonsterDeck() {
+        if (!this.monsterConfig) {
+            return [];
+        }
+
+        const computerCards = [];
+        const preferredCards = MonsterConfigManager.getPreferredCards(this.monsterConfig);
+        const avoidCards = MonsterConfigManager.getAvoidCards(this.monsterConfig);
+        const monsterClass = this.monsterConfig.class;
+
+        // 优先添加monster偏好的卡牌
+        for (const cardName of preferredCards) {
+            const cardConfig = CardConfigManager.getCardConfigByName(cardName);
+            if (cardConfig) {
+                const card = CardConfigManager.createCard(cardConfig);
+                computerCards.push(card);
+                console.log(`添加monster偏好卡牌: ${cardName}`);
+            }
+        }
+
+        // 添加同职业的其他卡牌（排除避免的卡牌）
+        const classCards = CardConfigManager.getCardConfigsByClass(monsterClass);
+        for (const cardConfig of classCards) {
+            if (!avoidCards.includes(cardConfig.name) && !preferredCards.includes(cardConfig.name)) {
+                const card = CardConfigManager.createCard(cardConfig);
+                computerCards.push(card);
+                console.log(`添加同职业卡牌: ${cardConfig.name}`);
+            }
+        }
+
+        // 如果卡牌数量不足，添加其他职业的卡牌
+        if (computerCards.length < 12) {
+            const allClasses = ['战士', '法师', '盗贼', '牧师'];
+            for (const cardClass of allClasses) {
+                if (cardClass === monsterClass) continue;
+                
+                const classCards = CardConfigManager.getCardConfigsByClass(cardClass);
+                for (const cardConfig of classCards) {
+                    if (!avoidCards.includes(cardConfig.name) && computerCards.length < 12) {
+                        const card = CardConfigManager.createCard(cardConfig);
+                        computerCards.push(card);
+                        console.log(`添加其他职业卡牌: ${cardConfig.name}`);
+                    }
+                }
+            }
+        }
+
+        console.log(`Monster牌组构建完成: ${computerCards.length}张卡牌`);
+        return computerCards;
     }
 
     /**
@@ -450,7 +538,7 @@ class GameState {
     computerTurn() {
         // 使用BotPlayer进行智能决策
         if (!this.botPlayer) {
-            this.botPlayer = new BotPlayer(this);
+            this.botPlayer = new BotPlayer(this, this.monsterConfig);
         }
         
         // 添加调试信息
@@ -531,6 +619,8 @@ class GameState {
         // 重置BotPlayer
         if (this.botPlayer) {
             this.botPlayer.reset();
+        } else {
+            this.botPlayer = new BotPlayer(this, this.monsterConfig);
         }
 
         this.initializeDeck();
@@ -660,5 +750,45 @@ class GameState {
         }
         
         return result;
+    }
+
+    /**
+     * 获取可用的卡牌
+     * @param {boolean} isPlayer - 是否为玩家
+     * @returns {Array} 可用的卡牌数组
+     */
+    getPlayableCards(isPlayer) {
+        const hand = isPlayer ? this.playerHand : this.computerHand;
+        const energy = isPlayer ? this.playerEnergy : this.computerEnergy;
+        
+        return hand.filter(card => card.energyCost <= energy);
+    }
+
+    /**
+     * 应用monster属性配置
+     */
+    applyMonsterAttributes() {
+        if (!this.monsterConfig) return;
+        
+        const characterConfig = MonsterConfigManager.createCharacterFromMonster(this.monsterConfig);
+        
+        // 更新电脑角色的属性
+        this.computerCharacter.maxHealth = characterConfig.maxHealth;
+        this.computerCharacter.currentHealth = characterConfig.maxHealth;
+        this.computerCharacter.maxEnergy = characterConfig.maxEnergy;
+        this.computerCharacter.currentEnergy = characterConfig.initialEnergy;
+        this.computerCharacter.strength = characterConfig.strength;
+        this.computerCharacter.agility = characterConfig.agility;
+        this.computerCharacter.spirit = characterConfig.spirit;
+        this.computerCharacter.healthRegenRate = characterConfig.healthRegenRate;
+        this.computerCharacter.energyRegenRate = characterConfig.energyRegenRate;
+        
+        // 更新兼容状态
+        this.computerHealth = this.computerCharacter.currentHealth;
+        this.computerEnergy = this.computerCharacter.currentEnergy;
+        
+        console.log(`应用monster属性: ${this.monsterConfig.name}`);
+        console.log(`生命值: ${this.computerCharacter.currentHealth}/${this.computerCharacter.maxHealth}`);
+        console.log(`能量: ${this.computerCharacter.currentEnergy}/${this.computerCharacter.maxEnergy}`);
     }
 } 

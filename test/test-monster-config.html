@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monster配置功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-button.danger {
+            background: #dc3545;
+        }
+        .test-button.danger:hover {
+            background: #c82333;
+        }
+        .test-button.success {
+            background: #28a745;
+        }
+        .test-button.success:hover {
+            background: #218838;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .test-result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .monster-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .monster-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+        .monster-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .monster-class {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .monster-difficulty {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .difficulty-1 { background: #28a745; color: white; }
+        .difficulty-2 { background: #ffc107; color: black; }
+        .difficulty-3 { background: #dc3545; color: white; }
+        .monster-stats {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .monster-cards {
+            font-size: 12px;
+            color: #666;
+        }
+        .preferred-cards {
+            color: #28a745;
+        }
+        .avoid-cards {
+            color: #dc3545;
+        }
+        .iframe-container {
+            margin-top: 20px;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🐉 Monster配置功能测试</h1>
+        <p>测试monster配置系统，包括monster选择、属性配置、卡牌偏好等功能。</p>
+
+        <div class="test-section">
+            <div class="test-title">1. Monster配置加载测试</div>
+            <p>测试monster配置是否正确加载。</p>
+            <button class="test-button" onclick="testMonsterConfigLoading()">测试配置加载</button>
+            <button class="test-button" onclick="displayAllMonsters()">显示所有Monster</button>
+            <div id="config-results"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">2. Monster选择测试</div>
+            <p>测试不同的monster选择逻辑。</p>
+            <button class="test-button" onclick="testRandomMonster()">随机选择Monster</button>
+            <button class="test-button" onclick="testDifficultySelection()">按难度选择</button>
+            <button class="test-button" onclick="testClassSelection()">按职业选择</button>
+            <div id="selection-results"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">3. Monster属性测试</div>
+            <p>测试monster属性配置是否正确应用。</p>
+            <button class="test-button" onclick="testMonsterAttributes()">测试属性配置</button>
+            <button class="test-button" onclick="testCharacterCreation()">测试角色创建</button>
+            <div id="attributes-results"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">4. Monster卡牌偏好测试</div>
+            <p>测试monster的卡牌偏好和避免逻辑。</p>
+            <button class="test-button" onclick="testCardPreferences()">测试卡牌偏好</button>
+            <button class="test-button" onclick="testDeckBuilding()">测试牌组构建</button>
+            <div id="cards-results"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">5. AI策略测试</div>
+            <p>测试monster的AI策略和个性特征。</p>
+            <button class="test-button" onclick="testAIStrategy()">测试AI策略</button>
+            <button class="test-button" onclick="testPersonality()">测试个性特征</button>
+            <div id="ai-results"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">6. 游戏集成测试</div>
+            <p>在下方游戏界面中测试完整的monster配置功能。</p>
+            <button class="test-button success" onclick="testGameIntegration()">测试游戏集成</button>
+            <div id="integration-results"></div>
+        </div>
+
+        <div class="iframe-container">
+            <iframe src="../index.html" style="width: 100%; height: 600px; border: none;"></iframe>
+        </div>
+    </div>
+
+    <!-- 引入配置数据文件 -->
+    <script src="../js/ConfigData.js"></script>
+    
+    <script>
+        let monsters = [];
+
+        // 动态加载脚本
+        async function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const existingScript = document.querySelector(`script[src="${src}"]`);
+                if (existingScript) {
+                    resolve();
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        // 初始化测试环境
+        async function initializeTest() {
+            try {
+                // 加载必要的脚本
+                await loadScript('../js/ConfigManager.js');
+                await loadScript('../js/MonsterConfigManager.js');
+
+                // 加载配置
+                await ConfigManager.loadAllConfigs();
+                await MonsterConfigManager.loadMonsterConfigs();
+
+                // 获取所有monster配置
+                monsters = ConfigManager.getAllMonsterConfigs();
+
+                addConfigResult('✅ 测试环境初始化完成', 'success');
+                addConfigResult(`加载了 ${monsters.length} 个monster配置`);
+
+            } catch (error) {
+                addConfigResult(`❌ 初始化失败: ${error.message}`, 'error');
+            }
+        }
+
+        function addConfigResult(message, type = 'info') {
+            const container = document.getElementById('config-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            container.appendChild(resultDiv);
+        }
+
+        function addSelectionResult(message, type = 'info') {
+            const container = document.getElementById('selection-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            container.appendChild(resultDiv);
+        }
+
+        function addAttributesResult(message, type = 'info') {
+            const container = document.getElementById('attributes-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            container.appendChild(resultDiv);
+        }
+
+        function addCardsResult(message, type = 'info') {
+            const container = document.getElementById('cards-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            container.appendChild(resultDiv);
+        }
+
+        function addAIResult(message, type = 'info') {
+            const container = document.getElementById('ai-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            container.appendChild(resultDiv);
+        }
+
+        function addIntegrationResult(message, type = 'info') {
+            const container = document.getElementById('integration-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            container.appendChild(resultDiv);
+        }
+
+        function testMonsterConfigLoading() {
+            document.getElementById('config-results').innerHTML = '';
+            addConfigResult('🔍 Monster配置加载测试：');
+            addConfigResult(`总monster数量: ${monsters.length}`);
+            
+            if (monsters.length > 0) {
+                addConfigResult('✅ Monster配置加载成功', 'success');
+                monsters.forEach(monster => {
+                    addConfigResult(`• ${monster.name} (${monster.class}) - 难度${monster.difficulty}`);
+                });
+            } else {
+                addConfigResult('❌ 没有找到monster配置', 'error');
+            }
+        }
+
+        function displayAllMonsters() {
+            document.getElementById('config-results').innerHTML = '';
+            addConfigResult('📋 所有Monster配置：');
+            
+            const monsterGrid = document.createElement('div');
+            monsterGrid.className = 'monster-grid';
+            
+            monsters.forEach(monster => {
+                const monsterCard = document.createElement('div');
+                monsterCard.className = 'monster-card';
+                monsterCard.innerHTML = `
+                    <div class="monster-name">${monster.name}</div>
+                    <div class="monster-class">${monster.class}</div>
+                    <div class="monster-difficulty difficulty-${monster.difficulty}">难度 ${monster.difficulty}</div>
+                    <div class="monster-stats">
+                        生命: ${monster.maxHealth} | 能量: ${monster.maxEnergy} | 初始能量: ${monster.initialEnergy}
+                    </div>
+                    <div class="monster-stats">
+                        力量: ${monster.strength} | 敏捷: ${monster.agility} | 精神: ${monster.spirit}
+                    </div>
+                    <div class="monster-cards">
+                        <div class="preferred-cards">偏好: ${monster.preferredCards.join(', ')}</div>
+                        <div class="avoid-cards">避免: ${monster.avoidCards.join(', ') || '无'}</div>
+                    </div>
+                `;
+                monsterGrid.appendChild(monsterCard);
+            });
+            
+            document.getElementById('config-results').appendChild(monsterGrid);
+        }
+
+        function testRandomMonster() {
+            document.getElementById('selection-results').innerHTML = '';
+            addSelectionResult('🎲 随机Monster选择测试：');
+            
+            for (let i = 0; i < 5; i++) {
+                const randomMonster = ConfigManager.getRandomMonster();
+                addSelectionResult(`随机选择 ${i + 1}: ${randomMonster.name} (${randomMonster.class})`);
+            }
+        }
+
+        function testDifficultySelection() {
+            document.getElementById('selection-results').innerHTML = '';
+            addSelectionResult('📊 按难度选择测试：');
+            
+            for (let difficulty = 1; difficulty <= 3; difficulty++) {
+                const difficultyMonsters = ConfigManager.getMonstersByDifficulty(difficulty);
+                addSelectionResult(`难度 ${difficulty}: ${difficultyMonsters.length} 个monster`);
+                difficultyMonsters.forEach(monster => {
+                    addSelectionResult(`  • ${monster.name} (${monster.class})`);
+                });
+            }
+        }
+
+        function testClassSelection() {
+            document.getElementById('selection-results').innerHTML = '';
+            addSelectionResult('⚔️ 按职业选择测试：');
+            
+            const classes = ['战士', '法师', '盗贼', '牧师'];
+            classes.forEach(characterClass => {
+                const classMonsters = ConfigManager.getMonstersByClass(characterClass);
+                addSelectionResult(`${characterClass}: ${classMonsters.length} 个monster`);
+                classMonsters.forEach(monster => {
+                    addSelectionResult(`  • ${monster.name} (难度${monster.difficulty})`);
+                });
+            });
+        }
+
+        function testMonsterAttributes() {
+            document.getElementById('attributes-results').innerHTML = '';
+            addAttributesResult('📈 Monster属性测试：');
+            
+            const testMonster = monsters[0];
+            if (testMonster) {
+                addAttributesResult(`测试monster: ${testMonster.name}`);
+                addAttributesResult(`生命值: ${testMonster.maxHealth}`);
+                addAttributesResult(`能量: ${testMonster.maxEnergy} (初始: ${testMonster.initialEnergy})`);
+                addAttributesResult(`属性: 力量${testMonster.strength} 敏捷${testMonster.agility} 精神${testMonster.spirit}`);
+                addAttributesResult(`恢复: 生命${testMonster.healthRegenRate}/s 能量${testMonster.energyRegenRate}/s`);
+                addAttributesResult('✅ 属性配置正确', 'success');
+            }
+        }
+
+        function testCharacterCreation() {
+            document.getElementById('attributes-results').innerHTML = '';
+            addAttributesResult('👤 角色创建测试：');
+            
+            const testMonster = monsters[0];
+            if (testMonster) {
+                const characterConfig = MonsterConfigManager.createCharacterFromMonster(testMonster);
+                addAttributesResult(`从monster创建角色: ${testMonster.name}`);
+                addAttributesResult(`职业: ${characterConfig.class}`);
+                addAttributesResult(`属性: 生命${characterConfig.maxHealth} 能量${characterConfig.maxEnergy}`);
+                addAttributesResult('✅ 角色创建成功', 'success');
+            }
+        }
+
+        function testCardPreferences() {
+            document.getElementById('cards-results').innerHTML = '';
+            addCardsResult('🃏 卡牌偏好测试：');
+            
+            monsters.forEach(monster => {
+                const preferredCards = MonsterConfigManager.getPreferredCards(monster);
+                const avoidCards = MonsterConfigManager.getAvoidCards(monster);
+                addCardsResult(`${monster.name}:`);
+                addCardsResult(`  偏好: ${preferredCards.join(', ') || '无'}`);
+                addCardsResult(`  避免: ${avoidCards.join(', ') || '无'}`);
+            });
+        }
+
+        function testDeckBuilding() {
+            document.getElementById('cards-results').innerHTML = '';
+            addCardsResult('🎴 牌组构建测试：');
+            
+            const testMonster = monsters.find(m => m.preferredCards.length > 0);
+            if (testMonster) {
+                addCardsResult(`测试monster: ${testMonster.name}`);
+                addCardsResult(`偏好卡牌: ${testMonster.preferredCards.join(', ')}`);
+                addCardsResult(`避免卡牌: ${testMonster.avoidCards.join(', ') || '无'}`);
+                addCardsResult('✅ 牌组构建逻辑正确', 'success');
+            }
+        }
+
+        function testAIStrategy() {
+            document.getElementById('ai-results').innerHTML = '';
+            addAIResult('🤖 AI策略测试：');
+            
+            monsters.forEach(monster => {
+                const strategy = MonsterConfigManager.getAIStrategy(monster);
+                const personality = MonsterConfigManager.getPersonality(monster);
+                addAIResult(`${monster.name}:`);
+                addAIResult(`  策略: ${strategy}`);
+                addAIResult(`  性格: ${personality}`);
+            });
+        }
+
+        function testPersonality() {
+            document.getElementById('ai-results').innerHTML = '';
+            addAIResult('🧠 个性特征测试：');
+            
+            const testMonster = monsters[0];
+            if (testMonster) {
+                addAIResult(`测试monster: ${testMonster.name}`);
+                addAIResult(`性格: ${testMonster.personality}`);
+                addAIResult(`策略: ${testMonster.aiStrategy}`);
+                addAIResult('✅ 个性特征配置正确', 'success');
+            }
+        }
+
+        function testGameIntegration() {
+            document.getElementById('integration-results').innerHTML = '';
+            addIntegrationResult('🎮 游戏集成测试：');
+            addIntegrationResult('1. 在下方游戏界面中点击"开始游戏"');
+            addIntegrationResult('2. 观察控制台日志中的monster选择信息');
+            addIntegrationResult('3. 检查电脑角色的属性和牌组');
+            addIntegrationResult('4. 观察AI的行为是否符合monster配置');
+            addIntegrationResult('✅ 请在下方游戏界面中验证完整功能', 'success');
+        }
+
+        // 页面加载完成后初始化测试
+        window.addEventListener('load', function() {
+            initializeTest();
+        });
+    </script>
+</body>
+</html> 

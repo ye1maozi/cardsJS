@@ -89,13 +89,106 @@ async function startGame() {
     try {
         console.log('用户点击开始游戏，开始初始化...');
         
+        // 显示选择对手界面
+        showOpponentSelection();
+        
+    } catch (error) {
+        console.error('游戏启动失败:', error);
+        alert('游戏启动失败: ' + error.message);
+        
+        // 恢复开始界面
+        if (startScreen) {
+            showStartScreen();
+        }
+    }
+}
+
+/**
+ * 显示选择对手界面
+ */
+function showOpponentSelection() {
+    const startScreen = document.getElementById('startScreen');
+    if (!startScreen) return;
+    
+    // 获取monster配置
+    const monsters = ConfigData.MONSTER_CONFIG_DATA || [];
+    
+    // 创建选择对手界面
+    startScreen.innerHTML = `
+        <div class="start-content">
+            <h2>选择对手</h2>
+            <p>请选择你要挑战的对手：</p>
+            <div class="opponent-grid">
+                ${monsters.map(monster => `
+                    <div class="opponent-card" data-monster-id="${monster.id}">
+                        <div class="opponent-header">
+                            <h3>${monster.name}</h3>
+                            <span class="opponent-class">${monster.class}</span>
+                        </div>
+                        <div class="opponent-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">生命值:</span>
+                                <span class="stat-value">${monster.maxHealth}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">能量:</span>
+                                <span class="stat-value">${monster.maxEnergy}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">难度:</span>
+                                <span class="stat-value">${'★'.repeat(monster.difficulty)}</span>
+                            </div>
+                        </div>
+                        <div class="opponent-description">
+                            ${monster.description}
+                        </div>
+                        <button class="btn btn-primary select-opponent-btn">选择此对手</button>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="back-button">
+                <button id="backToStartBtn" class="btn btn-secondary">返回</button>
+            </div>
+        </div>
+    `;
+    
+    // 绑定选择对手事件
+    const opponentCards = startScreen.querySelectorAll('.opponent-card');
+    opponentCards.forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.classList.contains('select-opponent-btn')) {
+                const monsterId = card.dataset.monsterId;
+                const monster = monsters.find(m => m.id === monsterId);
+                if (monster) {
+                    startGameWithOpponent(monster);
+                }
+            }
+        });
+    });
+    
+    // 绑定返回按钮事件
+    const backBtn = document.getElementById('backToStartBtn');
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            showStartScreen();
+        });
+    }
+}
+
+/**
+ * 使用选定的对手开始游戏
+ */
+async function startGameWithOpponent(monsterConfig) {
+    try {
+        console.log('用户选择了对手:', monsterConfig.name);
+        
         // 显示加载提示
         const startScreen = document.getElementById('startScreen');
         if (startScreen) {
             startScreen.innerHTML = `
                 <div class="start-content">
                     <h2>正在加载游戏...</h2>
-                    <p>请稍候，正在初始化游戏配置...</p>
+                    <p>正在准备与 ${monsterConfig.name} 的战斗...</p>
                     <div class="loading-spinner"></div>
                 </div>
             `;
@@ -119,8 +212,8 @@ async function startGame() {
             // 更新版本信息
             updateVersionInfo();
             
-            // 创建游戏实例
-            game = new Game();
+            // 创建游戏实例（传入选定的monster配置）
+            game = new Game(monsterConfig);
             
             // 初始化游戏
             await game.initialize();
@@ -133,6 +226,10 @@ async function startGame() {
             
             isGameInitialized = true;
             console.log('游戏初始化完成');
+        } else {
+            // 如果游戏已经初始化，重新创建游戏实例
+            game = new Game(monsterConfig);
+            await game.initialize();
         }
         
         // 隐藏开始界面
@@ -148,7 +245,7 @@ async function startGame() {
         // 开始游戏
         if (game) {
             game.start();
-            console.log('游戏启动成功！');
+            console.log(`游戏启动成功！对手: ${monsterConfig.name}`);
         }
         
     } catch (error) {
@@ -156,9 +253,7 @@ async function startGame() {
         alert('游戏启动失败: ' + error.message);
         
         // 恢复开始界面
-        if (startScreen) {
-            showStartScreen();
-        }
+        showStartScreen();
     }
 }
 
@@ -354,6 +449,77 @@ function updateVersionInfo() {
     } catch (error) {
         console.warn('更新版本信息失败:', error);
     }
+}
+
+/**
+ * 选择monster配置
+ * @returns {Object|null} monster配置对象
+ */
+function selectMonsterForGame() {
+    try {
+        // 获取所有monster配置
+        const allMonsters = ConfigManager.getAllMonsterConfigs();
+        
+        if (allMonsters.length === 0) {
+            console.log('没有可用的monster配置，使用默认配置');
+            return null;
+        }
+        
+        // 可以根据需要实现不同的选择逻辑
+        // 1. 随机选择
+        const randomMonster = selectRandomMonster(allMonsters);
+        
+        // 2. 根据难度选择
+        // const easyMonster = selectMonsterByDifficulty(allMonsters, 1);
+        
+        // 3. 根据职业选择
+        // const warriorMonster = selectMonsterByClass(allMonsters, '战士');
+        
+        console.log(`选择了monster: ${randomMonster.name} (难度: ${randomMonster.difficulty})`);
+        return randomMonster;
+        
+    } catch (error) {
+        console.warn('选择monster配置失败:', error);
+        return null;
+    }
+}
+
+/**
+ * 随机选择monster
+ * @param {Array} monsters - monster配置数组
+ * @returns {Object} 随机选择的monster配置
+ */
+function selectRandomMonster(monsters) {
+    const randomIndex = Math.floor(Math.random() * monsters.length);
+    return monsters[randomIndex];
+}
+
+/**
+ * 根据难度选择monster
+ * @param {Array} monsters - monster配置数组
+ * @param {number} difficulty - 难度等级
+ * @returns {Object|null} 指定难度的monster配置
+ */
+function selectMonsterByDifficulty(monsters, difficulty) {
+    const filteredMonsters = monsters.filter(monster => monster.difficulty === difficulty);
+    if (filteredMonsters.length === 0) {
+        return null;
+    }
+    return selectRandomMonster(filteredMonsters);
+}
+
+/**
+ * 根据职业选择monster
+ * @param {Array} monsters - monster配置数组
+ * @param {string} characterClass - 职业名称
+ * @returns {Object|null} 指定职业的monster配置
+ */
+function selectMonsterByClass(monsters, characterClass) {
+    const filteredMonsters = monsters.filter(monster => monster.class === characterClass);
+    if (filteredMonsters.length === 0) {
+        return null;
+    }
+    return selectRandomMonster(filteredMonsters);
 }
 
 // 如果是移动设备，添加移动端优化

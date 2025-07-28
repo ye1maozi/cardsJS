@@ -131,6 +131,15 @@ class CardConfigManager {
     }
 
     /**
+     * 根据卡牌名称获取配置（别名方法）
+     * @param {string} name - 卡牌名称
+     * @returns {CardConfig|null} 卡牌配置
+     */
+    static getCardConfigByName(name) {
+        return this.getCardConfig(name);
+    }
+
+    /**
      * 根据职业获取卡牌配置
      * @param {string} cardClass - 卡牌职业
      * @returns {Array} 卡牌配置数组

@@ -2,9 +2,10 @@
  * 角色属性系统 - 实现readme1.txt中要求的角色属性
  */
 class Character {
-    constructor(name, characterClass) {
+    constructor(name, characterClass, monsterConfig = null) {
         this.name = name;
         this.characterClass = characterClass;
+        this.monsterConfig = monsterConfig; // 保存monster配置
         
         // 基础属性
         this.maxHealth = 30;

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>关闭按钮测试</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-button {
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .test-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>关闭按钮测试</h1>
+        <p>点击下面的按钮来测试游戏结束模态框的关闭功能：</p>
+        
+        <button class="test-button" onclick="showTestModal()">显示游戏结束模态框</button>
+        <button class="test-button" onclick="testCloseButton()">测试关闭按钮</button>
+        
+        <div id="testResult"></div>
+    </div>
+
+    <!-- 游戏结束对话框 -->
+    <div id="gameOverModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2 id="gameOverTitle">游戏结束</h2>
+            <p id="gameOverMessage">这是一个测试消息</p>
+            <button id="restartBtn" class="btn btn-primary">重新开始</button>
+            <button id="closeModalBtn" class="btn btn-secondary">关闭</button>
+        </div>
+    </div>
+
+    <!-- JavaScript文件 -->
+    <script src="../js/ConfigData.js"></script>
+    <script src="../js/Character.js"></script>
+    <script src="../js/CastingSystem.js"></script>
+    <script src="../js/Card.js"></script>
+    <script src="../js/CardConfig.js"></script>
+    <script src="../js/ConfigManager.js"></script>
+    <script src="../js/ConfigValidator.js"></script>
+    <script src="../js/HeroSkill.js"></script>
+    <script src="../js/BotPlayer.js"></script>
+    <script src="../js/MonsterConfigManager.js"></script>
+    <script src="../js/GameState.js"></script>
+    <script src="../js/GameUI.js"></script>
+    <script src="../js/Game.js"></script>
+
+    <script>
+        let gameUI = null;
+        let gameState = null;
+
+        // 初始化测试
+        async function initTest() {
+            try {
+                // 加载配置
+                await ConfigManager.loadAllConfigs();
+                
+                // 创建游戏状态
+                gameState = new GameState();
+                await gameState.initializeDeck();
+                
+                // 创建游戏UI
+                gameUI = new GameUI(gameState);
+                
+                console.log('测试初始化完成');
+                document.getElementById('testResult').innerHTML = '<p style="color: green;">测试环境初始化完成</p>';
+                
+            } catch (error) {
+                console.error('测试初始化失败:', error);
+                document.getElementById('testResult').innerHTML = '<p style="color: red;">测试初始化失败: ' + error.message + '</p>';
+            }
+        }
+
+        // 显示测试模态框
+        function showTestModal() {
+            if (gameUI) {
+                gameUI.showGameOverModal('这是一个测试游戏结束消息');
+                document.getElementById('testResult').innerHTML = '<p style="color: blue;">模态框已显示，请尝试点击关闭按钮</p>';
+            } else {
+                document.getElementById('testResult').innerHTML = '<p style="color: red;">GameUI未初始化</p>';
+            }
+        }
+
+        // 测试关闭按钮
+        function testCloseButton() {
+            const closeBtn = document.getElementById('closeModalBtn');
+            if (closeBtn) {
+                console.log('手动触发关闭按钮点击');
+                closeBtn.click();
+                document.getElementById('testResult').innerHTML = '<p style="color: green;">关闭按钮点击事件已触发</p>';
+            } else {
+                document.getElementById('testResult').innerHTML = '<p style="color: red;">关闭按钮未找到</p>';
+            }
+        }
+
+        // 页面加载完成后初始化测试
+        document.addEventListener('DOMContentLoaded', initTest);
+    </script>
+</body>
+</html> 

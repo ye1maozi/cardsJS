@@ -5,6 +5,6 @@ DrawInterval,3,抽卡间隔（秒）
 MaxDeckSize,30,牌组最大数量
 EnergyPerTurn,1,每回合能量恢复
 MaxEnergy,10,最大能量值
-GameVersion,1.8.1,游戏版本
+GameVersion,2.0.0,游戏版本
 DefaultPlayerClass,战士,默认玩家职业
 DefaultComputerClass,法师,默认电脑职业 

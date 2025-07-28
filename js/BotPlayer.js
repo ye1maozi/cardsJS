@@ -2,8 +2,9 @@
  * 电脑AI玩家类 - 负责电脑玩家的智能决策
  */
 class BotPlayer {
-    constructor(gameState) {
+    constructor(gameState, monsterConfig = null) {
         this.gameState = gameState;
+        this.monsterConfig = monsterConfig;
         this.personality = this.generatePersonality();
         this.memory = {
             lastPlayedCards: [],
@@ -19,6 +20,11 @@ class BotPlayer {
         this.lastComboTime = 0; // 上次连击时间
         this.threatLevel = 0; // 威胁等级
         this.strategy = 'balanced'; // balanced, aggressive, defensive, combo
+        
+        // 如果提供了monster配置，应用monster的个性特征
+        if (this.monsterConfig) {
+            this.applyMonsterConfig();
+        }
     }
 
     /**
@@ -34,6 +40,92 @@ class BotPlayer {
             comboPreference: Math.random() * 0.8 + 0.2, // 0.2-1.0 连击偏好
             castingPatience: Math.random() * 0.8 + 0.2  // 0.2-1.0 吟唱耐心
         };
+    }
+
+    /**
+     * 应用monster配置
+     */
+    applyMonsterConfig() {
+        if (!this.monsterConfig) return;
+        
+        // 设置难度
+        this.difficulty = this.getDifficultyFromMonster();
+        
+        // 应用monster的个性特征
+        this.personality = this.generatePersonalityFromMonster();
+        
+        // 设置策略
+        this.strategy = MonsterConfigManager.getAIStrategy(this.monsterConfig);
+        
+        console.log(`应用monster配置: ${this.monsterConfig.name}, 策略: ${this.strategy}`);
+    }
+
+    /**
+     * 根据monster配置生成个性特征
+     */
+    generatePersonalityFromMonster() {
+        if (!this.monsterConfig) {
+            return this.generatePersonality();
+        }
+        
+        const personality = MonsterConfigManager.getPersonality(this.monsterConfig);
+        const basePersonality = this.generatePersonality();
+        
+        // 根据monster的个性类型调整特征
+        switch (personality) {
+            case 'reckless':
+                basePersonality.aggressiveness *= 1.5;
+                basePersonality.riskTolerance *= 1.8;
+                basePersonality.defensiveness *= 0.6;
+                break;
+            case 'calculating':
+                basePersonality.efficiency *= 1.4;
+                basePersonality.adaptability *= 1.3;
+                basePersonality.castingPatience *= 1.5;
+                break;
+            case 'cautious':
+                basePersonality.defensiveness *= 1.4;
+                basePersonality.riskTolerance *= 0.7;
+                basePersonality.aggressiveness *= 0.8;
+                break;
+            case 'protective':
+                basePersonality.defensiveness *= 1.6;
+                basePersonality.efficiency *= 1.2;
+                basePersonality.aggressiveness *= 0.6;
+                break;
+            case 'patient':
+                basePersonality.castingPatience *= 1.6;
+                basePersonality.adaptability *= 1.3;
+                basePersonality.aggressiveness *= 0.7;
+                break;
+            case 'disciplined':
+                basePersonality.efficiency *= 1.3;
+                basePersonality.adaptability *= 1.2;
+                basePersonality.comboPreference *= 1.1;
+                break;
+            case 'aggressive':
+                basePersonality.aggressiveness *= 1.4;
+                basePersonality.comboPreference *= 1.3;
+                basePersonality.defensiveness *= 0.7;
+                break;
+            default:
+                // 使用基础个性
+                break;
+        }
+        
+        return basePersonality;
+    }
+
+    /**
+     * 根据monster配置获取难度
+     */
+    getDifficultyFromMonster() {
+        if (!this.monsterConfig) return 'normal';
+        
+        const difficulty = this.monsterConfig.difficulty;
+        if (difficulty <= 1) return 'easy';
+        if (difficulty >= 3) return 'hard';
+        return 'normal';
     }
 
     /**
@@ -335,58 +427,85 @@ class BotPlayer {
     }
 
     /**
-     * 根据策略选择卡牌
-     * @param {object} strategy - 策略分析结果
+     * 选择卡牌
+     * @param {Object} strategy - 策略对象
      * @returns {Card|null} 选择的卡牌
      */
     selectCard(strategy) {
-        const playableCards = this.gameState.computerHand.filter(card => 
-            card.energyCost <= this.gameState.computerEnergy
-        );
-
-        console.log(`电脑可用的卡牌: ${playableCards.length}张`);
-        if (playableCards.length > 0) {
-            console.log('可用卡牌:', playableCards.map(card => `${card.name}(消耗${card.energyCost})`));
-        }
-
+        const playableCards = this.gameState.getPlayableCards(false);
+        
         if (playableCards.length === 0) {
             console.log('电脑没有可用的卡牌');
             return null;
         }
+        
+        // 根据monster配置过滤卡牌
+        const filteredCards = this.filterCardsByMonsterPreference(playableCards);
+        
+        if (filteredCards.length === 0) {
+            console.log('根据monster偏好过滤后没有可用卡牌，使用原始卡牌');
+            return this.selectCardByStrategy(playableCards, strategy);
+        }
+        
+        return this.selectCardByStrategy(filteredCards, strategy);
+    }
 
-        // 根据策略选择卡牌
-        let selectedCard;
+    /**
+     * 根据monster偏好过滤卡牌
+     * @param {Array} cards - 可用卡牌数组
+     * @returns {Array} 过滤后的卡牌数组
+     */
+    filterCardsByMonsterPreference(cards) {
+        if (!this.monsterConfig) {
+            return cards;
+        }
+        
+        const preferredCards = MonsterConfigManager.getPreferredCards(this.monsterConfig);
+        const avoidCards = MonsterConfigManager.getAvoidCards(this.monsterConfig);
+        
+        // 优先选择偏好的卡牌
+        const preferredMatches = cards.filter(card => 
+            preferredCards.includes(card.name)
+        );
+        
+        if (preferredMatches.length > 0) {
+            console.log(`根据monster偏好选择卡牌: ${preferredMatches.map(c => c.name).join(', ')}`);
+            return preferredMatches;
+        }
+        
+        // 如果没有偏好卡牌，排除避免的卡牌
+        const filteredCards = cards.filter(card => 
+            !avoidCards.includes(card.name)
+        );
+        
+        if (filteredCards.length > 0) {
+            console.log(`排除monster避免的卡牌: ${avoidCards.join(', ')}`);
+            return filteredCards;
+        }
+        
+        // 如果过滤后没有卡牌，返回原始卡牌
+        console.log('过滤后没有可用卡牌，使用原始卡牌');
+        return cards;
+    }
+
+    /**
+     * 根据策略选择卡牌
+     * @param {Array} playableCards - 可用卡牌数组
+     * @param {Object} strategy - 策略对象
+     * @returns {Card|null} 选择的卡牌
+     */
+    selectCardByStrategy(playableCards, strategy) {
         switch (strategy.strategy) {
             case 'aggressive':
-                selectedCard = this.selectAggressiveCard(playableCards, strategy);
-                break;
+                return this.selectAggressiveCard(playableCards, strategy);
             case 'defensive':
-                selectedCard = this.selectDefensiveCard(playableCards, strategy);
-                break;
+                return this.selectDefensiveCard(playableCards, strategy);
             case 'combo':
-                selectedCard = this.selectComboCard(playableCards, strategy);
-                break;
+                return this.selectComboCard(playableCards, strategy);
             case 'balanced':
             default:
-                selectedCard = this.selectBalancedCard(playableCards, strategy);
-                break;
+                return this.selectBalancedCard(playableCards, strategy);
         }
-
-        if (selectedCard) {
-            console.log(`电脑选择了卡牌: ${selectedCard.name}`);
-            // 确保卡牌在手牌中，并设置handIndex
-            const handIndex = this.gameState.computerHand.indexOf(selectedCard);
-            if (handIndex !== -1) {
-                selectedCard.handIndex = handIndex;
-                console.log(`设置卡牌handIndex: ${handIndex}`);
-            } else {
-                console.log(`警告：选择的卡牌不在手牌中: ${selectedCard.name}`);
-            }
-        } else {
-            console.log('电脑没有选择任何卡牌');
-        }
-
-        return selectedCard;
     }
 
     /**
@@ -988,7 +1107,13 @@ class BotPlayer {
         this.lastComboTime = 0;
         this.threatLevel = 0;
         this.strategy = 'balanced';
-        this.adjustPersonalityByDifficulty();
+        
+        // 如果存在monster配置，重新应用
+        if (this.monsterConfig) {
+            this.applyMonsterConfig();
+        } else {
+            this.adjustPersonalityByDifficulty();
+        }
     }
 
     /**

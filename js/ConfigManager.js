@@ -7,7 +7,8 @@ class ConfigManager {
         heroSkills: [],
         characterClasses: [],
         gameConfig: new Map(),
-        cards: []
+        cards: [],
+        monsters: []
     };
     
     static isLoaded = false;
@@ -25,7 +26,8 @@ class ConfigManager {
                 this.loadHeroSkills(),
                 this.loadCharacterClasses(),
                 this.loadGameConfig(),
-                this.loadCardConfigs()
+                this.loadCardConfigs(),
+                this.loadMonsterConfigs()
             ]);
             
             // 检查加载结果
@@ -198,6 +200,47 @@ class ConfigManager {
     }
 
     /**
+     * 加载怪物配置
+     * @returns {Promise<boolean>} 是否加载成功
+     */
+    static async loadMonsterConfigs() {
+        try {
+            // 直接使用内置数据
+            const builtInSuccess = this.loadMonsterConfigsFromBuiltInData();
+            if (builtInSuccess) {
+                return true;
+            }
+            
+            // 如果内置数据加载失败，使用默认配置
+            console.warn('怪物配置加载失败，使用默认配置');
+            return this.loadDefaultMonsterConfigs();
+        } catch (error) {
+            console.warn('怪物配置加载失败，使用默认配置:', error.message);
+            return this.loadDefaultMonsterConfigs();
+        }
+    }
+
+    /**
+     * 从内置数据加载怪物配置
+     * @returns {boolean} 是否加载成功
+     */
+    static loadMonsterConfigsFromBuiltInData() {
+        try {
+            if (typeof window.ConfigData === 'undefined' || !window.ConfigData.MONSTER_CONFIG_DATA) {
+                console.warn('内置怪物数据不可用');
+                return false;
+            }
+            
+            this.configs.monsters = [...window.ConfigData.MONSTER_CONFIG_DATA];
+            console.log(`从内置数据成功加载 ${this.configs.monsters.length} 个怪物配置`);
+            return true;
+        } catch (error) {
+            console.warn('从内置数据加载怪物配置失败:', error.message);
+            return false;
+        }
+    }
+
+    /**
      * 加载默认英雄技能配置
      * @returns {boolean} 是否加载成功
      */
@@ -244,6 +287,21 @@ class ConfigManager {
             return true;
         } catch (error) {
             console.error('加载默认游戏配置失败:', error);
+            return false;
+        }
+    }
+
+    /**
+     * 加载默认怪物配置
+     * @returns {boolean} 是否加载成功
+     */
+    static loadDefaultMonsterConfigs() {
+        try {
+            this.configs.monsters = this.getDefaultMonsterConfigs();
+            console.log(`默认怪物配置加载成功: ${this.configs.monsters.length} 个怪物`);
+            return true;
+        } catch (error) {
+            console.error('加载默认怪物配置失败:', error);
             return false;
         }
     }
@@ -374,7 +432,7 @@ class ConfigManager {
             "MaxDeckSize": 30,
             "EnergyPerTurn": 1,
             "MaxEnergy": 10,
-            "GameVersion": "1.8.0",
+            "GameVersion": "2.0.0",
             "DefaultPlayerClass": "战士",
             "DefaultComputerClass": "法师"
         };
@@ -438,6 +496,51 @@ class ConfigManager {
     }
 
     /**
+     * 获取默认怪物配置
+     * @returns {Array} 默认怪物配置数组
+     */
+    static getDefaultMonsterConfigs() {
+        return [
+            {
+                name: "普通小怪",
+                maxHealth: 10,
+                maxEnergy: 0,
+                initialEnergy: 0,
+                strength: 1,
+                agility: 0,
+                spirit: 0,
+                healthRegenRate: 0,
+                energyRegenRate: 0,
+                description: "基础小怪，生命值低"
+            },
+            {
+                name: "精英小怪",
+                maxHealth: 20,
+                maxEnergy: 0,
+                initialEnergy: 0,
+                strength: 2,
+                agility: 0,
+                spirit: 0,
+                healthRegenRate: 0,
+                energyRegenRate: 0,
+                description: "生命值较高的小怪"
+            },
+            {
+                name: "Boss",
+                maxHealth: 100,
+                maxEnergy: 0,
+                initialEnergy: 0,
+                strength: 5,
+                agility: 0,
+                spirit: 0,
+                healthRegenRate: 0,
+                energyRegenRate: 0,
+                description: "最终Boss，生命值高"
+            }
+        ];
+    }
+
+    /**
      * 获取英雄技能配置
      * @param {string} characterClass - 角色职业
      * @returns {Object|null} 英雄技能配置
@@ -490,6 +593,66 @@ class ConfigManager {
     }
 
     /**
+     * 获取所有怪物配置
+     * @returns {Array} 怪物配置数组
+     */
+    static getAllMonsterConfigs() {
+        return [...this.configs.monsters];
+    }
+
+    /**
+     * 根据ID获取怪物配置
+     * @param {string} monsterId - 怪物ID
+     * @returns {Object|null} 怪物配置对象
+     */
+    static getMonsterConfig(monsterId) {
+        return this.configs.monsters.find(monster => monster.id === monsterId) || null;
+    }
+
+    /**
+     * 根据难度获取怪物配置
+     * @param {number} difficulty - 难度等级
+     * @returns {Array} 指定难度的怪物配置数组
+     */
+    static getMonstersByDifficulty(difficulty) {
+        return this.configs.monsters.filter(monster => monster.difficulty === difficulty);
+    }
+
+    /**
+     * 根据职业获取怪物配置
+     * @param {string} characterClass - 职业名称
+     * @returns {Array} 指定职业的怪物配置数组
+     */
+    static getMonstersByClass(characterClass) {
+        return this.configs.monsters.filter(monster => monster.class === characterClass);
+    }
+
+    /**
+     * 获取随机怪物配置
+     * @param {number} difficulty - 可选，难度等级
+     * @param {string} characterClass - 可选，职业名称
+     * @returns {Object|null} 随机怪物配置
+     */
+    static getRandomMonster(difficulty = null, characterClass = null) {
+        let filteredMonsters = this.configs.monsters;
+        
+        if (difficulty !== null) {
+            filteredMonsters = filteredMonsters.filter(monster => monster.difficulty === difficulty);
+        }
+        
+        if (characterClass !== null) {
+            filteredMonsters = filteredMonsters.filter(monster => monster.class === characterClass);
+        }
+        
+        if (filteredMonsters.length === 0) {
+            return null;
+        }
+        
+        const randomIndex = Math.floor(Math.random() * filteredMonsters.length);
+        return filteredMonsters[randomIndex];
+    }
+
+    /**
      * 检查配置是否已加载
      * @returns {boolean} 是否已加载
      */
@@ -507,7 +670,8 @@ class ConfigManager {
             heroSkills: [],
             characterClasses: [],
             gameConfig: new Map(),
-            cards: []
+            cards: [],
+            monsters: []
         };
         return await this.loadAllConfigs();
     }

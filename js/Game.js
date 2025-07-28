@@ -2,11 +2,12 @@
  * 游戏主控制器 - 管理整个游戏流程
  */
 class Game {
-    constructor() {
+    constructor(monsterConfig = null) {
         this.gameState = null;
         this.gameUI = null;
         this.isInitialized = false;
         this.isDestroyed = false;
+        this.monsterConfig = monsterConfig;
     }
 
     /**
@@ -19,8 +20,8 @@ class Game {
             // 重置销毁标志
             this.isDestroyed = false;
 
-            // 创建游戏状态
-            this.gameState = new GameState();
+            // 创建游戏状态（传入monster配置）
+            this.gameState = new GameState(this.monsterConfig);
 
             // 异步初始化牌组（包括加载CSV配置）
             await this.gameState.initializeDeck();
@@ -33,6 +34,9 @@ class Game {
 
             this.isInitialized = true;
             console.log('游戏初始化完成，等待用户开始...');
+            if (this.monsterConfig) {
+                console.log(`使用monster配置: ${this.monsterConfig.name}`);
+            }
 
             // 不自动开始游戏，等待用户点击开始按钮
 

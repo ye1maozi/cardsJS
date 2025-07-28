@@ -48,6 +48,22 @@ class GameUI {
         
         // 更新UI
         this.updateUI();
+        
+        // 显示对手信息
+        this.showOpponentInfo();
+    }
+    
+    /**
+     * 显示对手信息
+     */
+    showOpponentInfo() {
+        const computerCharacter = this.gameState.computerCharacter;
+        if (computerCharacter && computerCharacter.monsterConfig) {
+            const monsterConfig = computerCharacter.monsterConfig;
+            this.addGameLog(`对手: ${monsterConfig.name} (${monsterConfig.class})`);
+            this.addGameLog(`难度: ${'★'.repeat(monsterConfig.difficulty)}`);
+            this.addGameLog(`描述: ${monsterConfig.description}`);
+        }
     }
 
     /**
@@ -70,20 +86,6 @@ class GameUI {
             });
         }
 
-        // 关闭模态框按钮 - 修复事件绑定
-        const closeModalBtn = document.getElementById('closeModalBtn');
-        if (closeModalBtn) {
-            // 移除可能存在的旧事件监听器
-            const newCloseBtn = closeModalBtn.cloneNode(true);
-            closeModalBtn.parentNode.replaceChild(newCloseBtn, closeModalBtn);
-            
-            // 重新绑定事件
-            newCloseBtn.addEventListener('click', () => {
-                console.log('关闭按钮被点击');
-                this.hideGameOverModal();
-            });
-        }
-        
         // 英雄技能按钮
         const heroSkillBtn = document.getElementById('heroSkillBtn');
         if (heroSkillBtn) {
@@ -91,6 +93,9 @@ class GameUI {
                 this.onHeroSkillClicked();
             });
         }
+        
+        // 绑定关闭按钮事件
+        this.bindCloseModalEvent();
     }
 
     /**
