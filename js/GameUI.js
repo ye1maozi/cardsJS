@@ -12,8 +12,42 @@ class GameUI {
      * 初始化UI
      */
     initializeUI() {
-        this.updateUI();
+        // 初始时隐藏游戏界面，等待用户开始游戏
+        this.hideGameInterface();
         this.bindEvents();
+    }
+    
+    /**
+     * 隐藏游戏界面
+     */
+    hideGameInterface() {
+        const gameArea = document.querySelector('.game-area');
+        const gameStatus = document.querySelector('.game-status');
+        
+        if (gameArea) {
+            gameArea.style.display = 'none';
+        }
+        if (gameStatus) {
+            gameStatus.style.display = 'none';
+        }
+    }
+    
+    /**
+     * 显示游戏界面
+     */
+    showGameInterface() {
+        const gameArea = document.querySelector('.game-area');
+        const gameStatus = document.querySelector('.game-status');
+        
+        if (gameArea) {
+            gameArea.style.display = 'flex';
+        }
+        if (gameStatus) {
+            gameStatus.style.display = 'flex';
+        }
+        
+        // 更新UI
+        this.updateUI();
     }
 
     /**
@@ -314,6 +348,9 @@ class GameUI {
             this.addGameLog(`能量不足，无法使用 ${card.name}`);
             return;
         }
+
+        // 设置卡牌在手牌中的索引
+        card.handIndex = index;
 
         // 使用卡牌
         const useResult = this.gameState.useCard(card, true);

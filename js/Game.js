@@ -6,6 +6,7 @@ class Game {
         this.gameState = null;
         this.gameUI = null;
         this.isInitialized = false;
+        this.isDestroyed = false;
     }
 
     /**
@@ -14,6 +15,9 @@ class Game {
     async initialize() {
         try {
             console.log('正在初始化游戏...');
+
+            // 重置销毁标志
+            this.isDestroyed = false;
 
             // 创建游戏状态
             this.gameState = new GameState();
@@ -36,8 +40,7 @@ class Game {
             this.isInitialized = true;
             console.log('游戏初始化完成');
 
-            // 添加初始日志
-            this.gameUI.addGameLog('游戏开始！');
+            // 不自动添加初始日志，等待用户开始游戏
 
         } catch (error) {
             console.error('游戏初始化失败:', error);
@@ -50,11 +53,19 @@ class Game {
      */
     startGameLoop() {
         const gameLoop = () => {
-            // 更新游戏状态
-            this.gameState.update();
+            // 检查游戏是否已销毁
+            if (this.isDestroyed) {
+                return; // 停止游戏循环
+            }
             
-            // 更新UI
-            this.gameUI.update();
+            // 检查游戏状态是否有效
+            if (this.gameState && this.gameUI) {
+                // 更新游戏状态
+                this.gameState.update();
+                
+                // 更新UI
+                this.gameUI.update();
+            }
             
             // 继续循环
             requestAnimationFrame(gameLoop);
@@ -74,6 +85,7 @@ class Game {
         }
 
         console.log('游戏开始');
+        this.gameUI.addGameLog('游戏开始！');
         this.gameUI.addGameLog('欢迎来到卡牌对战游戏！');
     }
 
@@ -277,14 +289,13 @@ class Game {
      * 销毁游戏
      */
     destroy() {
+        // 设置销毁标志，停止游戏循环
+        this.isDestroyed = true;
+        
         if (this.gameUI) {
             // 清理事件监听器
-            const endTurnBtn = document.getElementById('endTurnBtn');
             const newGameBtn = document.getElementById('newGameBtn');
             
-            if (endTurnBtn) {
-                endTurnBtn.replaceWith(endTurnBtn.cloneNode(true));
-            }
             if (newGameBtn) {
                 newGameBtn.replaceWith(newGameBtn.cloneNode(true));
             }

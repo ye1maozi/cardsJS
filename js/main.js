@@ -9,19 +9,16 @@ let game = null;
  * 页面加载完成后初始化游戏
  */
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log('页面加载完成，开始初始化游戏...');
+    console.log('页面加载完成，准备游戏...');
     
     try {
         // 创建游戏实例
         game = new Game();
         
-        // 初始化游戏
+        // 初始化游戏（但不自动开始）
         await game.initialize();
         
-        // 开始游戏
-        game.start();
-        
-        console.log('游戏启动成功！');
+        console.log('游戏准备完成，等待用户开始...');
         
         // 添加键盘快捷键
         setupKeyboardShortcuts();
@@ -29,11 +26,84 @@ document.addEventListener('DOMContentLoaded', async function() {
         // 添加开发者工具
         setupDeveloperTools();
         
+        // 显示开始游戏界面
+        showStartScreen();
+        
     } catch (error) {
-        console.error('游戏启动失败:', error);
-        alert('游戏启动失败: ' + error.message);
+        console.error('游戏准备失败:', error);
+        alert('游戏准备失败: ' + error.message);
     }
 });
+
+/**
+ * 显示开始游戏界面
+ */
+function showStartScreen() {
+    const gameContainer = document.querySelector('.game-container');
+    if (!gameContainer) return;
+    
+    // 创建开始游戏界面
+    const startScreen = document.createElement('div');
+    startScreen.id = 'startScreen';
+    startScreen.className = 'start-screen';
+    startScreen.innerHTML = `
+        <div class="start-content">
+            <h2>卡牌对战游戏</h2>
+            <p>欢迎来到卡牌对战世界！</p>
+            <div class="start-buttons">
+                <button id="startGameBtn" class="btn btn-primary">开始游戏</button>
+                <button id="loadGameBtn" class="btn btn-secondary">加载游戏</button>
+            </div>
+            <div class="game-info">
+                <p>版本: v1.4.2</p>
+                <p>按 R 键重新开始 | 按 S 键保存 | 按 L 键加载</p>
+            </div>
+        </div>
+    `;
+    
+    // 插入到游戏容器的最前面
+    gameContainer.insertBefore(startScreen, gameContainer.firstChild);
+    
+    // 绑定开始游戏按钮事件
+    const startGameBtn = document.getElementById('startGameBtn');
+    if (startGameBtn) {
+        startGameBtn.addEventListener('click', () => {
+            startGame();
+        });
+    }
+    
+    // 绑定加载游戏按钮事件
+    const loadGameBtn = document.getElementById('loadGameBtn');
+    if (loadGameBtn) {
+        loadGameBtn.addEventListener('click', () => {
+            if (game) {
+                game.loadGame();
+            }
+        });
+    }
+}
+
+/**
+ * 开始游戏
+ */
+function startGame() {
+    // 隐藏开始界面
+    const startScreen = document.getElementById('startScreen');
+    if (startScreen) {
+        startScreen.style.display = 'none';
+    }
+    
+    // 显示游戏界面
+    if (game && game.gameUI) {
+        game.gameUI.showGameInterface();
+    }
+    
+    // 开始游戏
+    if (game) {
+        game.start();
+        console.log('游戏启动成功！');
+    }
+}
 
 /**
  * 设置键盘快捷键

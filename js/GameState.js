@@ -293,10 +293,15 @@ class GameState {
             this.computerEnergy = character.currentEnergy;
         }
 
-        // 从手牌移除卡牌
-        const cardIndex = hand.findIndex(c => c.name === card.name);
-        if (cardIndex !== -1) {
-            hand.splice(cardIndex, 1);
+        // 从手牌移除卡牌（使用索引确保移除正确的卡牌）
+        if (card.handIndex !== undefined && card.handIndex >= 0 && card.handIndex < hand.length) {
+            hand.splice(card.handIndex, 1);
+        } else {
+            // 后备方案：查找并移除第一张匹配的卡牌
+            const cardIndex = hand.findIndex(c => c.name === card.name);
+            if (cardIndex !== -1) {
+                hand.splice(cardIndex, 1);
+            }
         }
 
         // 检查是否需要吟唱

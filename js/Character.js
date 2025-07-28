@@ -137,8 +137,31 @@ class Character {
      * @returns {number} 实际伤害
      */
     takeDamage(damage) {
+        // 获取护甲值
+        let armor = 0;
+        if (this.gameState) {
+            if (this.name === "玩家") {
+                armor = this.gameState.playerArmor;
+            } else if (this.name === "电脑") {
+                armor = this.gameState.computerArmor;
+            }
+        }
+        
         // 计算护甲减免
-        let actualDamage = Math.max(0, damage);
+        let actualDamage = Math.max(0, damage - armor);
+        
+        // 扣除护甲
+        if (armor > 0) {
+            if (this.gameState) {
+                if (this.name === "玩家") {
+                    this.gameState.playerArmor = Math.max(0, this.gameState.playerArmor - damage);
+                } else if (this.name === "电脑") {
+                    this.gameState.computerArmor = Math.max(0, this.gameState.computerArmor - damage);
+                }
+            }
+        }
+        
+        // 扣除血量
         this.currentHealth = Math.max(0, this.currentHealth - actualDamage);
         return actualDamage;
     }

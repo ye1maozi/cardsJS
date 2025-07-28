@@ -22,45 +22,51 @@ class Card {
      * @returns {string} 效果描述
      */
     executeEffect(gameState, isPlayer) {
-        const target = isPlayer ? "电脑" : "玩家";
-        
         // 优先使用EffectCode，如果没有则使用Name作为后备
         const effectCode = this.effectCode || this.name;
         
         switch (effectCode) {
             case "DAMAGE_6":
                 if (isPlayer) {
-                    gameState.computerHealth -= this.value1;
+                    gameState.computerCharacter.takeDamage(this.value1);
+                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
                 } else {
-                    gameState.playerHealth -= this.value1;
+                    gameState.playerCharacter.takeDamage(this.value1);
+                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
                 }
                 return this.formatEffect(this.value1);
                 
             case "DAMAGE_9":
                 if (isPlayer) {
-                    gameState.computerHealth -= this.value1;
+                    gameState.computerCharacter.takeDamage(this.value1);
+                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
                 } else {
-                    gameState.playerHealth -= this.value1;
+                    gameState.playerCharacter.takeDamage(this.value1);
+                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
                 }
                 return this.formatEffect(this.value1);
                 
             case "HEAL_6":
                 if (isPlayer) {
-                    gameState.playerHealth = Math.min(gameState.playerHealth + this.value1, 30);
+                    gameState.playerCharacter.heal(this.value1);
+                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
                 } else {
-                    gameState.computerHealth = Math.min(gameState.computerHealth + this.value1, 30);
+                    gameState.computerCharacter.heal(this.value1);
+                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
                 }
                 return this.formatEffect(this.value1);
                 
             case "DAMAGE_6_POISON":
                 if (isPlayer) {
-                    gameState.computerHealth -= this.value1;
+                    gameState.computerCharacter.takeDamage(this.value1);
+                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
                     // 添加中毒效果
                     if (gameState.computerCharacter) {
                         gameState.computerCharacter.addStatusEffect(new PoisonEffect(this.value2, 5));
                     }
                 } else {
-                    gameState.playerHealth -= this.value1;
+                    gameState.playerCharacter.takeDamage(this.value1);
+                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
                     // 添加中毒效果
                     if (gameState.playerCharacter) {
                         gameState.playerCharacter.addStatusEffect(new PoisonEffect(this.value2, 5));
@@ -70,13 +76,15 @@ class Card {
                 
             case "DAMAGE_3_SLOW":
                 if (isPlayer) {
-                    gameState.computerHealth -= this.value1;
+                    gameState.computerCharacter.takeDamage(this.value1);
+                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
                     // 添加减速效果
                     if (gameState.computerCharacter) {
                         gameState.computerCharacter.addStatusEffect(new SlowEffect(this.value2, this.value3));
                     }
                 } else {
-                    gameState.playerHealth -= this.value1;
+                    gameState.playerCharacter.takeDamage(this.value1);
+                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
                     // 添加减速效果
                     if (gameState.playerCharacter) {
                         gameState.playerCharacter.addStatusEffect(new SlowEffect(this.value2, this.value3));
@@ -86,23 +94,27 @@ class Card {
                 
             case "DAMAGE_4_ARMOR":
                 if (isPlayer) {
-                    gameState.computerHealth -= this.value1;
+                    gameState.computerCharacter.takeDamage(this.value1);
+                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
                     gameState.playerArmor += this.value2;
                 } else {
-                    gameState.playerHealth -= this.value1;
+                    gameState.playerCharacter.takeDamage(this.value1);
+                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
                     gameState.computerArmor += this.value2;
                 }
                 return this.formatEffect(this.value1, this.value2);
                 
             case "DAMAGE_4_ALL_SLOW":
                 if (isPlayer) {
-                    gameState.computerHealth -= this.value1;
+                    gameState.computerCharacter.takeDamage(this.value1);
+                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
                     // 添加减速效果
                     if (gameState.computerCharacter) {
                         gameState.computerCharacter.addStatusEffect(new SlowEffect(this.value2, 3));
                     }
                 } else {
-                    gameState.playerHealth -= this.value1;
+                    gameState.playerCharacter.takeDamage(this.value1);
+                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
                     // 添加减速效果
                     if (gameState.playerCharacter) {
                         gameState.playerCharacter.addStatusEffect(new SlowEffect(this.value2, 3));
@@ -113,10 +125,12 @@ class Card {
             case "CONSUME_ALL_ENERGY":
                 const damage = isPlayer ? gameState.playerEnergy * this.value1 : gameState.computerEnergy * this.value1;
                 if (isPlayer) {
-                    gameState.computerHealth -= damage;
+                    gameState.computerCharacter.takeDamage(damage);
+                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
                     gameState.playerEnergy = 0;
                 } else {
-                    gameState.playerHealth -= damage;
+                    gameState.playerCharacter.takeDamage(damage);
+                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
                     gameState.computerEnergy = 0;
                 }
                 return `${this.name} 消耗所有能量造成${damage}点伤害`;
@@ -131,9 +145,11 @@ class Card {
                 }
                 
                 if (isPlayer) {
-                    gameState.computerHealth -= this.value1;
+                    gameState.computerCharacter.takeDamage(this.value1);
+                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
                 } else {
-                    gameState.playerHealth -= this.value1;
+                    gameState.playerCharacter.takeDamage(this.value1);
+                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
                 }
                 return this.formatEffect(this.value1);
                 
@@ -186,9 +202,11 @@ class Card {
                 
             case "HEAL_4_ALL":
                 if (isPlayer) {
-                    gameState.playerHealth = Math.min(gameState.playerHealth + this.value1, 30);
+                    gameState.playerCharacter.heal(this.value1);
+                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
                 } else {
-                    gameState.computerHealth = Math.min(gameState.computerHealth + this.value1, 30);
+                    gameState.computerCharacter.heal(this.value1);
+                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
                 }
                 return this.formatEffect(this.value1);
                 
@@ -199,137 +217,24 @@ class Card {
                     gameState.playerCharacter.statusEffects = [];
                 }
                 return "移除所有负面效果";
-                if (isPlayer) {
-                    gameState.computerHealth -= this.value1;
-                } else {
-                    gameState.playerHealth -= this.value1;
-                }
-                return this.formatEffect(this.value1);
                 
             case "STEALTH":
                 return this.formatEffect(this.value1);
                 
-            case "HEAL_4_ALL":
-                if (isPlayer) {
-                    gameState.playerHealth = Math.min(gameState.playerHealth + this.value1, 30);
-                } else {
-                    gameState.computerHealth = Math.min(gameState.computerHealth + this.value1, 30);
-                }
-                return this.formatEffect(this.value1);
-                
-            case "DISPEL":
-                return this.effect;
-                
             default:
-                // 后备：使用Name进行匹配（兼容旧版本）
-                return this.executeLegacyEffect(gameState, isPlayer, target);
+                // 默认效果：造成4点伤害
+                if (isPlayer) {
+                    gameState.computerCharacter.takeDamage(4);
+                    gameState.computerHealth = gameState.computerCharacter.currentHealth;
+                } else {
+                    gameState.playerCharacter.takeDamage(4);
+                    gameState.playerHealth = gameState.playerCharacter.currentHealth;
+                }
+                return `${this.name} 对${isPlayer ? "电脑" : "玩家"}造成4点伤害`;
         }
     }
 
-    /**
-     * 执行旧版本效果（兼容性）
-     */
-    executeLegacyEffect(gameState, isPlayer, target) {
-        switch (this.name) {
-            case "打击":
-                if (isPlayer) {
-                    gameState.computerHealth -= 6;
-                } else {
-                    gameState.playerHealth -= 6;
-                }
-                return `${this.name} 对${target}造成6点伤害`;
-                
-            case "火球术":
-                if (isPlayer) {
-                    gameState.computerHealth -= 8;
-                } else {
-                    gameState.playerHealth -= 8;
-                }
-                return `${this.name} 对${target}造成8点伤害`;
-                
-            case "治疗术":
-                if (isPlayer) {
-                    gameState.playerHealth = Math.min(gameState.playerHealth + 6, 30);
-                } else {
-                    gameState.computerHealth = Math.min(gameState.computerHealth + 6, 30);
-                }
-                return `${this.name} 恢复了6点生命值`;
-                
-            case "毒刃":
-                if (isPlayer) {
-                    gameState.computerHealth -= 6;
-                } else {
-                    gameState.playerHealth -= 6;
-                }
-                return `${this.name} 对${target}造成6点伤害并施加中毒效果`;
-                
-            case "断筋":
-                if (isPlayer) {
-                    gameState.computerHealth -= 3;
-                } else {
-                    gameState.playerHealth -= 3;
-                }
-                return `${this.name} 对${target}造成3点伤害并减速`;
-                
-            case "盾击":
-                if (isPlayer) {
-                    gameState.computerHealth -= 4;
-                } else {
-                    gameState.playerHealth -= 4;
-                }
-                return `${this.name} 对${target}造成4点伤害并获得护甲`;
-                
-            case "冰霜新星":
-                if (isPlayer) {
-                    gameState.computerHealth -= 4;
-                } else {
-                    gameState.playerHealth -= 4;
-                }
-                return `${this.name} 对所有敌人造成4点伤害并减速`;
-                
-            case "奥术冲击":
-                const damage2 = isPlayer ? gameState.playerEnergy * 2 : gameState.computerEnergy * 2;
-                if (isPlayer) {
-                    gameState.computerHealth -= damage2;
-                    gameState.playerEnergy = 0;
-                } else {
-                    gameState.playerHealth -= damage2;
-                    gameState.computerEnergy = 0;
-                }
-                return `${this.name} 消耗所有能量造成${damage2}点伤害`;
-                
-            case "伏击":
-                if (isPlayer) {
-                    gameState.computerHealth -= 15;
-                } else {
-                    gameState.playerHealth -= 15;
-                }
-                return `${this.name} 造成15点高额伤害`;
-                
-            case "疾跑":
-                return `${this.name} 进入潜行状态`;
-                
-            case "神圣新星":
-                if (isPlayer) {
-                    gameState.playerHealth = Math.min(gameState.playerHealth + 4, 30);
-                } else {
-                    gameState.computerHealth = Math.min(gameState.computerHealth + 4, 30);
-                }
-                return `${this.name} 恢复4点生命值`;
-                
-            case "驱散":
-                return `${this.name} 移除负面效果`;
-                
-            default:
-                // 默认效果
-                if (isPlayer) {
-                    gameState.computerHealth -= 4;
-                } else {
-                    gameState.playerHealth -= 4;
-                }
-                return `${this.name} 对${target}造成4点伤害`;
-        }
-    }
+
 
     /**
      * 格式化效果描述
