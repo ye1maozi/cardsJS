@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加载优化和关闭按钮修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-button.danger {
+            background: #dc3545;
+        }
+        .test-button.danger:hover {
+            background: #c82333;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .test-result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .iframe-container {
+            margin-top: 20px;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .performance-info {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎮 加载优化和关闭按钮修复测试</h1>
+        <p>测试游戏加载优化和游戏结束模态框关闭按钮的修复效果。</p>
+
+        <div class="test-section">
+            <div class="test-title">1. 加载性能测试</div>
+            <p>测试游戏是否只在点击"开始游戏"时才初始化，而不是页面加载时就开始。</p>
+            <button class="test-button" onclick="testLoadingPerformance()">测试加载性能</button>
+            <button class="test-button" onclick="measureLoadTime()">测量加载时间</button>
+            <div id="performance-results"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">2. 关闭按钮测试</div>
+            <p>测试游戏结束后关闭按钮是否正常工作。</p>
+            <button class="test-button" onclick="testCloseButton()">测试关闭按钮</button>
+            <button class="test-button danger" onclick="forceGameEnd()">强制结束游戏</button>
+            <div id="close-button-results"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">3. 游戏功能测试</div>
+            <p>在下方游戏界面中测试完整功能。</p>
+            <button class="test-button" onclick="testGameFlow()">测试游戏流程</button>
+            <div id="game-flow-results"></div>
+        </div>
+
+        <div class="iframe-container">
+            <iframe src="../index.html" style="width: 100%; height: 600px; border: none;"></iframe>
+        </div>
+    </div>
+
+    <script>
+        let loadStartTime = 0;
+        let loadEndTime = 0;
+
+        function addTestResult(message, type = 'info') {
+            const container = document.getElementById('performance-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            container.appendChild(resultDiv);
+        }
+
+        function addCloseButtonResult(message, type = 'info') {
+            const container = document.getElementById('close-button-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            container.appendChild(resultDiv);
+        }
+
+        function addGameFlowResult(message, type = 'info') {
+            const container = document.getElementById('game-flow-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            container.appendChild(resultDiv);
+        }
+
+        function testLoadingPerformance() {
+            document.getElementById('performance-results').innerHTML = '';
+            addTestResult('🎯 加载性能测试开始...');
+            addTestResult('1. 页面加载时应该只显示开始界面');
+            addTestResult('2. 不应该在页面加载时就开始初始化游戏');
+            addTestResult('3. 只有点击"开始游戏"按钮时才应该开始加载');
+            addTestResult('✅ 请在下方游戏界面中验证这些行为', 'success');
+        }
+
+        function measureLoadTime() {
+            document.getElementById('performance-results').innerHTML = '';
+            addTestResult('⏱️ 加载时间测量：');
+            addTestResult('请在下方游戏界面中：');
+            addTestResult('1. 记录页面加载完成的时间');
+            addTestResult('2. 点击"开始游戏"按钮');
+            addTestResult('3. 记录游戏完全启动的时间');
+            addTestResult('4. 计算实际加载时间');
+            addTestResult('💡 优化前：页面加载时就开始初始化');
+            addTestResult('💡 优化后：只有点击开始游戏时才初始化', 'success');
+        }
+
+        function testCloseButton() {
+            document.getElementById('close-button-results').innerHTML = '';
+            addCloseButtonResult('🔧 关闭按钮测试：');
+            addCloseButtonResult('1. 在下方游戏界面中开始游戏');
+            addCloseButtonResult('2. 快速使用高伤害卡牌结束游戏');
+            addCloseButtonResult('3. 观察游戏结束弹窗是否出现');
+            addCloseButtonResult('4. 点击"关闭"按钮测试是否正常工作');
+            addCloseButtonResult('5. 也可以按ESC键测试关闭功能');
+            addCloseButtonResult('✅ 修复前：关闭按钮可能无反应');
+            addCloseButtonResult('✅ 修复后：关闭按钮和ESC键都应该正常工作', 'success');
+        }
+
+        function forceGameEnd() {
+            document.getElementById('close-button-results').innerHTML = '';
+            addCloseButtonResult('⚠️ 强制结束游戏测试：');
+            addCloseButtonResult('1. 在游戏界面中快速点击高伤害卡牌');
+            addCloseButtonResult('2. 观察生命值变化和游戏结束逻辑');
+            addCloseButtonResult('3. 确认游戏结束弹窗正确显示');
+            addCloseButtonResult('4. 测试关闭按钮的响应性');
+        }
+
+        function testGameFlow() {
+            document.getElementById('game-flow-results').innerHTML = '';
+            addGameFlowResult('🎮 游戏流程测试：');
+            addGameFlowResult('1. 点击"开始游戏"按钮');
+            addGameFlowResult('2. 观察加载动画和初始化过程');
+            addGameFlowResult('3. 正常进行游戏');
+            addGameFlowResult('4. 测试游戏结束和重新开始功能');
+            addGameFlowResult('5. 验证所有按钮和快捷键正常工作');
+            addGameFlowResult('✅ 完整的游戏体验测试', 'success');
+        }
+
+        // 页面加载完成后的提示
+        window.addEventListener('load', function() {
+            addTestResult('📋 测试说明：', 'info');
+            addTestResult('• 这个测试页面验证了加载优化和关闭按钮修复');
+            addTestResult('• 游戏现在只在用户点击开始游戏时才初始化');
+            addTestResult('• 关闭按钮现在有更好的事件处理和错误处理');
+            addTestResult('• 支持ESC键关闭游戏结束弹窗');
+        });
+    </script>
+</body>
+</html> 

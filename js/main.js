@@ -4,52 +4,23 @@
 
 // 全局游戏实例
 let game = null;
+let isGameInitialized = false;
 
 /**
- * 页面加载完成后初始化游戏
+ * 页面加载完成后只显示开始界面，不初始化游戏
  */
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('页面加载完成，准备游戏...');
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('页面加载完成，显示开始界面...');
     
     try {
-        // 首先加载所有配置
-        console.log('正在加载配置文件...');
-        const configLoaded = await ConfigManager.loadAllConfigs();
-        if (!configLoaded) {
-            console.warn('部分配置文件加载失败，将使用默认配置');
-        }
-        
-        // 验证配置
-        console.log('正在验证配置文件...');
-        ConfigValidator.logValidationReport();
-        
-        // 更新版本信息
-        const versionInfo = document.getElementById('versionInfo');
-        if (versionInfo) {
-            const gameVersion = ConfigManager.getGameConfig('GameVersion', '1.4.2');
-            versionInfo.textContent = `v${gameVersion}`;
-        }
-        
-        // 创建游戏实例
-        game = new Game();
-        
-        // 初始化游戏（但不自动开始）
-        await game.initialize();
-        
-        console.log('游戏准备完成，等待用户开始...');
-        
-        // 添加键盘快捷键
-        setupKeyboardShortcuts();
-        
-        // 添加开发者工具
-        setupDeveloperTools();
-        
-        // 显示开始游戏界面
+        // 只显示开始游戏界面，不初始化游戏
         showStartScreen();
         
+        console.log('开始界面显示完成，等待用户点击开始...');
+        
     } catch (error) {
-        console.error('游戏准备失败:', error);
-        alert('游戏准备失败: ' + error.message);
+        console.error('显示开始界面失败:', error);
+        alert('显示开始界面失败: ' + error.message);
     }
 });
 
@@ -59,6 +30,16 @@ document.addEventListener('DOMContentLoaded', async function() {
 function showStartScreen() {
     const gameContainer = document.querySelector('.game-container');
     if (!gameContainer) return;
+    
+    // 获取版本号（如果配置已加载则使用配置中的版本号，否则使用默认值）
+    let version = 'v1.8.0'; // 默认版本号
+    try {
+        if (typeof ConfigManager !== 'undefined' && ConfigManager.isLoaded) {
+            version = 'v' + ConfigManager.getGameConfig('GameVersion', '1.8.0');
+        }
+    } catch (error) {
+        console.warn('无法获取配置版本号，使用默认版本号:', error);
+    }
     
     // 创建开始游戏界面
     const startScreen = document.createElement('div');
@@ -73,7 +54,7 @@ function showStartScreen() {
                 <button id="loadGameBtn" class="btn btn-secondary">加载游戏</button>
             </div>
             <div class="game-info">
-                <p>版本: v${ConfigManager.getGameConfig('GameVersion', '1.4.2')}</p>
+                <p>版本: ${version}</p>
                 <p>按 R 键重新开始 | 按 S 键保存 | 按 L 键加载</p>
             </div>
         </div>
@@ -102,24 +83,82 @@ function showStartScreen() {
 }
 
 /**
- * 开始游戏
+ * 开始游戏 - 只在用户点击开始游戏时才初始化
  */
-function startGame() {
-    // 隐藏开始界面
-    const startScreen = document.getElementById('startScreen');
-    if (startScreen) {
-        startScreen.style.display = 'none';
-    }
-    
-    // 显示游戏界面
-    if (game && game.gameUI) {
-        game.gameUI.showGameInterface();
-    }
-    
-    // 开始游戏
-    if (game) {
-        game.start();
-        console.log('游戏启动成功！');
+async function startGame() {
+    try {
+        console.log('用户点击开始游戏，开始初始化...');
+        
+        // 显示加载提示
+        const startScreen = document.getElementById('startScreen');
+        if (startScreen) {
+            startScreen.innerHTML = `
+                <div class="start-content">
+                    <h2>正在加载游戏...</h2>
+                    <p>请稍候，正在初始化游戏配置...</p>
+                    <div class="loading-spinner"></div>
+                </div>
+            `;
+        }
+        
+        // 如果游戏还未初始化，则进行初始化
+        if (!isGameInitialized) {
+            console.log('首次启动，开始初始化游戏...');
+            
+            // 加载所有配置
+            console.log('正在加载配置文件...');
+            const configLoaded = await ConfigManager.loadAllConfigs();
+            if (!configLoaded) {
+                console.warn('部分配置文件加载失败，将使用默认配置');
+            }
+            
+            // 验证配置
+            console.log('正在验证配置文件...');
+            ConfigValidator.logValidationReport();
+            
+            // 更新版本信息
+            updateVersionInfo();
+            
+            // 创建游戏实例
+            game = new Game();
+            
+            // 初始化游戏
+            await game.initialize();
+            
+            // 设置键盘快捷键
+            setupKeyboardShortcuts();
+            
+            // 添加开发者工具
+            setupDeveloperTools();
+            
+            isGameInitialized = true;
+            console.log('游戏初始化完成');
+        }
+        
+        // 隐藏开始界面
+        if (startScreen) {
+            startScreen.style.display = 'none';
+        }
+        
+        // 显示游戏界面
+        if (game && game.gameUI) {
+            game.gameUI.showGameInterface();
+        }
+        
+        // 开始游戏
+        if (game) {
+            game.start();
+            console.log('游戏启动成功！');
+        }
+        
+    } catch (error) {
+        console.error('游戏启动失败:', error);
+        alert('游戏启动失败: ' + error.message);
+        
+        // 恢复开始界面
+        if (startScreen) {
+            showStartScreen();
+        }
     }
 }
 
@@ -285,6 +324,36 @@ if (window.performance) {
  */
 function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+/**
+ * 更新版本信息
+ */
+function updateVersionInfo() {
+    try {
+        // 获取配置中的版本号
+        const gameVersion = ConfigManager.getGameConfig('GameVersion', '1.8.0');
+        const versionText = `v${gameVersion}`;
+        
+        // 更新HTML中的版本信息
+        const versionInfo = document.getElementById('versionInfo');
+        if (versionInfo) {
+            versionInfo.textContent = versionText;
+        }
+        
+        // 更新开始界面中的版本信息
+        const startScreen = document.getElementById('startScreen');
+        if (startScreen) {
+            const versionElement = startScreen.querySelector('.game-info p');
+            if (versionElement && versionElement.textContent.includes('版本:')) {
+                versionElement.textContent = `版本: ${versionText}`;
+            }
+        }
+        
+        console.log(`版本信息已更新为: ${versionText}`);
+    } catch (error) {
+        console.warn('更新版本信息失败:', error);
+    }
 }
 
 // 如果是移动设备，添加移动端优化

@@ -12,7 +12,7 @@
         <!-- 游戏标题 -->
         <header class="game-header">
             <h1>卡牌对战游戏</h1>
-            <div class="version-info" id="versionInfo">v1.4.2</div>
+            <div class="version-info" id="versionInfo">v1.8.0</div>
         </header>
 
         <!-- 游戏状态栏 -->
@@ -145,25 +145,19 @@
         </div>
     </div>
 
-    <!-- JavaScript文件 - 使用时间戳防止缓存 -->
-    <script>
-        // 生成时间戳并加载所有脚本
-        const timestamp = Date.now();
-        document.write(`
-            <script src="js/ConfigData.js?t=${timestamp}"><\/script>
-            <script src="js/Character.js?t=${timestamp}"><\/script>
-            <script src="js/CastingSystem.js?t=${timestamp}"><\/script>
-            <script src="js/Card.js?t=${timestamp}"><\/script>
-            <script src="js/CardConfig.js?t=${timestamp}"><\/script>
-            <script src="js/ConfigManager.js?t=${timestamp}"><\/script>
-            <script src="js/ConfigValidator.js?t=${timestamp}"><\/script>
-            <script src="js/HeroSkill.js?t=${timestamp}"><\/script>
-            <script src="js/BotPlayer.js?t=${timestamp}"><\/script>
-            <script src="js/GameState.js?t=${timestamp}"><\/script>
-            <script src="js/GameUI.js?t=${timestamp}"><\/script>
-            <script src="js/Game.js?t=${timestamp}"><\/script>
-            <script src="js/main.js?t=${timestamp}"><\/script>
-        `);
-    </script>
+    <!-- JavaScript文件 - 优化加载方式 -->
+    <script src="js/ConfigData.js"></script>
+    <script src="js/Character.js"></script>
+    <script src="js/CastingSystem.js"></script>
+    <script src="js/Card.js"></script>
+    <script src="js/CardConfig.js"></script>
+    <script src="js/ConfigManager.js"></script>
+    <script src="js/ConfigValidator.js"></script>
+    <script src="js/HeroSkill.js"></script>
+    <script src="js/BotPlayer.js"></script>
+    <script src="js/GameState.js"></script>
+    <script src="js/GameUI.js"></script>
+    <script src="js/Game.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html> 

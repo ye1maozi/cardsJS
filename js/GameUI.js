@@ -70,10 +70,16 @@ class GameUI {
             });
         }
 
-        // 关闭模态框按钮
+        // 关闭模态框按钮 - 修复事件绑定
         const closeModalBtn = document.getElementById('closeModalBtn');
         if (closeModalBtn) {
-            closeModalBtn.addEventListener('click', () => {
+            // 移除可能存在的旧事件监听器
+            const newCloseBtn = closeModalBtn.cloneNode(true);
+            closeModalBtn.parentNode.replaceChild(newCloseBtn, closeModalBtn);
+            
+            // 重新绑定事件
+            newCloseBtn.addEventListener('click', () => {
+                console.log('关闭按钮被点击');
                 this.hideGameOverModal();
             });
         }
@@ -493,6 +499,13 @@ class GameUI {
             title.textContent = '游戏结束';
             messageElement.textContent = message;
             modal.style.display = 'flex';
+            
+            // 重新绑定关闭按钮事件
+            this.bindCloseModalEvent();
+            
+            console.log('游戏结束模态框已显示');
+        } else {
+            console.error('游戏结束模态框元素未找到');
         }
     }
 
@@ -503,6 +516,38 @@ class GameUI {
         const modal = document.getElementById('gameOverModal');
         if (modal) {
             modal.style.display = 'none';
+            console.log('游戏结束模态框已隐藏');
+        } else {
+            console.error('游戏结束模态框元素未找到');
+        }
+    }
+
+    /**
+     * 绑定关闭模态框事件
+     */
+    bindCloseModalEvent() {
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        if (closeModalBtn) {
+            // 移除所有现有的事件监听器
+            const newCloseBtn = closeModalBtn.cloneNode(true);
+            closeModalBtn.parentNode.replaceChild(newCloseBtn, closeModalBtn);
+            
+            // 重新绑定事件
+            newCloseBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('关闭按钮被点击');
+                this.hideGameOverModal();
+            });
+            
+            // 也支持ESC键关闭
+            const handleEscKey = (e) => {
+                if (e.key === 'Escape') {
+                    this.hideGameOverModal();
+                    document.removeEventListener('keydown', handleEscKey);
+                }
+            };
+            document.addEventListener('keydown', handleEscKey);
         }
     }
 

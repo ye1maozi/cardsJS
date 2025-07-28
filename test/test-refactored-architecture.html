@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>重构架构测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            color: #333;
+            margin-top: 0;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .log-container {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .performance-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .stat-item {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>重构架构测试</h1>
+        <p>测试重构后的模块化架构和核心系统功能</p>
+
+        <!-- 核心系统测试 -->
+        <div class="test-section">
+            <h3>核心系统测试</h3>
+            <button onclick="testEventSystem()">测试事件系统</button>
+            <button onclick="testStateManager()">测试状态管理</button>
+            <button onclick="testErrorHandler()">测试错误处理</button>
+            <div id="core-test-results"></div>
+        </div>
+
+        <!-- 游戏引擎测试 -->
+        <div class="test-section">
+            <h3>游戏引擎测试</h3>
+            <button onclick="testGameEngine()">测试游戏引擎</button>
+            <button onclick="testPerformance()">测试性能监控</button>
+            <button onclick="testSaveLoad()">测试保存加载</button>
+            <div id="engine-test-results"></div>
+        </div>
+
+        <!-- 卡牌系统测试 -->
+        <div class="test-section">
+            <h3>卡牌系统测试</h3>
+            <button onclick="testCardSystem()">测试卡牌系统</button>
+            <button onclick="testCardEffects()">测试卡牌效果</button>
+            <button onclick="testCardCreation()">测试卡牌创建</button>
+            <div id="card-test-results"></div>
+        </div>
+
+        <!-- 性能监控 -->
+        <div class="test-section">
+            <h3>性能监控</h3>
+            <div class="performance-stats" id="performance-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="fps">0</div>
+                    <div class="stat-label">FPS</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="memory">0</div>
+                    <div class="stat-label">内存 (MB)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="update-time">0</div>
+                    <div class="stat-label">更新时间 (ms)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="render-time">0</div>
+                    <div class="stat-label">渲染时间 (ms)</div>
+                </div>
+            </div>
+            <button onclick="startPerformanceMonitoring()">开始监控</button>
+            <button onclick="stopPerformanceMonitoring()">停止监控</button>
+        </div>
+
+        <!-- 日志输出 -->
+        <div class="test-section">
+            <h3>测试日志</h3>
+            <div class="log-container" id="test-log"></div>
+            <button onclick="clearLog()">清空日志</button>
+        </div>
+    </div>
+
+    <!-- 加载核心系统 -->
+    <script src="../js/core/EventSystem.js"></script>
+    <script src="../js/core/StateManager.js"></script>
+    <script src="../js/core/ErrorHandler.js"></script>
+    <script src="../js/core/GameEngine.js"></script>
+    <script src="../js/ConfigData.js"></script>
+    <script src="../js/systems/CardSystem.js"></script>
+
+    <script>
+        // 全局变量
+        let gameEngine = null;
+        let performanceMonitor = null;
+
+        // 日志函数
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('test-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('test-log').innerHTML = '';
+        }
+
+        // 显示测试结果
+        function showResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const result = document.createElement('div');
+            result.className = `test-result ${type}`;
+            result.textContent = message;
+            container.appendChild(result);
+        }
+
+        // 测试事件系统
+        async function testEventSystem() {
+            log('开始测试事件系统...');
+            
+            try {
+                // 测试基本事件功能
+                let eventReceived = false;
+                window.EventBus.on('test:event', (data) => {
+                    eventReceived = true;
+                    log(`收到事件: ${data.message}`, 'success');
+                });
+
+                window.EventBus.emit('test:event', { message: '测试事件' });
+                
+                if (eventReceived) {
+                    showResult('core-test-results', '事件系统测试通过', 'success');
+                    log('事件系统测试通过', 'success');
+                } else {
+                    throw new Error('事件未正确接收');
+                }
+
+                // 测试一次性事件
+                let onceEventReceived = false;
+                window.EventBus.once('test:once', (data) => {
+                    onceEventReceived = true;
+                    log(`收到一次性事件: ${data.message}`, 'success');
+                });
+
+                window.EventBus.emit('test:once', { message: '一次性事件' });
+                window.EventBus.emit('test:once', { message: '第二次事件' });
+
+                if (onceEventReceived) {
+                    showResult('core-test-results', '一次性事件测试通过', 'success');
+                    log('一次性事件测试通过', 'success');
+                } else {
+                    throw new Error('一次性事件未正确接收');
+                }
+
+            } catch (error) {
+                showResult('core-test-results', `事件系统测试失败: ${error.message}`, 'error');
+                log(`事件系统测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试状态管理
+        async function testStateManager() {
+            log('开始测试状态管理...');
+            
+            try {
+                // 测试基本状态操作
+                window.StateManager.set('test.value', 42);
+                const value = window.StateManager.get('test.value');
+                
+                if (value === 42) {
+                    showResult('core-test-results', '状态设置和获取测试通过', 'success');
+                    log('状态设置和获取测试通过', 'success');
+                } else {
+                    throw new Error(`状态值不匹配: 期望 42, 实际 ${value}`);
+                }
+
+                // 测试状态订阅
+                let subscriptionReceived = false;
+                const unsubscribe = window.StateManager.subscribe('test.subscription', (newValue, oldValue) => {
+                    subscriptionReceived = true;
+                    log(`状态变更: ${oldValue} -> ${newValue}`, 'success');
+                });
+
+                window.StateManager.set('test.subscription', '新值');
+                
+                if (subscriptionReceived) {
+                    showResult('core-test-results', '状态订阅测试通过', 'success');
+                    log('状态订阅测试通过', 'success');
+                } else {
+                    throw new Error('状态订阅未正确触发');
+                }
+
+                unsubscribe();
+
+            } catch (error) {
+                showResult('core-test-results', `状态管理测试失败: ${error.message}`, 'error');
+                log(`状态管理测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试错误处理
+        async function testErrorHandler() {
+            log('开始测试错误处理...');
+            
+            try {
+                // 初始化错误处理器
+                window.ErrorHandler.init();
+
+                // 测试错误捕获
+                let errorCaught = false;
+                window.ErrorHandler.onError('test', (errorInfo) => {
+                    errorCaught = true;
+                    log(`错误被捕获: ${errorInfo.message}`, 'warning');
+                });
+
+                // 触发测试错误
+                window.ErrorHandler.handleError(new Error('测试错误'), {
+                    type: 'test',
+                    context: '测试上下文'
+                });
+
+                if (errorCaught) {
+                    showResult('core-test-results', '错误处理测试通过', 'success');
+                    log('错误处理测试通过', 'success');
+                } else {
+                    throw new Error('错误未被正确捕获');
+                }
+
+                // 测试安全执行
+                const result = window.ErrorHandler.safeExecute(() => {
+                    throw new Error('函数执行错误');
+                });
+
+                if (result === null) {
+                    showResult('core-test-results', '安全执行测试通过', 'success');
+                    log('安全执行测试通过', 'success');
+                } else {
+                    throw new Error('安全执行未正确处理错误');
+                }
+
+            } catch (error) {
+                showResult('core-test-results', `错误处理测试失败: ${error.message}`, 'error');
+                log(`错误处理测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试游戏引擎
+        async function testGameEngine() {
+            log('开始测试游戏引擎...');
+            
+            try {
+                // 创建游戏引擎
+                gameEngine = new GameEngine();
+                
+                // 等待引擎初始化
+                await new Promise((resolve) => {
+                    window.EventBus.once('engine:initialized', resolve);
+                });
+
+                showResult('engine-test-results', '游戏引擎初始化成功', 'success');
+                log('游戏引擎初始化成功', 'success');
+
+                // 测试引擎状态
+                const isInitialized = gameEngine.isInitialized;
+                if (isInitialized) {
+                    showResult('engine-test-results', '引擎状态检查通过', 'success');
+                    log('引擎状态检查通过', 'success');
+                } else {
+                    throw new Error('引擎未正确初始化');
+                }
+
+            } catch (error) {
+                showResult('engine-test-results', `游戏引擎测试失败: ${error.message}`, 'error');
+                log(`游戏引擎测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试性能监控
+        async function testPerformance() {
+            log('开始测试性能监控...');
+            
+            try {
+                if (!gameEngine) {
+                    throw new Error('游戏引擎未初始化');
+                }
+
+                // 启动游戏引擎
+                gameEngine.start();
+                
+                // 等待一段时间收集性能数据
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const stats = gameEngine.getPerformanceStats();
+                
+                if (stats.fps > 0) {
+                    showResult('engine-test-results', '性能监控测试通过', 'success');
+                    log(`性能统计: FPS=${stats.fps.toFixed(1)}, 内存=${stats.memoryUsage.toFixed(1)}MB`, 'success');
+                } else {
+                    throw new Error('性能数据未正确收集');
+                }
+
+                gameEngine.stop();
+
+            } catch (error) {
+                showResult('engine-test-results', `性能监控测试失败: ${error.message}`, 'error');
+                log(`性能监控测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试保存加载
+        async function testSaveLoad() {
+            log('开始测试保存加载...');
+            
+            try {
+                if (!gameEngine) {
+                    throw new Error('游戏引擎未初始化');
+                }
+
+                // 设置一些测试状态
+                gameEngine.stateManager.set('test.save', '测试数据');
+                
+                // 保存游戏
+                const saveData = gameEngine.saveGame();
+                
+                if (saveData) {
+                    showResult('engine-test-results', '游戏保存测试通过', 'success');
+                    log('游戏保存测试通过', 'success');
+                } else {
+                    throw new Error('游戏保存失败');
+                }
+
+                // 重置状态
+                gameEngine.stateManager.set('test.save', null);
+                
+                // 加载游戏
+                const loadSuccess = gameEngine.loadGame();
+                
+                if (loadSuccess) {
+                    const loadedValue = gameEngine.stateManager.get('test.save');
+                    if (loadedValue === '测试数据') {
+                        showResult('engine-test-results', '游戏加载测试通过', 'success');
+                        log('游戏加载测试通过', 'success');
+                    } else {
+                        throw new Error('加载的数据不正确');
+                    }
+                } else {
+                    throw new Error('游戏加载失败');
+                }
+
+            } catch (error) {
+                showResult('engine-test-results', `保存加载测试失败: ${error.message}`, 'error');
+                log(`保存加载测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试卡牌系统
+        async function testCardSystem() {
+            log('开始测试卡牌系统...');
+            
+            try {
+                if (!gameEngine) {
+                    throw new Error('游戏引擎未初始化');
+                }
+
+                const cardSystem = gameEngine.cardSystem;
+                
+                if (!cardSystem) {
+                    throw new Error('卡牌系统未初始化');
+                }
+
+                // 测试卡牌创建
+                const card = cardSystem.createCard('打击');
+                
+                if (card && card.name === '打击') {
+                    showResult('card-test-results', '卡牌创建测试通过', 'success');
+                    log('卡牌创建测试通过', 'success');
+                } else {
+                    throw new Error('卡牌创建失败');
+                }
+
+                // 测试卡牌配置获取
+                const config = cardSystem.getCardConfig('打击');
+                
+                if (config) {
+                    showResult('card-test-results', '卡牌配置获取测试通过', 'success');
+                    log('卡牌配置获取测试通过', 'success');
+                } else {
+                    throw new Error('卡牌配置获取失败');
+                }
+
+            } catch (error) {
+                showResult('card-test-results', `卡牌系统测试失败: ${error.message}`, 'error');
+                log(`卡牌系统测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试卡牌效果
+        async function testCardEffects() {
+            log('开始测试卡牌效果...');
+            
+            try {
+                if (!gameEngine) {
+                    throw new Error('游戏引擎未初始化');
+                }
+
+                const cardSystem = gameEngine.cardSystem;
+                
+                // 测试效果策略
+                const strategies = cardSystem.effectStrategies;
+                
+                if (strategies.size > 0) {
+                    showResult('card-test-results', '效果策略测试通过', 'success');
+                    log(`效果策略数量: ${strategies.size}`, 'success');
+                } else {
+                    throw new Error('效果策略未正确注册');
+                }
+
+            } catch (error) {
+                showResult('card-test-results', `卡牌效果测试失败: ${error.message}`, 'error');
+                log(`卡牌效果测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 测试卡牌创建
+        async function testCardCreation() {
+            log('开始测试卡牌创建...');
+            
+            try {
+                if (!gameEngine) {
+                    throw new Error('游戏引擎未初始化');
+                }
+
+                const cardSystem = gameEngine.cardSystem;
+                
+                // 测试随机卡牌创建
+                const randomCard = cardSystem.createRandomCard('战士');
+                
+                if (randomCard && randomCard.class === '战士') {
+                    showResult('card-test-results', '随机卡牌创建测试通过', 'success');
+                    log(`随机卡牌: ${randomCard.name}`, 'success');
+                } else {
+                    throw new Error('随机卡牌创建失败');
+                }
+
+                // 测试牌组初始化
+                cardSystem.initializeDecks('战士', '法师');
+                
+                const playerDeck = gameEngine.stateManager.get('player.deck');
+                const computerDeck = gameEngine.stateManager.get('computer.deck');
+                
+                if (playerDeck.length > 0 && computerDeck.length > 0) {
+                    showResult('card-test-results', '牌组初始化测试通过', 'success');
+                    log(`玩家牌组: ${playerDeck.length}张, 电脑牌组: ${computerDeck.length}张`, 'success');
+                } else {
+                    throw new Error('牌组初始化失败');
+                }
+
+            } catch (error) {
+                showResult('card-test-results', `卡牌创建测试失败: ${error.message}`, 'error');
+                log(`卡牌创建测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 性能监控
+        function startPerformanceMonitoring() {
+            if (performanceMonitor) {
+                clearInterval(performanceMonitor);
+            }
+            
+            performanceMonitor = setInterval(() => {
+                if (gameEngine) {
+                    const stats = gameEngine.getPerformanceStats();
+                    
+                    document.getElementById('fps').textContent = stats.fps.toFixed(1);
+                    document.getElementById('memory').textContent = stats.memoryUsage.toFixed(1);
+                    document.getElementById('update-time').textContent = stats.updateTime.toFixed(2);
+                    document.getElementById('render-time').textContent = stats.renderTime.toFixed(2);
+                }
+            }, 100);
+            
+            log('性能监控已启动', 'info');
+        }
+
+        function stopPerformanceMonitoring() {
+            if (performanceMonitor) {
+                clearInterval(performanceMonitor);
+                performanceMonitor = null;
+                log('性能监控已停止', 'info');
+            }
+        }
+
+        // 页面加载完成后自动运行基础测试
+        window.addEventListener('load', async () => {
+            log('页面加载完成，开始基础测试...', 'info');
+            
+            // 等待核心系统加载
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // 运行基础测试
+            await testEventSystem();
+            await testStateManager();
+            await testErrorHandler();
+            
+            log('基础测试完成', 'success');
+        });
+    </script>
+</body>
+</html> 
