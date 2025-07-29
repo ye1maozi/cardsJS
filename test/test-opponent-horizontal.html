@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>选择对手横向排列测试</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+        .test-title {
+            color: #fff;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .width-control {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .width-control input {
+            margin: 0 10px;
+        }
+        .width-control label {
+            color: #fff;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-section">
+            <h1 class="test-title">选择对手界面横向排列测试</h1>
+            
+            <div class="width-control">
+                <label>调整容器宽度:</label>
+                <input type="range" id="widthSlider" min="300" max="1200" value="1200">
+                <span id="widthValue" style="color: #fff;">1200px</span>
+            </div>
+            
+            <div id="testOpponentGrid" style="width: 1200px; margin: 0 auto; transition: width 0.3s ease;">
+                <div class="start-content">
+                    <h2>选择对手</h2>
+                    <p>请选择你要挑战的对手：</p>
+                    <div class="opponent-grid">
+                        <div class="opponent-card">
+                            <div class="opponent-header">
+                                <h3>火焰法师</h3>
+                                <span class="opponent-class">法师</span>
+                            </div>
+                            <div class="opponent-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">生命值:</span>
+                                    <span class="stat-value">25</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">能量:</span>
+                                    <span class="stat-value">4</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">难度:</span>
+                                    <span class="stat-value">★★☆</span>
+                                </div>
+                            </div>
+                            <div class="opponent-description">
+                                擅长火焰魔法的强大法师，拥有高伤害的火球术和火焰护盾。
+                            </div>
+                            <button class="btn btn-primary select-opponent-btn">选择此对手</button>
+                        </div>
+                        
+                        <div class="opponent-card">
+                            <div class="opponent-header">
+                                <h3>暗影刺客</h3>
+                                <span class="opponent-class">刺客</span>
+                            </div>
+                            <div class="opponent-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">生命值:</span>
+                                    <span class="stat-value">20</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">能量:</span>
+                                    <span class="stat-value">3</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">难度:</span>
+                                    <span class="stat-value">★★★</span>
+                                </div>
+                            </div>
+                            <div class="opponent-description">
+                                快速而致命的刺客，擅长潜行和暴击攻击。
+                            </div>
+                            <button class="btn btn-primary select-opponent-btn">选择此对手</button>
+                        </div>
+                        
+                        <div class="opponent-card">
+                            <div class="opponent-header">
+                                <h3>圣光骑士</h3>
+                                <span class="opponent-class">骑士</span>
+                            </div>
+                            <div class="opponent-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">生命值:</span>
+                                    <span class="stat-value">35</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">能量:</span>
+                                    <span class="stat-value">3</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">难度:</span>
+                                    <span class="stat-value">★★☆</span>
+                                </div>
+                            </div>
+                            <div class="opponent-description">
+                                拥有强大防御和治疗能力的骑士，善于保护自己。
+                            </div>
+                            <button class="btn btn-primary select-opponent-btn">选择此对手</button>
+                        </div>
+                        
+                        <div class="opponent-card">
+                            <div class="opponent-header">
+                                <h3>自然德鲁伊</h3>
+                                <span class="opponent-class">德鲁伊</span>
+                            </div>
+                            <div class="opponent-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">生命值:</span>
+                                    <span class="stat-value">28</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">能量:</span>
+                                    <span class="stat-value">4</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">难度:</span>
+                                    <span class="stat-value">★★★</span>
+                                </div>
+                            </div>
+                            <div class="opponent-description">
+                                掌控自然力量的德鲁伊，能够召唤野兽和使用治疗魔法。
+                            </div>
+                            <button class="btn btn-primary select-opponent-btn">选择此对手</button>
+                        </div>
+                    </div>
+                    
+                    <div class="back-button">
+                        <button class="btn btn-secondary">返回主菜单</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3 style="color: #fff; text-align: center;">测试说明</h3>
+            <ul style="color: #ddd; line-height: 1.6;">
+                <li>拖动滑块可以调整容器宽度，测试不同屏幕尺寸下的横向排列效果</li>
+                <li>在大屏幕上，对手卡片应该横向排列，可以换行</li>
+                <li>在中等屏幕上（768px以下），卡片会变小但仍然横向排列</li>
+                <li>在小屏幕上（480px以下），卡片会变成水平滚动列表</li>
+                <li>所有情况下都保持横向排列，不会变成单列竖向排列</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // 宽度控制滑块
+        const widthSlider = document.getElementById('widthSlider');
+        const widthValue = document.getElementById('widthValue');
+        const testGrid = document.getElementById('testOpponentGrid');
+        
+        widthSlider.addEventListener('input', function() {
+            const width = this.value;
+            widthValue.textContent = width + 'px';
+            testGrid.style.width = width + 'px';
+        });
+        
+        // 模拟选择对手按钮点击
+        document.querySelectorAll('.select-opponent-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const card = this.closest('.opponent-card');
+                const name = card.querySelector('h3').textContent;
+                alert(`已选择对手: ${name}`);
+            });
+        });
+    </script>
+</body>
+</html> 

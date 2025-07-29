@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>爬塔系统测试</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+        .test-title {
+            color: #fff;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .test-info {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .test-info h4 {
+            color: #fff;
+            margin: 0 0 10px 0;
+        }
+        .test-info p {
+            color: #ddd;
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+        .status-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .status-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .status-label {
+            color: #ccc;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+        .status-value {
+            color: #fff;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-section">
+            <h1 class="test-title">爬塔系统功能测试</h1>
+            
+            <div class="test-controls">
+                <button id="createTowerBtn" class="btn btn-primary">创建新爬塔</button>
+                <button id="showMapBtn" class="btn btn-secondary">显示地图</button>
+                <button id="hideMapBtn" class="btn btn-secondary">隐藏地图</button>
+                <button id="generateMapBtn" class="btn btn-special">重新生成地图</button>
+                <button id="testCombatBtn" class="btn btn-primary">测试战斗节点</button>
+                <button id="testTreasureBtn" class="btn btn-primary">测试宝箱节点</button>
+                <button id="testRestBtn" class="btn btn-primary">测试休息点</button>
+                <button id="showConfigBtn" class="btn btn-special">显示配置信息</button>
+            </div>
+            
+            <div class="status-display" id="statusDisplay">
+                <!-- 状态信息将在这里显示 -->
+            </div>
+            
+            <div class="test-info">
+                <h4>爬塔系统说明</h4>
+                <p>• <strong>战斗节点 (⚔️)</strong>：与敌人战斗，获得金币奖励</p>
+                <p>• <strong>宝箱节点 (📦)</strong>：获得随机奖励，包括金币、生命值、能量或卡牌</p>
+                <p>• <strong>休息点 (🔥)</strong>：选择恢复生命值或升级卡牌</p>
+                <p>• <strong>Boss节点 (👹)</strong>：强化的Boss敌人，在最后一层出现</p>
+                <p>• <strong>起始点 (🏠)</strong>：冒险的起点</p>
+            </div>
+            
+            <div class="test-info">
+                <h4>测试功能</h4>
+                <p>• <strong>创建新爬塔</strong>：初始化新的爬塔状态和地图</p>
+                <p>• <strong>显示/隐藏地图</strong>：切换地图界面的显示状态</p>
+                <p>• <strong>重新生成地图</strong>：生成新的随机地图布局</p>
+                <p>• <strong>测试节点</strong>：模拟不同类型节点的交互效果</p>
+            </div>
+            
+            <div class="test-info">
+                <h4>地图特性</h4>
+                <p>• 共8层，每层2-4个随机节点</p>
+                <p>• 节点之间有连接关系，完成当前节点才能解锁下一层</p>
+                <p>• 节点类型包括战斗、宝箱、休息点，最后一层是Boss</p>
+                <p>• 每3层至少包含一个休息点</p>
+                <p>• 奖励和难度随层数递增</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 引入必要的JavaScript文件 -->
+    <script src="../js/ConfigData.js"></script>
+    <script src="../js/Character.js"></script>
+    <script src="../js/TowerConfigManager.js"></script>
+    <script src="../js/TowerSystem.js"></script>
+    <script src="../js/MapUI.js"></script>
+    
+    <script>
+        // 测试用的爬塔系统实例
+        let testTowerState = null;
+        let testMapUI = null;
+        
+        // 初始化测试
+        function initTest() {
+            console.log('初始化爬塔系统测试');
+            updateStatusDisplay();
+        }
+        
+        // 更新状态显示
+        function updateStatusDisplay() {
+            const statusDisplay = document.getElementById('statusDisplay');
+            
+            if (!testTowerState) {
+                statusDisplay.innerHTML = `
+                    <div class="status-item">
+                        <div class="status-label">系统状态</div>
+                        <div class="status-value">未初始化</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const state = testTowerState.getCurrentState();
+            statusDisplay.innerHTML = `
+                <div class="status-item">
+                    <div class="status-label">当前层数</div>
+                    <div class="status-value">${state.currentFloor + 1}</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">生命值</div>
+                    <div class="status-value">${state.playerCurrentHealth}/${state.playerMaxHealth}</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">金币</div>
+                    <div class="status-value">${state.playerGold}</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">爬塔状态</div>
+                    <div class="status-value">${state.isInTower ? '进行中' : '未开始'}</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">可选节点</div>
+                    <div class="status-value">${state.availableNodes.length}</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">总层数</div>
+                    <div class="status-value">${state.mapData.totalLayers}</div>
+                </div>
+            `;
+        }
+        
+        // 创建新爬塔
+        document.getElementById('createTowerBtn').addEventListener('click', () => {
+            console.log('创建新爬塔');
+            
+            try {
+                // 初始化ConfigData（模拟数据）
+                if (!window.ConfigData) {
+                    window.ConfigData = {
+                        MONSTER_CONFIG_DATA: [
+                            {
+                                id: 'goblin',
+                                name: '哥布林',
+                                class: '战士',
+                                maxHealth: 20,
+                                maxEnergy: 3,
+                                difficulty: 1,
+                                description: '弱小的哥布林战士'
+                            },
+                            {
+                                id: 'orc',
+                                name: '兽人',
+                                class: '战士',
+                                maxHealth: 30,
+                                maxEnergy: 4,
+                                difficulty: 2,
+                                description: '强壮的兽人战士'
+                            },
+                            {
+                                id: 'dragon',
+                                name: '巨龙',
+                                class: '魔王',
+                                maxHealth: 50,
+                                maxEnergy: 5,
+                                difficulty: 5,
+                                description: '传说中的巨龙'
+                            }
+                        ]
+                    };
+                }
+                
+                // 加载爬塔配置
+                if (!TowerConfig.isLoaded) {
+                    console.log('加载爬塔配置...');
+                    TowerConfig.loadSync();
+                }
+                
+                testTowerState = new TowerState();
+                testMapUI = new MapUI(testTowerState);
+                testMapUI.initialize();
+                
+                testTowerState.startNewTower();
+                updateStatusDisplay();
+                
+                console.log('爬塔创建完成');
+                
+            } catch (error) {
+                console.error('创建爬塔失败:', error);
+                alert('创建爬塔失败: ' + error.message);
+            }
+        });
+        
+        // 显示地图
+        document.getElementById('showMapBtn').addEventListener('click', () => {
+            if (testMapUI) {
+                testMapUI.showMap();
+                console.log('地图已显示');
+            } else {
+                alert('请先创建爬塔');
+            }
+        });
+        
+        // 隐藏地图
+        document.getElementById('hideMapBtn').addEventListener('click', () => {
+            if (testMapUI) {
+                testMapUI.hideMap();
+                console.log('地图已隐藏');
+            }
+        });
+        
+        // 重新生成地图
+        document.getElementById('generateMapBtn').addEventListener('click', () => {
+            if (testTowerState) {
+                testTowerState.mapSystem.generateMap();
+                updateStatusDisplay();
+                if (testMapUI && testMapUI.isVisible) {
+                    testMapUI.renderMap();
+                }
+                console.log('地图已重新生成');
+            } else {
+                alert('请先创建爬塔');
+            }
+        });
+        
+        // 测试战斗节点
+        document.getElementById('testCombatBtn').addEventListener('click', () => {
+            if (testTowerState) {
+                // 模拟战斗胜利
+                const availableNodes = testTowerState.mapSystem.getAvailableNodes();
+                const combatNode = availableNodes.find(node => node.type === 'combat');
+                
+                if (combatNode) {
+                    testTowerState.completeNode(combatNode.id, { victory: true });
+                    updateStatusDisplay();
+                    console.log('战斗节点测试完成');
+                } else {
+                    alert('没有可用的战斗节点');
+                }
+            } else {
+                alert('请先创建爬塔');
+            }
+        });
+        
+        // 测试宝箱节点
+        document.getElementById('testTreasureBtn').addEventListener('click', () => {
+            if (testTowerState) {
+                const availableNodes = testTowerState.mapSystem.getAvailableNodes();
+                const treasureNode = availableNodes.find(node => node.type === 'treasure');
+                
+                if (treasureNode) {
+                    testTowerState.completeNode(treasureNode.id);
+                    updateStatusDisplay();
+                    console.log('宝箱节点测试完成');
+                } else {
+                    alert('没有可用的宝箱节点');
+                }
+            } else {
+                alert('请先创建爬塔');
+            }
+        });
+        
+        // 测试休息点
+        document.getElementById('testRestBtn').addEventListener('click', () => {
+            if (testTowerState) {
+                // 模拟受伤状态
+                testTowerState.playerCurrentHealth = Math.max(10, testTowerState.playerCurrentHealth - 10);
+                
+                const availableNodes = testTowerState.mapSystem.getAvailableNodes();
+                const restNode = availableNodes.find(node => node.type === 'rest');
+                
+                if (restNode) {
+                    // 模拟选择恢复生命值
+                    testTowerState.restHeal();
+                    testTowerState.completeNode(restNode.id);
+                    updateStatusDisplay();
+                    console.log('休息点测试完成');
+                } else {
+                    alert('没有可用的休息点');
+                }
+            } else {
+                alert('请先创建爬塔');
+            }
+        });
+        
+        // 显示配置信息
+        document.getElementById('showConfigBtn').addEventListener('click', () => {
+            if (TowerConfig.isLoaded) {
+                const configInfo = TowerConfig.getAllConfigs();
+                console.log('爬塔配置信息:', configInfo);
+                
+                let infoText = '=== 爬塔配置信息 ===\n\n';
+                
+                // 主配置
+                infoText += '【主要配置】\n';
+                Object.entries(configInfo.tower).forEach(([key, config]) => {
+                    infoText += `${key}: ${config.value} (${config.description})\n`;
+                });
+                
+                // 节点类型
+                infoText += '\n【节点类型】\n';
+                Object.entries(configInfo.nodeTypes).forEach(([type, config]) => {
+                    infoText += `${type}: ${config.displayName} ${config.icon} (权重:${config.weight})\n`;
+                });
+                
+                // 奖励类型
+                infoText += '\n【奖励类型】\n';
+                Object.entries(configInfo.rewards).forEach(([type, config]) => {
+                    infoText += `${type}: ${config.icon} ${config.description} (概率:${config.probability}%)\n`;
+                });
+                
+                alert(infoText);
+            } else {
+                alert('配置尚未加载');
+            }
+        });
+        
+        // 初始化测试
+        initTest();
+        
+        // 定期更新状态显示
+        setInterval(updateStatusDisplay, 2000);
+    </script>
+</body>
+</html> 

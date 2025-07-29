@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>爬塔节点点击调试</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .debug-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .debug-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+        .debug-log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1 style="color: #fff;">爬塔节点点击问题调试</h1>
+        
+        <div class="debug-section">
+            <h3 style="color: #fff;">控制面板</h3>
+            <div class="test-controls">
+                <button id="initTowerBtn" class="btn btn-primary">初始化爬塔</button>
+                <button id="showMapBtn" class="btn btn-secondary">显示地图</button>
+                <button id="checkNodesBtn" class="btn btn-special">检查节点状态</button>
+                <button id="testClickBtn" class="btn btn-warning">测试节点点击</button>
+                <button id="clearLogBtn" class="btn btn-danger">清空日志</button>
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <h3 style="color: #fff;">调试日志</h3>
+            <div id="debugLog" class="debug-log">正在等待初始化...\n</div>
+        </div>
+
+        <div class="debug-section">
+            <h3 style="color: #fff;">节点状态</h3>
+            <div id="nodeStatus" style="color: #fff;">尚未初始化</div>
+        </div>
+    </div>
+
+    <!-- 引入必要的JavaScript文件 -->
+    <script src="../js/ConfigData.js"></script>
+    <script src="../js/Character.js"></script>
+    <script src="../js/TowerConfigManager.js"></script>
+    <script src="../js/TowerSystem.js"></script>
+    <script src="../js/MapUI.js"></script>
+
+    <script>
+        let debugTowerState = null;
+        let debugMapUI = null;
+        let debugLog = document.getElementById('debugLog');
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugLog.textContent += `[${timestamp}] ${message}\n`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+            console.log(message);
+        }
+
+        function updateNodeStatus() {
+            const statusElement = document.getElementById('nodeStatus');
+            if (!debugTowerState) {
+                statusElement.innerHTML = '尚未初始化';
+                return;
+            }
+
+            const state = debugTowerState.getCurrentState();
+            const availableNodes = state.availableNodes;
+            
+            let statusHTML = `
+                <p><strong>当前层数:</strong> ${state.currentFloor + 1}</p>
+                <p><strong>总层数:</strong> ${state.mapData.totalLayers}</p>
+                <p><strong>可用节点数:</strong> ${availableNodes.length}</p>
+                <p><strong>可用节点列表:</strong></p>
+                <ul>
+            `;
+            
+            availableNodes.forEach(node => {
+                statusHTML += `<li>${node.id} (${node.type}) - Available: ${node.available}, Completed: ${node.completed}</li>`;
+            });
+            
+            statusHTML += '</ul>';
+            statusElement.innerHTML = statusHTML;
+        }
+
+        // 初始化爬塔
+        document.getElementById('initTowerBtn').addEventListener('click', () => {
+            log('开始初始化爬塔系统...');
+            
+            try {
+                // 模拟ConfigData
+                if (!window.ConfigData) {
+                    window.ConfigData = {
+                        MONSTER_CONFIG_DATA: [
+                            {
+                                id: 'goblin',
+                                name: '哥布林',
+                                class: '战士',
+                                maxHealth: 20,
+                                maxEnergy: 3,
+                                difficulty: 1
+                            }
+                        ]
+                    };
+                    log('设置模拟ConfigData');
+                }
+
+                // 检查TowerConfig
+                if (!window.TowerConfig) {
+                    log('错误：TowerConfig未定义！');
+                    return;
+                }
+
+                // 加载配置
+                if (!TowerConfig.isLoaded) {
+                    log('加载TowerConfig...');
+                    TowerConfig.loadSync();
+                }
+
+                // 检查NodeType
+                if (!window.NodeType) {
+                    log('错误：NodeType未定义！');
+                    return;
+                }
+                log(`NodeType定义: ${JSON.stringify(NodeType)}`);
+
+                // 创建爬塔状态
+                debugTowerState = new TowerState();
+                log('TowerState创建成功');
+
+                // 创建地图UI
+                debugMapUI = new MapUI(debugTowerState);
+                debugMapUI.initialize();
+                log('MapUI初始化成功');
+
+                // 开始新爬塔
+                debugTowerState.startNewTower();
+                log('新爬塔开始成功');
+
+                updateNodeStatus();
+
+            } catch (error) {
+                log(`初始化失败：${error.message}`);
+                log(`错误堆栈：${error.stack}`);
+            }
+        });
+
+        // 显示地图
+        document.getElementById('showMapBtn').addEventListener('click', () => {
+            if (!debugMapUI) {
+                log('错误：地图UI未初始化');
+                return;
+            }
+            
+            try {
+                debugMapUI.showMap();
+                log('地图显示成功');
+                
+                // 添加点击事件监听器到所有节点
+                setTimeout(() => {
+                    const nodes = document.querySelectorAll('.map-node');
+                    log(`找到 ${nodes.length} 个地图节点`);
+                    
+                    nodes.forEach((node, index) => {
+                        const nodeId = node.getAttribute('data-node-id');
+                        const isAvailable = node.classList.contains('available');
+                        log(`节点 ${index}: ID=${nodeId}, Available=${isAvailable}, Classes=${node.className}`);
+                        
+                        // 添加调试点击事件
+                        node.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            log(`点击了节点: ${nodeId} (Available: ${isAvailable})`);
+                            
+                            if (!isAvailable) {
+                                log('节点不可用，点击被忽略');
+                            }
+                        });
+                    });
+                }, 500);
+                
+            } catch (error) {
+                log(`显示地图失败：${error.message}`);
+            }
+        });
+
+        // 检查节点状态
+        document.getElementById('checkNodesBtn').addEventListener('click', () => {
+            if (!debugTowerState) {
+                log('错误：爬塔状态未初始化');
+                return;
+            }
+
+            try {
+                const mapData = debugTowerState.getCurrentState().mapData;
+                const allNodes = debugTowerState.mapSystem.nodes;
+                
+                log('=== 节点状态检查 ===');
+                log(`总节点数: ${allNodes.size}`);
+                
+                allNodes.forEach((node, nodeId) => {
+                    log(`节点 ${nodeId}: Type=${node.type}, Available=${node.available}, Completed=${node.completed}, Layer=${node.layer}`);
+                });
+
+                const availableNodes = debugTowerState.mapSystem.getAvailableNodes();
+                log(`可用节点数: ${availableNodes.length}`);
+                
+                updateNodeStatus();
+                
+            } catch (error) {
+                log(`检查节点状态失败：${error.message}`);
+            }
+        });
+
+        // 测试节点点击
+        document.getElementById('testClickBtn').addEventListener('click', () => {
+            if (!debugMapUI) {
+                log('错误：地图UI未初始化');
+                return;
+            }
+
+            try {
+                const availableNodes = debugTowerState.mapSystem.getAvailableNodes();
+                
+                if (availableNodes.length === 0) {
+                    log('没有可用节点可以测试');
+                    return;
+                }
+
+                const firstNode = availableNodes[0];
+                log(`手动触发节点选择: ${firstNode.id}`);
+                
+                // 直接调用selectNode方法
+                debugMapUI.selectNode(firstNode.id);
+                
+            } catch (error) {
+                log(`测试节点点击失败：${error.message}`);
+            }
+        });
+
+        // 清空日志
+        document.getElementById('clearLogBtn').addEventListener('click', () => {
+            debugLog.textContent = '';
+        });
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            log('页面加载完成');
+            log('可用的全局对象:');
+            log(`- ConfigData: ${typeof window.ConfigData}`);
+            log(`- TowerConfig: ${typeof window.TowerConfig}`);
+            log(`- NodeType: ${typeof window.NodeType}`);
+            log(`- TowerState: ${typeof window.TowerState}`);
+            log(`- MapUI: ${typeof window.MapUI}`);
+        });
+    </script>
+</body>
+</html> 

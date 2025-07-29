@@ -4,11 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>卡牌对战游戏</title>
-    <link rel="stylesheet" href="css/style.css?v=2">
+    <link rel="stylesheet" href="css/style.css?v=3">
 
 </head>
 <body>
     <div class="game-container">
+        <!-- 开始游戏界面 -->
+        <div id="startScreen" class="start-screen">
+            <div class="start-content">
+                <h2>卡牌对战游戏</h2>
+                <p>欢迎来到卡牌对战世界！</p>
+                <div class="start-buttons">
+                    <button id="startGameBtn" class="btn btn-primary">开始游戏</button>
+                    <button id="startTowerBtn" class="btn btn-special">🗼 开始爬塔</button>
+                    <button id="selectOpponentBtn" class="btn btn-secondary">选择对手</button>
+                </div>
+                <div class="game-info">
+                    <p>版本: v3.0.0</p>
+                    <p>按 R 键重新开始 | 按 S 键保存 | 按 L 键加载</p>
+                </div>
+            </div>
+        </div>
+
         <!-- 游戏状态栏 -->
         <div class="game-status" style="display: none;">
             <!-- 左侧：电脑状态 -->
@@ -215,19 +232,26 @@
     </div>
 
     <!-- JavaScript文件 - 优化加载方式 -->
-    <script src="js/ConfigData.js?v=2"></script>
-    <script src="js/Character.js?v=2"></script>
-    <script src="js/CastingSystem.js?v=2"></script>
-    <script src="js/Card.js?v=2"></script>
-    <script src="js/CardConfig.js?v=2"></script>
-    <script src="js/ConfigManager.js?v=2"></script>
-    <script src="js/ConfigValidator.js?v=2"></script>
-    <script src="js/HeroSkill.js?v=2"></script>
-    <script src="js/BotPlayer.js?v=2"></script>
-    <script src="js/MonsterConfigManager.js?v=2"></script>
-    <script src="js/GameState.js?v=2"></script>
-    <script src="js/GameUI.js?v=2"></script>
-    <script src="js/Game.js?v=2"></script>
-    <script src="js/main.js?v=2"></script>
+    <script src="js/ConfigData.js?v=3"></script>
+    <script src="js/Character.js?v=3"></script>
+    <script src="js/CastingSystem.js?v=3"></script>
+    <script src="js/Card.js?v=3"></script>
+    <script src="js/CardConfig.js?v=3"></script>
+    <script src="js/ConfigManager.js?v=3"></script>
+    <script src="js/ConfigValidator.js?v=3"></script>
+    <script src="js/HeroSkill.js?v=3"></script>
+    <script src="js/BotPlayer.js?v=3"></script>
+    <script src="js/MonsterConfigManager.js?v=3"></script>
+    <script src="js/TowerConfigManager.js?v=3"></script>
+    <script src="js/TowerSystem.js?v=3"></script>
+    <!-- UI管理器 -->
+    <script src="js/StartUI.js?v=3"></script>
+    <script src="js/OpponentSelectUI.js?v=3"></script>
+    <script src="js/MapUI.js?v=3"></script>
+    <script src="js/GameUI.js?v=3"></script>
+    <!-- 游戏核心 -->
+    <script src="js/GameState.js?v=3"></script>
+    <script src="js/Game.js?v=3"></script>
+    <script src="js/main.js?v=3"></script>
 </body>
 </html> 

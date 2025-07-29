@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>完整游戏功能测试</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .test-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 2000;
+            max-width: 300px;
+        }
+        .test-info h4 {
+            margin: 0 0 10px 0;
+            color: #4CAF50;
+        }
+        .test-info p {
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+        .status-ok {
+            color: #4CAF50;
+        }
+        .status-error {
+            color: #f44336;
+        }
+        .status-warning {
+            color: #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h4>🎮 功能测试面板</h4>
+        <p><strong>测试项目：</strong></p>
+        <p id="test-start-screen">• 开始界面: <span class="status-warning">检测中...</span></p>
+        <p id="test-buttons">• 按钮事件: <span class="status-warning">检测中...</span></p>
+        <p id="test-tower-config">• 爬塔配置: <span class="status-warning">检测中...</span></p>
+        <p id="test-opponent-data">• 对手数据: <span class="status-warning">检测中...</span></p>
+        <p><strong>操作说明：</strong></p>
+        <p>1. 测试"开始游戏"→选择对手</p>
+        <p>2. 测试"🗼 开始爬塔"</p>
+        <p>3. 测试"选择对手"界面</p>
+        <p>4. 按 Ctrl+` 显示开发者工具</p>
+    </div>
+
+    <!-- 游戏容器 - 复制自index.html -->
+    <div class="game-container">
+        <!-- 开始游戏界面 -->
+        <div id="startScreen" class="start-screen">
+            <div class="start-content">
+                <h2>卡牌对战游戏</h2>
+                <p>欢迎来到卡牌对战世界！</p>
+                <div class="start-buttons">
+                    <button id="startGameBtn" class="btn btn-primary">开始游戏</button>
+                    <button id="startTowerBtn" class="btn btn-special">🗼 开始爬塔</button>
+                    <button id="selectOpponentBtn" class="btn btn-secondary">选择对手</button>
+                </div>
+                <div class="game-info">
+                    <p>版本: v2.1.0</p>
+                    <p>按 R 键重新开始 | 按 S 键保存 | 按 L 键加载</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 游戏状态栏 -->
+        <div class="game-status" style="display: none;">
+            <!-- 左侧：电脑状态 -->
+            <div class="computer-status">
+                <div class="status-item">
+                    <span class="label">电脑生命:</span>
+                    <span id="computerHealth" class="value">30</span>
+                    <span id="computerHealthPercent" class="percent">100%</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">电脑护甲:</span>
+                    <span id="computerArmor" class="value">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">电脑能量:</span>
+                    <span id="computerEnergy" class="value">3</span>
+                    <span id="computerEnergyPercent" class="percent">100%</span>
+                </div>
+            </div>
+            
+            <!-- 中间：游戏时间和倒计时 -->
+            <div class="center-status">
+                <div class="game-time">
+                    <span id="turnInfo">游戏时间: 0.0秒</span>
+                </div>
+            </div>
+            
+            <!-- 右侧：玩家状态 -->
+            <div class="player-status">
+                <div class="status-item">
+                    <span class="label">玩家生命:</span>
+                    <span id="playerHealth" class="value">30</span>
+                    <span id="playerHealthPercent" class="percent">100%</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">玩家护甲:</span>
+                    <span id="playerArmor" class="value">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">玩家能量:</span>
+                    <span id="playerEnergy" class="value">3</span>
+                    <span id="playerEnergyPercent" class="percent">100%</span>
+                </div>
+                <button id="heroSkillBtn" class="btn btn-primary hero-skill-btn">英雄技能</button>
+            </div>
+        </div>
+
+        <!-- 游戏区域 -->
+        <div class="game-area" style="display: none;">
+            <div class="center-area">
+                <div class="game-log" id="gameLog">
+                    <div class="log-entry">等待开始游戏...</div>
+                </div>
+            </div>
+
+            <div class="bottom-areas">
+                <div class="computer-area">
+                    <div class="computer-effects" id="computerEffects"></div>
+                    <div class="computer-field" id="computerField"></div>
+                </div>
+
+                <div class="player-area">
+                    <div class="player-effects" id="playerEffects"></div>
+                    <div class="player-hand" id="playerHand"></div>
+                    <div class="player-field" id="playerField"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 新游戏按钮 -->
+        <div class="bottom-controls">
+            <button id="newGameBtn" class="btn btn-secondary">新游戏</button>
+        </div>
+
+        <!-- 游戏结束对话框 -->
+        <div id="gameOverModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h2 id="gameOverTitle">游戏结束</h2>
+                <p id="gameOverMessage"></p>
+                <button id="restartBtn" class="btn btn-primary">重新开始</button>
+                <button id="closeModalBtn" class="btn btn-secondary">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript文件 - 与index.html保持一致 -->
+    <script src="../js/ConfigData.js?v=2"></script>
+    <script src="../js/Character.js?v=2"></script>
+    <script src="../js/CastingSystem.js?v=2"></script>
+    <script src="../js/Card.js?v=2"></script>
+    <script src="../js/CardConfig.js?v=2"></script>
+    <script src="../js/ConfigManager.js?v=2"></script>
+    <script src="../js/ConfigValidator.js?v=2"></script>
+    <script src="../js/HeroSkill.js?v=2"></script>
+    <script src="../js/BotPlayer.js?v=2"></script>
+    <script src="../js/MonsterConfigManager.js?v=2"></script>
+    <script src="../js/TowerConfigManager.js?v=2"></script>
+    <script src="../js/TowerSystem.js?v=2"></script>
+    <script src="../js/MapUI.js?v=2"></script>
+    <script src="../js/GameState.js?v=2"></script>
+    <script src="../js/GameUI.js?v=2"></script>
+    <script src="../js/Game.js?v=2"></script>
+    <script src="../js/main.js?v=2"></script>
+
+    <script>
+        // 测试状态检查
+        function updateTestStatus() {
+            // 检查开始界面
+            const startScreen = document.getElementById('startScreen');
+            const testStartScreen = document.getElementById('test-start-screen');
+            if (startScreen && startScreen.style.display !== 'none') {
+                testStartScreen.innerHTML = '• 开始界面: <span class="status-ok">✓ 正常显示</span>';
+            } else {
+                testStartScreen.innerHTML = '• 开始界面: <span class="status-error">✗ 未显示</span>';
+            }
+
+            // 检查按钮事件
+            const buttons = ['startGameBtn', 'startTowerBtn', 'selectOpponentBtn'];
+            const testButtons = document.getElementById('test-buttons');
+            const buttonsWorking = buttons.every(id => {
+                const btn = document.getElementById(id);
+                return btn && btn.onclick !== null;
+            });
+            
+            if (buttonsWorking || buttons.some(id => document.getElementById(id))) {
+                testButtons.innerHTML = '• 按钮事件: <span class="status-ok">✓ 已绑定</span>';
+            } else {
+                testButtons.innerHTML = '• 按钮事件: <span class="status-error">✗ 未绑定</span>';
+            }
+
+            // 检查爬塔配置
+            const testTowerConfig = document.getElementById('test-tower-config');
+            if (window.TowerConfig && TowerConfig.isLoaded) {
+                testTowerConfig.innerHTML = '• 爬塔配置: <span class="status-ok">✓ 已加载</span>';
+            } else if (window.ConfigData && ConfigData.TOWER_CONFIG_DATA) {
+                testTowerConfig.innerHTML = '• 爬塔配置: <span class="status-warning">⚠ 数据可用，未初始化</span>';
+            } else {
+                testTowerConfig.innerHTML = '• 爬塔配置: <span class="status-error">✗ 未找到</span>';
+            }
+
+            // 检查对手数据
+            const testOpponentData = document.getElementById('test-opponent-data');
+            if (window.ConfigData && ConfigData.MONSTER_CONFIG_DATA && ConfigData.MONSTER_CONFIG_DATA.length > 0) {
+                testOpponentData.innerHTML = `• 对手数据: <span class="status-ok">✓ ${ConfigData.MONSTER_CONFIG_DATA.length}个对手可用</span>`;
+            } else {
+                testOpponentData.innerHTML = '• 对手数据: <span class="status-error">✗ 未找到</span>';
+            }
+        }
+
+        // 页面加载完成后开始测试
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 开始功能测试...');
+            
+            // 延迟检查，确保所有脚本都已加载
+            setTimeout(() => {
+                updateTestStatus();
+                
+                // 每5秒更新一次测试状态
+                setInterval(updateTestStatus, 5000);
+                
+                console.log('🧪 测试面板初始化完成');
+            }, 1000);
+        });
+
+        // 添加开发者快捷键
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === '`') {
+                console.log('=== 🔧 开发者信息 ===');
+                console.log('ConfigData:', window.ConfigData);
+                console.log('TowerConfig:', window.TowerConfig);
+                console.log('GlobalTowerState:', window.globalTowerState);
+                console.log('GlobalMapUI:', window.globalMapUI);
+                console.log('GlobalGame:', window.globalGame);
+                
+                // 显示配置信息
+                if (window.TowerConfig && TowerConfig.isLoaded) {
+                    console.log('爬塔配置详情:', TowerConfig.getAllConfigs());
+                }
+                
+                alert('开发者信息已输出到控制台 (F12)');
+            }
+        });
+    </script>
+</body>
+</html> 

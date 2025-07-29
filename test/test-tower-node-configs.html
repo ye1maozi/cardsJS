@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>爬塔节点配置测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-title {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .config-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .config-name {
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+        .config-details {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        .test-log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>爬塔节点配置测试</h1>
+    
+    <div class="test-section">
+        <h2 class="test-title">🏗️ 配置加载测试</h2>
+        <button class="test-button" onclick="testConfigLoading()">测试配置加载</button>
+        <div id="configLoadResult" class="test-log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">👹 Boss配置数据</h2>
+        <button class="test-button" onclick="displayBossConfigs()">显示Boss配置</button>
+        <div id="bossConfigs"></div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">🏪 商店物品配置</h2>
+        <button class="test-button" onclick="displayShopConfigs()">显示商店配置</button>
+        <div id="shopConfigs"></div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">❓ 随机事件配置</h2>
+        <button class="test-button" onclick="displayEventConfigs()">显示事件配置</button>
+        <div id="eventConfigs"></div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">🎯 节点生成测试</h2>
+        <button class="test-button" onclick="testNodeGeneration()">测试节点生成</button>
+        <div id="nodeGenerationResult" class="test-log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2 class="test-title">🗺️ 地图生成测试</h2>
+        <button class="test-button" onclick="testMapGeneration()">生成测试地图</button>
+        <div id="mapGenerationResult" class="test-log"></div>
+    </div>
+
+    <!-- 引入必要的脚本 -->
+    <script src="../js/ConfigData.js"></script>
+    <script src="../js/TowerConfigManager.js"></script>
+    <script src="../js/TowerSystem.js"></script>
+
+    <script>
+        let testMapSystem = null;
+        
+        function log(containerId, message, isError = false) {
+            const container = document.getElementById(containerId);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = isError ? 'error' : 'success';
+            container.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearLog(containerId) {
+            document.getElementById(containerId).innerHTML = '';
+        }
+
+        function testConfigLoading() {
+            clearLog('configLoadResult');
+            
+            try {
+                log('configLoadResult', '开始测试配置加载...');
+                
+                // 测试ConfigData是否加载
+                if (typeof window.ConfigData === 'undefined') {
+                    log('configLoadResult', '❌ ConfigData未加载', true);
+                    return;
+                }
+                log('configLoadResult', '✅ ConfigData加载成功');
+                
+                // 测试各个配置数据
+                const configs = [
+                    'BOSS_CONFIG_DATA',
+                    'SHOP_ITEM_DATA', 
+                    'RANDOM_EVENT_DATA',
+                    'TOWER_NODE_TYPES_DATA',
+                    'TOWER_REWARDS_DATA'
+                ];
+                
+                configs.forEach(configName => {
+                    if (window.ConfigData[configName]) {
+                        const length = window.ConfigData[configName].length;
+                        log('configLoadResult', `✅ ${configName}: ${length} 项配置`);
+                    } else {
+                        log('configLoadResult', `❌ ${configName}: 未找到`, true);
+                    }
+                });
+                
+                // 测试TowerConfig初始化
+                if (typeof window.TowerConfig !== 'undefined') {
+                    window.TowerConfig.loadSync();
+                    log('configLoadResult', '✅ TowerConfig初始化成功');
+                } else {
+                    log('configLoadResult', '❌ TowerConfig未加载', true);
+                }
+                
+                log('configLoadResult', '配置加载测试完成！');
+                
+            } catch (error) {
+                log('configLoadResult', `❌ 配置加载失败: ${error.message}`, true);
+            }
+        }
+
+        function displayBossConfigs() {
+            const container = document.getElementById('bossConfigs');
+            container.innerHTML = '';
+            
+            if (!window.ConfigData || !window.ConfigData.BOSS_CONFIG_DATA) {
+                container.innerHTML = '<div class="error">Boss配置数据未加载</div>';
+                return;
+            }
+            
+            window.ConfigData.BOSS_CONFIG_DATA.forEach(boss => {
+                const div = document.createElement('div');
+                div.className = 'config-item';
+                div.innerHTML = `
+                    <div class="config-name">
+                        <span class="icon">${boss.icon || '👹'}</span>
+                        ${boss.name} (难度: ${boss.difficulty})
+                    </div>
+                    <div class="config-details">
+                        <strong>职业:</strong> ${boss.class}<br>
+                        <strong>生命值:</strong> ${boss.maxHealth}<br>
+                        <strong>能量:</strong> ${boss.maxEnergy}<br>
+                        <strong>属性:</strong> 力量${boss.strength} 敏捷${boss.agility} 精神${boss.spirit}<br>
+                        <strong>描述:</strong> ${boss.description}<br>
+                        <strong>AI策略:</strong> ${boss.aiStrategy || '默认'}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function displayShopConfigs() {
+            const container = document.getElementById('shopConfigs');
+            container.innerHTML = '';
+            
+            if (!window.ConfigData || !window.ConfigData.SHOP_ITEM_DATA) {
+                container.innerHTML = '<div class="error">商店配置数据未加载</div>';
+                return;
+            }
+            
+            window.ConfigData.SHOP_ITEM_DATA.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'config-item';
+                div.innerHTML = `
+                    <div class="config-name">
+                        <span class="icon">${item.icon || '🛍️'}</span>
+                        ${item.name} - ${item.price}金币
+                    </div>
+                    <div class="config-details">
+                        <strong>类型:</strong> ${item.type}<br>
+                        <strong>描述:</strong> ${item.description}<br>
+                        <strong>效果:</strong> ${JSON.stringify(item.effect)}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function displayEventConfigs() {
+            const container = document.getElementById('eventConfigs');
+            container.innerHTML = '';
+            
+            if (!window.ConfigData || !window.ConfigData.RANDOM_EVENT_DATA) {
+                container.innerHTML = '<div class="error">事件配置数据未加载</div>';
+                return;
+            }
+            
+            window.ConfigData.RANDOM_EVENT_DATA.forEach(event => {
+                const div = document.createElement('div');
+                div.className = 'config-item';
+                div.innerHTML = `
+                    <div class="config-name">
+                        <span class="icon">${event.icon || '❓'}</span>
+                        ${event.name}
+                    </div>
+                    <div class="config-details">
+                        <strong>描述:</strong> ${event.description}<br>
+                        <strong>选择数量:</strong> ${event.choices.length}<br>
+                        ${event.choices.map((choice, index) => 
+                            `<strong>选择${index + 1}:</strong> ${choice.text}`
+                        ).join('<br>')}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function testNodeGeneration() {
+            clearLog('nodeGenerationResult');
+            
+            try {
+                log('nodeGenerationResult', '开始测试节点生成...');
+                
+                if (!window.TowerConfig.isLoaded) {
+                    window.TowerConfig.loadSync();
+                }
+                
+                testMapSystem = new MapSystem();
+                
+                // 测试Boss节点生成
+                log('nodeGenerationResult', '测试Boss节点生成:');
+                const bossConfig = testMapSystem.getBossConfig(8);
+                log('nodeGenerationResult', `Boss: ${bossConfig.name} (生命值: ${bossConfig.maxHealth})`);
+                
+                // 测试精英怪物生成
+                log('nodeGenerationResult', '测试精英怪物生成:');
+                const eliteConfig = testMapSystem.getEliteMonster(5);
+                log('nodeGenerationResult', `精英: ${eliteConfig.name} (生命值: ${eliteConfig.maxHealth})`);
+                
+                // 测试商店物品生成
+                log('nodeGenerationResult', '测试商店物品生成:');
+                const shopItems = testMapSystem.generateShopItems(3);
+                shopItems.forEach(item => {
+                    log('nodeGenerationResult', `商店物品: ${item.name} - ${item.price}金币`);
+                });
+                
+                // 测试随机事件生成
+                log('nodeGenerationResult', '测试随机事件生成:');
+                const eventConfig = testMapSystem.getRandomEvent(4);
+                log('nodeGenerationResult', `事件: ${eventConfig.name}`);
+                
+                log('nodeGenerationResult', '✅ 节点生成测试完成！');
+                
+            } catch (error) {
+                log('nodeGenerationResult', `❌ 节点生成测试失败: ${error.message}`, true);
+            }
+        }
+
+        function testMapGeneration() {
+            clearLog('mapGenerationResult');
+            
+            try {
+                log('mapGenerationResult', '开始生成测试地图...');
+                
+                if (!window.TowerConfig.isLoaded) {
+                    window.TowerConfig.loadSync();
+                }
+                
+                testMapSystem = new MapSystem();
+                testMapSystem.generateMap();
+                
+                const mapData = testMapSystem.getMapData();
+                
+                log('mapGenerationResult', `✅ 地图生成成功！总层数: ${mapData.totalLayers}`);
+                
+                mapData.layers.forEach((layer, index) => {
+                    log('mapGenerationResult', `第${index}层: ${layer.length}个节点`);
+                    layer.forEach(node => {
+                        log('mapGenerationResult', `  - ${node.icon} ${node.displayName} (${node.type})`);
+                    });
+                });
+                
+                // 统计节点类型
+                const nodeTypeCount = {};
+                mapData.layers.forEach(layer => {
+                    layer.forEach(node => {
+                        nodeTypeCount[node.type] = (nodeTypeCount[node.type] || 0) + 1;
+                    });
+                });
+                
+                log('mapGenerationResult', '节点类型统计:');
+                Object.entries(nodeTypeCount).forEach(([type, count]) => {
+                    log('mapGenerationResult', `  ${type}: ${count}个`);
+                });
+                
+                log('mapGenerationResult', '✅ 地图生成测试完成！');
+                
+            } catch (error) {
+                log('mapGenerationResult', `❌ 地图生成测试失败: ${error.message}`, true);
+            }
+        }
+
+        // 页面加载完成后自动运行配置测试
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testConfigLoading();
+            }, 500);
+        });
+    </script>
+</body>
+</html> 

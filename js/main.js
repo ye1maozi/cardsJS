@@ -6,254 +6,290 @@
 let game = null;
 let isGameInitialized = false;
 
+// 全局UI管理器实例
+let startUI = null;
+let opponentSelectUI = null;
+let gameUI = null;
+let mapUI = null;
+let globalTowerState = null;
+
 /**
- * 页面加载完成后只显示开始界面，不初始化游戏
+ * 页面加载完成后初始化UI管理器
  */
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('页面加载完成，显示开始界面...');
+    console.log('页面加载完成，初始化UI管理器...');
     
     try {
-        // 只显示开始游戏界面，不初始化游戏
-        showStartScreen();
+        // 初始化UI管理器
+        initializeUIManagers();
         
-        console.log('开始界面显示完成，等待用户点击开始...');
+        console.log('UI管理器初始化完成，显示开始界面...');
         
     } catch (error) {
-        console.error('显示开始界面失败:', error);
-        alert('显示开始界面失败: ' + error.message);
+        console.error('UI初始化失败:', error);
+        alert('UI初始化失败: ' + error.message);
     }
 });
 
 /**
- * 显示开始游戏界面
+ * 初始化所有UI管理器
  */
-function showStartScreen() {
-    const gameContainer = document.querySelector('.game-container');
-    if (!gameContainer) return;
+function initializeUIManagers() {
+    // 创建开始界面UI管理器
+    startUI = new StartUI();
     
-    // 获取版本号（如果配置已加载则使用配置中的版本号，否则使用默认值）
-    let version = 'v2.1.0'; // 默认版本号
-    try {
-        if (typeof ConfigManager !== 'undefined' && ConfigManager.isLoaded) {
-            version = 'v' + ConfigManager.getGameConfig('GameVersion', '2.1.0');
-        }
-    } catch (error) {
-        console.warn('无法获取配置版本号，使用默认版本号:', error);
-    }
+    // 创建选择对手界面UI管理器
+    opponentSelectUI = new OpponentSelectUI();
     
-    // 创建开始游戏界面
-    const startScreen = document.createElement('div');
-    startScreen.id = 'startScreen';
-    startScreen.className = 'start-screen';
-    startScreen.innerHTML = `
-        <div class="start-content">
-            <h2>卡牌对战游戏</h2>
-            <p>欢迎来到卡牌对战世界！</p>
-            <div class="start-buttons">
-                <button id="startGameBtn" class="btn btn-primary">开始游戏</button>
-                <button id="loadGameBtn" class="btn btn-secondary">加载游戏</button>
-            </div>
-            <div class="game-info">
-                <p>版本: ${version}</p>
-                <p>按 R 键重新开始 | 按 S 键保存 | 按 L 键加载</p>
-            </div>
-        </div>
-    `;
+    // 将UI管理器添加到全局作用域供其他模块使用
+    window.startUI = startUI;
+    window.opponentSelectUI = opponentSelectUI;
     
-    // 插入到游戏容器的最前面
-    gameContainer.insertBefore(startScreen, gameContainer.firstChild);
+    // 设置全局函数供UI管理器调用
+    window.startDefaultGame = startDefaultGame;
+    window.startGameWithOpponent = startGameWithOpponent;
+    window.startTowerMode = startTowerMode;
+    window.showStartScreen = () => startUI.show();
     
-    // 绑定开始游戏按钮事件
-    const startGameBtn = document.getElementById('startGameBtn');
-    if (startGameBtn) {
-        startGameBtn.addEventListener('click', () => {
-            startGame();
-        });
-    }
-    
-    // 绑定加载游戏按钮事件
-    const loadGameBtn = document.getElementById('loadGameBtn');
-    if (loadGameBtn) {
-        loadGameBtn.addEventListener('click', () => {
-            if (game) {
-                game.loadGame();
-            }
-        });
-    }
+    console.log('所有UI管理器已初始化');
 }
 
 /**
- * 开始游戏 - 只在用户点击开始游戏时才初始化
+ * 开始默认游戏（使用默认对手）
  */
-async function startGame() {
+async function startDefaultGame() {
     try {
-        console.log('用户点击开始游戏，开始初始化...');
+        console.log('开始默认游戏');
         
-        // 显示选择对手界面
-        showOpponentSelection();
+        // 确保配置已加载
+        await ensureConfigLoaded();
+        
+        // 使用第一个怪物作为默认对手
+        const monsters = window.ConfigData.MONSTER_CONFIG_DATA || [];
+        if (monsters.length === 0) {
+            throw new Error('没有可用的对手配置');
+        }
+        
+        const defaultMonster = monsters[0];
+        await startGameWithOpponent(defaultMonster);
         
     } catch (error) {
-        console.error('游戏启动失败:', error);
-        alert('游戏启动失败: ' + error.message);
+        console.error('启动默认游戏失败:', error);
+        alert('启动默认游戏失败: ' + error.message);
         
-        // 恢复开始界面
-        if (startScreen) {
-            showStartScreen();
+        // 返回开始界面
+        if (startUI) {
+            startUI.show();
         }
     }
 }
 
-/**
- * 显示选择对手界面
- */
-function showOpponentSelection() {
-    const startScreen = document.getElementById('startScreen');
-    if (!startScreen) return;
-    
-    // 获取monster配置
-    const monsters = ConfigData.MONSTER_CONFIG_DATA || [];
-    
-    // 创建选择对手界面
-    startScreen.innerHTML = `
-        <div class="start-content">
-            <h2>选择对手</h2>
-            <p>请选择你要挑战的对手：</p>
-            <div class="opponent-grid">
-                ${monsters.map(monster => `
-                    <div class="opponent-card" data-monster-id="${monster.id}">
-                        <div class="opponent-header">
-                            <h3>${monster.name}</h3>
-                            <span class="opponent-class">${monster.class}</span>
-                        </div>
-                        <div class="opponent-stats">
-                            <div class="stat-item">
-                                <span class="stat-label">生命值:</span>
-                                <span class="stat-value">${monster.maxHealth}</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">能量:</span>
-                                <span class="stat-value">${monster.maxEnergy}</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">难度:</span>
-                                <span class="stat-value">${'★'.repeat(monster.difficulty)}</span>
-                            </div>
-                        </div>
-                        <div class="opponent-description">
-                            ${monster.description}
-                        </div>
-                        <button class="btn btn-primary select-opponent-btn">选择此对手</button>
-                    </div>
-                `).join('')}
-            </div>
-            <div class="back-button">
-                <button id="backToStartBtn" class="btn btn-secondary">返回</button>
-            </div>
-        </div>
-    `;
-    
-    // 绑定选择对手事件
-    const opponentCards = startScreen.querySelectorAll('.opponent-card');
-    opponentCards.forEach(card => {
-        card.addEventListener('click', (e) => {
-            if (e.target.classList.contains('select-opponent-btn')) {
-                const monsterId = card.dataset.monsterId;
-                const monster = monsters.find(m => m.id === monsterId);
-                if (monster) {
-                    startGameWithOpponent(monster);
-                }
-            }
-        });
-    });
-    
-    // 绑定返回按钮事件
-    const backBtn = document.getElementById('backToStartBtn');
-    if (backBtn) {
-        backBtn.addEventListener('click', () => {
-            showStartScreen();
-        });
-    }
-}
+// 这些函数已移动到对应的UI管理器中
+// showStartScreen -> StartUI.show()
+// hideStartScreen -> StartUI.hide()
+
+// showOpponentSelection函数已移动到OpponentSelectUI.js
+
+// startGame函数已废弃，使用startDefaultGame或showOpponentSelection
+
+// 重复的showOpponentSelection函数已移动到OpponentSelectUI.js
 
 /**
  * 使用选定的对手开始游戏
  */
 async function startGameWithOpponent(monsterConfig) {
     try {
-        console.log('用户选择了对手:', monsterConfig.name);
+        console.log('=== 开始游戏启动流程 ===');
+        console.log('用户选择了对手:', monsterConfig);
         
-        // 显示加载提示
-        const startScreen = document.getElementById('startScreen');
-        if (startScreen) {
-            startScreen.innerHTML = `
-                <div class="start-content">
-                    <h2>正在加载游戏...</h2>
-                    <p>正在准备与 ${monsterConfig.name} 的战斗...</p>
-                    <div class="loading-spinner"></div>
-                </div>
-            `;
+        // 验证输入参数
+        if (!monsterConfig) {
+            throw new Error('对手配置不能为空');
+        }
+        
+        // 验证monsterConfig的基本属性
+        const requiredFields = ['id', 'name', 'class', 'maxHealth', 'maxEnergy'];
+        for (const field of requiredFields) {
+            if (monsterConfig[field] === undefined) {
+                console.warn(`对手配置缺少字段: ${field}, 将使用默认值`);
+            }
+        }
+        
+        // 为缺失的字段设置默认值
+        monsterConfig = {
+            initialEnergy: 1,
+            strength: 1,
+            agility: 1,
+            spirit: 1,
+            healthRegenRate: 0,
+            energyRegenRate: 1,
+            difficulty: 1,
+            description: '未知对手',
+            ...monsterConfig
+        };
+        
+        console.log('完整的对手配置:', monsterConfig);
+        
+        // 隐藏选择界面，显示加载提示
+        if (opponentSelectUI) {
+            opponentSelectUI.hide();
+        }
+        if (startUI) {
+            startUI.hide();
+        }
+        
+        console.log(`正在准备与 ${monsterConfig.name} 的战斗...`);
+        
+        // 检查必要的类是否存在
+        if (typeof ConfigManager === 'undefined') {
+            throw new Error('ConfigManager类未找到，请检查配置管理器是否正确加载');
+        }
+        
+        if (typeof Game === 'undefined') {
+            throw new Error('Game类未找到，请检查游戏类是否正确加载');
+        }
+        
+        if (typeof MonsterConfigManager === 'undefined') {
+            throw new Error('MonsterConfigManager类未找到，请检查怪物配置管理器是否正确加载');
+        }
+        
+        // 确保MonsterConfigManager已加载
+        if (!MonsterConfigManager.isLoaded) {
+            console.log('MonsterConfigManager未加载，正在加载...');
+            await MonsterConfigManager.loadMonsterConfigs();
         }
         
         // 如果游戏还未初始化，则进行初始化
         if (!isGameInitialized) {
             console.log('首次启动，开始初始化游戏...');
             
-            // 加载所有配置
-            console.log('正在加载配置文件...');
-            const configLoaded = await ConfigManager.loadAllConfigs();
-            if (!configLoaded) {
-                console.warn('部分配置文件加载失败，将使用默认配置');
+            try {
+                // 加载所有配置
+                console.log('正在加载配置文件...');
+                const configLoaded = await ConfigManager.loadAllConfigs();
+                if (!configLoaded) {
+                    console.warn('部分配置文件加载失败，将使用默认配置');
+                }
+                console.log('配置文件加载完成');
+            } catch (configError) {
+                console.error('配置加载失败:', configError);
+                throw new Error('配置加载失败: ' + configError.message);
             }
             
-            // 验证配置
-            console.log('正在验证配置文件...');
-            ConfigValidator.logValidationReport();
+            try {
+                // 验证配置
+                console.log('正在验证配置文件...');
+                if (typeof ConfigValidator !== 'undefined') {
+                    ConfigValidator.logValidationReport();
+                }
+                console.log('配置验证完成');
+            } catch (validationError) {
+                console.warn('配置验证失败:', validationError);
+            }
             
-            // 更新版本信息
-            updateVersionInfo();
+            try {
+                // 更新版本信息
+                console.log('更新版本信息...');
+                updateVersionInfo();
+                console.log('版本信息更新完成');
+            } catch (versionError) {
+                console.warn('版本信息更新失败:', versionError);
+            }
             
-            // 创建游戏实例（传入选定的monster配置）
-            game = new Game(monsterConfig);
+            try {
+                // 创建游戏实例（传入选定的monster配置）
+                console.log('创建游戏实例...');
+                game = new Game(monsterConfig);
+                console.log('游戏实例创建完成');
+            } catch (gameCreateError) {
+                console.error('游戏实例创建失败:', gameCreateError);
+                throw new Error('游戏实例创建失败: ' + gameCreateError.message);
+            }
             
-            // 初始化游戏
-            await game.initialize();
+            try {
+                // 初始化游戏
+                console.log('初始化游戏...');
+                await game.initialize();
+                console.log('游戏初始化完成');
+            } catch (initError) {
+                console.error('游戏初始化失败:', initError);
+                throw new Error('游戏初始化失败: ' + initError.message);
+            }
             
-            // 设置键盘快捷键
-            setupKeyboardShortcuts();
+            try {
+                // 设置键盘快捷键
+                console.log('设置键盘快捷键...');
+                setupKeyboardShortcuts();
+                console.log('键盘快捷键设置完成');
+            } catch (keyboardError) {
+                console.warn('键盘快捷键设置失败:', keyboardError);
+            }
             
-            // 添加开发者工具
-            setupDeveloperTools();
+            try {
+                // 添加开发者工具
+                console.log('添加开发者工具...');
+                setupDeveloperTools();
+                console.log('开发者工具添加完成');
+            } catch (devToolsError) {
+                console.warn('开发者工具添加失败:', devToolsError);
+            }
             
             isGameInitialized = true;
-            console.log('游戏初始化完成');
+            console.log('=== 游戏初始化完成 ===');
         } else {
-            // 如果游戏已经初始化，重新创建游戏实例
-            game = new Game(monsterConfig);
-            await game.initialize();
+            try {
+                // 如果游戏已经初始化，重新创建游戏实例
+                console.log('重新创建游戏实例...');
+                game = new Game(monsterConfig);
+                await game.initialize();
+                console.log('游戏实例重新创建完成');
+            } catch (recreateError) {
+                console.error('游戏实例重新创建失败:', recreateError);
+                throw new Error('游戏实例重新创建失败: ' + recreateError.message);
+            }
         }
         
-        // 隐藏开始界面
-        if (startScreen) {
-            startScreen.style.display = 'none';
+        try {
+            // 显示游戏界面
+            console.log('显示游戏界面...');
+            if (game && game.gameUI) {
+                game.gameUI.showGameInterface();
+                // 保存全局gameUI引用
+                gameUI = game.gameUI;
+                window.globalGame = game;
+                console.log('游戏界面显示完成');
+            } else {
+                throw new Error('游戏实例或游戏UI未正确创建');
+            }
+        } catch (uiError) {
+            console.error('游戏界面显示失败:', uiError);
+            throw new Error('游戏界面显示失败: ' + uiError.message);
         }
         
-        // 显示游戏界面
-        if (game && game.gameUI) {
-            game.gameUI.showGameInterface();
-        }
-        
-        // 开始游戏
-        if (game) {
-            game.start();
-            console.log(`游戏启动成功！对手: ${monsterConfig.name}`);
+        try {
+            // 开始游戏
+            console.log('启动游戏...');
+            if (game) {
+                game.start();
+                console.log(`=== 游戏启动成功！对手: ${monsterConfig.name} ===`);
+            } else {
+                throw new Error('游戏实例不存在');
+            }
+        } catch (startError) {
+            console.error('游戏启动失败:', startError);
+            throw new Error('游戏启动失败: ' + startError.message);
         }
         
     } catch (error) {
-        console.error('游戏启动失败:', error);
+        console.error('=== 游戏启动失败 ===');
+        console.error('错误详情:', error);
+        console.error('错误堆栈:', error.stack);
         alert('游戏启动失败: ' + error.message);
         
         // 恢复开始界面
-        showStartScreen();
+        if (startUI) {
+            startUI.show();
+        }
     }
 }
 
@@ -560,6 +596,140 @@ if ('serviceWorker' in navigator) {
                 console.log('Service Worker 注册失败:', error);
             });
     });
+}
+
+// ============== 爬塔系统相关函数 ==============
+
+/**
+ * 全局爬塔状态和地图UI实例（已在顶部声明）
+ */
+
+/**
+ * 开始爬塔模式
+ */
+async function startTowerMode() {
+    console.log('开始爬塔模式');
+    
+    try {
+        // 确保配置已加载
+        await ensureConfigLoaded();
+        
+        // 确保爬塔配置已加载
+        await ensureTowerConfigLoaded();
+        
+        // 创建爬塔状态
+        if (!globalTowerState) {
+            globalTowerState = new TowerState();
+        }
+        
+        // 创建地图UI
+        if (!mapUI) {
+            mapUI = new MapUI(globalTowerState);
+            mapUI.initialize();
+            globalMapUI = mapUI; // 保持向后兼容
+        }
+        
+        // 开始新的爬塔
+        globalTowerState.startNewTower();
+        
+        // 显示地图
+        mapUI.showMap();
+        
+        // 隐藏开始界面
+        if (startUI) {
+            startUI.hide();
+        }
+        
+        console.log('爬塔模式启动成功');
+        
+    } catch (error) {
+        console.error('启动爬塔模式失败:', error);
+        alert('启动爬塔模式失败: ' + error.message);
+    }
+}
+
+/**
+ * 确保配置已加载
+ */
+async function ensureConfigLoaded() {
+    // 检查是否需要加载配置
+    if (!window.ConfigData || !window.ConfigData.MONSTER_CONFIG_DATA) {
+        console.log('正在加载配置数据...');
+        
+        // 如果ConfigManager存在且未加载，则加载配置
+        if (typeof ConfigManager !== 'undefined' && !ConfigManager.isLoaded) {
+            await ConfigManager.loadAllConfigs();
+        }
+        
+        // 检查是否成功加载了怪物配置
+        if (!window.ConfigData || !window.ConfigData.MONSTER_CONFIG_DATA) {
+            throw new Error('无法加载怪物配置数据');
+        }
+    }
+}
+
+/**
+ * 确保爬塔配置已加载
+ */
+async function ensureTowerConfigLoaded() {
+    if (!window.TowerConfig || !TowerConfig.isLoaded) {
+        console.log('正在加载爬塔配置...');
+        
+        // 使用同步加载，因为ConfigData已经可用
+        TowerConfig.loadSync();
+        
+        if (!TowerConfig.isLoaded) {
+            throw new Error('无法加载爬塔配置数据');
+        }
+    }
+}
+
+/**
+ * 退出爬塔模式，返回主菜单
+ */
+function exitTowerMode() {
+    console.log('退出爬塔模式');
+    
+    // 清理爬塔状态
+    if (globalTowerState) {
+        globalTowerState.isInTower = false;
+    }
+    
+    // 隐藏地图UI
+    if (mapUI) {
+        mapUI.hideMap();
+    }
+    
+    // 显示开始界面
+    if (startUI) {
+        startUI.show();
+    }
+}
+
+/**
+ * 处理爬塔战斗结束
+ */
+function handleTowerCombatEnd(victory, nodeId) {
+    console.log(`爬塔战斗结束，胜利: ${victory}, 节点: ${nodeId}`);
+    
+    if (globalTowerState && globalMapUI) {
+        // 完成节点
+        globalTowerState.completeNode(nodeId, { victory });
+        
+        if (victory) {
+            // 战斗胜利，立即显示地图
+            if (mapUI) {
+                mapUI.showMap();
+            }
+        } else {
+            // 战斗失败，显示失败选项
+            setTimeout(() => {
+                if (mapUI) {
+                    mapUI.showGameOverOptions();
+                }
+            }, 2000);
+        }
+    }
 }
 
 // 导出游戏实例供其他模块使用

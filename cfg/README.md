@@ -1,108 +1,177 @@
-# 游戏配置文件说明
+# 爬塔系统配置说明
 
-本目录包含游戏的所有配置文件，使用CSV格式便于编辑和管理。
+爬塔系统的配置已集成到 `js/ConfigData.js` 文件中，与其他游戏配置保持一致。这种方式避免了CORS问题，简化了部署和管理。
 
-## 文件列表
+## 配置数据结构
 
-### 1. cards.csv - 卡牌配置
-包含所有卡牌的属性配置：
-- **Name**: 卡牌名称
-- **Class**: 卡牌职业（战士/法师/盗贼/牧师）
-- **EnergyCost**: 能量消耗
-- **CastTime**: 吟唱时间
-- **CastType**: 施法类型（瞬发/吟唱）
-- **Effect**: 效果描述
-- **EffectCode**: 效果代码
-- **Value1-3**: 效果数值参数
-- **Value3**: 额外参数
+### 1. `TOWER_CONFIG_DATA` - 主要配置对象
+包含爬塔系统的核心参数设置：
 
-### 2. hero_skills.csv - 英雄技能配置
-包含所有职业的英雄技能配置：
-- **Class**: 职业名称
-- **SkillName**: 技能名称
-- **Description**: 技能描述
-- **Cooldown**: 冷却时间（秒）
-- **EnergyCost**: 能量消耗
-- **EffectType**: 效果类型
-- **Value1-3**: 效果数值参数
-- **Duration**: 持续时间（秒）
+| 配置项 | 默认值 | 说明 | 分类 |
+|--------|---------|------|------|
+| TotalLayers | 8 | 爬塔总层数 | Map |
+| MinNodesPerLayer | 2 | 每层最少节点数 | Map |
+| MaxNodesPerLayer | 4 | 每层最多节点数 | Map |
+| MinConnections | 1 | 每个节点最少连接数 | Map |
+| MaxConnections | 3 | 每个节点最多连接数 | Map |
+| RestLayerInterval | 3 | 休息点出现间隔层数 | Map |
+| StartingHealth | 30 | 玩家初始生命值 | Player |
+| StartingEnergy | 3 | 玩家初始能量 | Player |
+| StartingGold | 0 | 玩家初始金币 | Player |
+| CombatBaseReward | 10 | 战斗基础金币奖励 | Rewards |
+| CombatLayerBonus | 5 | 战斗每层额外金币奖励 | Rewards |
+| TreasureBaseGold | 25 | 宝箱基础金币奖励 | Rewards |
+| TreasureLayerBonus | 10 | 宝箱每层额外金币奖励 | Rewards |
+| RestHealPercent | 0.3 | 休息点恢复生命值比例 | Healing |
+| BossHealthMultiplier | 1.5 | Boss生命值倍数 | Combat |
+| BossEnergyBonus | 1 | Boss额外能量 | Combat |
+| TowerCompletionReward | 100 | 完成爬塔基础奖励 | Rewards |
+| TowerCompletionLayerBonus | 20 | 完成爬塔每层额外奖励 | Rewards |
 
-### 3. character_classes.csv - 角色职业配置
-包含所有职业的基础属性配置：
-- **Class**: 职业名称
-- **MaxHealth**: 最大生命值
-- **MaxEnergy**: 最大能量值
-- **InitialEnergy**: 初始能量值
-- **Strength**: 强度属性
-- **Agility**: 敏捷属性
-- **Spirit**: 精神属性
-- **HealthRegenRate**: 生命恢复速度
-- **EnergyRegenRate**: 能量恢复速度
-- **Description**: 职业描述
+### 2. `TOWER_NODE_TYPES_DATA` - 节点类型配置数组
+定义地图中可出现的节点类型：
 
-### 4. game_config.csv - 游戏配置
-包含游戏的各种参数设置：
-- **ConfigKey**: 配置键名
-- **Value**: 配置值
-- **Description**: 配置描述
+| 字段 | 说明 |
+|------|------|
+| type | 节点类型标识符 |
+| displayName | 显示名称 |
+| icon | 图标（支持Emoji） |
+| description | 描述文本 |
+| weight | 权重（影响出现概率） |
+| minLayer | 最小出现层数 |
+| maxLayer | 最大出现层数 |
+| isSpecial | 是否为特殊节点 |
 
-## 配置修改说明
+**默认节点类型：**
+- `combat` - 战斗节点（权重60）
+- `treasure` - 宝箱节点（权重25）  
+- `rest` - 休息点（权重15）
+- `boss` - Boss节点（仅第8层）
+- `start` - 起始点（仅第0层）
+- `elite` - 精英节点（权重20，3-6层）
+- `shop` - 商店节点（权重10，2-6层）
+- `event` - 事件节点（权重15，1-7层）
 
-### 修改卡牌
-1. 编辑 `cards.csv` 文件
-2. 添加新行或修改现有行
-3. 确保所有必需字段都已填写
-4. 重启游戏以应用更改
+### 3. `TOWER_REWARDS_DATA` - 奖励配置数组
+定义各种奖励的属性：
 
-### 修改英雄技能
-1. 编辑 `hero_skills.csv` 文件
-2. 修改技能参数（冷却时间、能量消耗、效果值等）
-3. 重启游戏以应用更改
+| 字段 | 说明 |
+|------|------|
+| type | 奖励类型标识符 |
+| icon | 奖励图标 |
+| baseAmount | 基础数量 |
+| layerMultiplier | 层数倍数 |
+| probability | 出现概率 |
+| minLayer | 最小出现层数 |
+| maxLayer | 最大出现层数 |
+| description | 描述文本 |
 
-### 修改职业属性
-1. 编辑 `character_classes.csv` 文件
-2. 调整职业的基础属性
-3. 重启游戏以应用更改
+**奖励计算公式：**
+```
+实际数量 = baseAmount + (layerMultiplier × 当前层数)
+```
 
-### 修改游戏参数
-1. 编辑 `game_config.csv` 文件
-2. 调整游戏参数（初始手牌数量、抽卡间隔等）
-3. 重启游戏以应用更改
+## 配置自定义示例
 
-## 效果类型说明
+### 示例1：创建高难度模式
+在 `js/ConfigData.js` 中修改 `TOWER_CONFIG_DATA`：
+```javascript
+const TOWER_CONFIG_DATA = {
+    TotalLayers: 12,
+    StartingHealth: 20,
+    RestHealPercent: 0.2,
+    BossHealthMultiplier: 2.0,
+    CombatBaseReward: 5,
+    // ... 其他配置
+};
+```
 
-### 英雄技能效果类型
-- **STRENGTH_BOOST**: 强度提升
-- **ENERGY_RESTORE_SPELL_BOOST**: 能量恢复+法术强化
-- **STEALTH**: 潜行效果
-- **ARMOR_BOOST**: 护甲提升
+### 示例2：添加新节点类型
+在 `TOWER_NODE_TYPES_DATA` 数组中添加：
+```javascript
+{
+    type: "mystery",
+    displayName: "神秘房间",
+    icon: "🔮",
+    description: "未知的神秘事件",
+    weight: 10,
+    minLayer: 2,
+    maxLayer: 6,
+    isSpecial: false
+}
+```
 
-### 卡牌效果代码
-- **DAMAGE_X**: 造成X点伤害
-- **HEAL_X**: 恢复X点生命值
-- **DAMAGE_X_POISON**: 造成X点伤害并中毒
-- **DAMAGE_X_SLOW**: 造成X点伤害并减速
-- **DAMAGE_X_ARMOR**: 造成X点伤害并获得护甲
-- **BLOOD_SACRIFICE**: 血祭效果
-- **CONSUME_ALL_ENERGY**: 消耗所有能量
-- **DAMAGE_X_ALL_SLOW**: 对所有敌人造成X点伤害并减速
-- **HEAL_X_ALL**: 对所有友军恢复X点生命值
-- **DISPEL**: 驱散效果
-- **STEALTH**: 潜行效果
+### 示例3：调整奖励分布
+在 `TOWER_REWARDS_DATA` 数组中修改：
+```javascript
+{
+    type: "card_legendary",
+    icon: "⭐",
+    baseAmount: 1,
+    layerMultiplier: 0,
+    probability: 15,  // 提高概率从5到15
+    minLayer: 3,      // 降低最小层数从6到3
+    maxLayer: 8,
+    description: "获得传说卡牌"
+}
+```
+
+## 配置加载机制
+
+1. **自动加载**：游戏启动时自动从 `js/ConfigData.js` 读取配置
+2. **默认值保护**：如果配置读取失败，系统会使用内置的默认配置
+3. **热重载**：可通过代码调用 `TowerConfig.reload()` 重新加载配置
+4. **验证机制**：配置加载后会自动验证必需的配置项
+5. **无CORS问题**：配置直接内嵌在JavaScript中，避免了跨域问题
+
+## 开发者接口
+
+### 获取配置值
+```javascript
+// 获取主配置
+const totalLayers = TowerConfig.getTowerConfig('TotalLayers', 8);
+
+// 获取节点类型配置
+const nodeConfig = TowerConfig.getNodeTypeConfig('combat');
+
+// 获取奖励配置
+const rewardConfig = TowerConfig.getRewardConfig('gold');
+
+// 计算奖励数量
+const goldAmount = TowerConfig.calculateRewardAmount('gold', 3);
+```
+
+### 获取可用选项
+```javascript
+// 获取指定层的可用节点类型
+const availableNodes = TowerConfig.getAvailableNodeTypesForLayer(3);
+
+// 获取指定层的可用奖励
+const availableRewards = TowerConfig.getAvailableRewardsForLayer(5);
+```
+
+### 配置调试
+```javascript
+// 导出所有配置为JSON
+console.log(TowerConfig.exportToJSON());
+
+// 重新加载配置
+await TowerConfig.reload();
+```
 
 ## 注意事项
 
-1. **CSV格式**: 确保CSV文件格式正确，字段间用逗号分隔
-2. **数值类型**: 数值字段必须为数字，字符串字段用引号包围
-3. **编码**: 文件必须使用UTF-8编码
-4. **备份**: 修改配置前建议备份原文件
-5. **测试**: 修改后请测试游戏功能是否正常
+1. **文件位置**：所有配置都在 `js/ConfigData.js` 文件中
+2. **数据类型**：JavaScript原生类型，无需字符串转换
+3. **布尔值**：直接使用 `true`/`false` 布尔值
+4. **权重系统**：节点类型和奖励都支持权重控制出现概率
+5. **层数限制**：层数从0开始计算（0为起始层）
+6. **代码编辑**：修改配置需要编辑JavaScript文件并重新加载页面
 
-## 故障排除
+## 扩展建议
 
-如果配置文件加载失败：
-1. 检查文件格式是否正确
-2. 确认文件编码为UTF-8
-3. 检查字段数量是否匹配
-4. 查看浏览器控制台的错误信息
-5. 游戏会自动使用默认配置作为后备方案 
+- 添加季节性事件配置
+- 实现难度等级预设
+- 支持自定义卡牌池配置
+- 添加成就系统配置
+- 实现动态平衡调整 

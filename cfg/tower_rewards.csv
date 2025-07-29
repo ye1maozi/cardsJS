@@ -1,0 +1,12 @@
+RewardType,Icon,BaseAmount,LayerMultiplier,Probability,MinLayer,MaxLayer,Description
+gold,💰,25,10,100,0,8,获得金币
+health,❤️,5,2,30,0,8,恢复生命值
+energy,⚡,1,0,20,0,8,增加最大能量
+card_common,🃏,1,0,40,0,8,获得普通卡牌
+card_rare,🎴,1,0,25,2,8,获得稀有卡牌
+card_epic,🎯,1,0,10,4,8,获得史诗卡牌
+card_legendary,⭐,1,0,5,6,8,获得传说卡牌
+relic,🔮,1,0,15,3,8,获得遗物
+potion,🧪,1,0,20,1,8,获得药水
+upgrade_random,⬆️,1,0,25,1,8,随机升级一张卡牌
+remove_card,��️,1,0,15,2,8,移除一张卡牌 

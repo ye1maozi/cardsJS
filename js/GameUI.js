@@ -1,11 +1,12 @@
 /**
- * 游戏UI类 - 对应C#版本的GameUI类
+ * 战斗界面UI类 - 专门处理战斗相关的UI
  */
 class GameUI {
     constructor(gameState) {
         this.gameState = gameState;
         this.gameLog = [];
         this.gameOverModalShown = false; // 添加游戏结束弹窗显示标志
+        this.isVisible = false;
         this.initializeUI();
     }
 
@@ -16,10 +17,11 @@ class GameUI {
         // 初始时隐藏游戏界面，等待用户开始游戏
         this.hideGameInterface();
         this.bindEvents();
+        console.log('战斗界面UI初始化完成');
     }
     
     /**
-     * 隐藏游戏界面
+     * 隐藏战斗界面
      */
     hideGameInterface() {
         const gameArea = document.querySelector('.game-area');
@@ -31,10 +33,12 @@ class GameUI {
         if (gameStatus) {
             gameStatus.style.display = 'none';
         }
+        this.isVisible = false;
+        console.log('隐藏战斗界面');
     }
     
     /**
-     * 显示游戏界面
+     * 显示战斗界面
      */
     showGameInterface() {
         const gameArea = document.querySelector('.game-area');
@@ -47,11 +51,35 @@ class GameUI {
             gameStatus.style.display = 'flex';
         }
         
+        this.isVisible = true;
+        
+        // 隐藏其他界面
+        this.hideOtherScreens();
+        
         // 更新UI
         this.updateUI();
         
         // 显示对手信息
         this.showOpponentInfo();
+        
+        console.log('显示战斗界面');
+    }
+    
+    /**
+     * 隐藏其他界面
+     */
+    hideOtherScreens() {
+        // 隐藏开始界面
+        const startScreen = document.getElementById('startScreen');
+        if (startScreen) startScreen.style.display = 'none';
+        
+        // 隐藏选择对手界面
+        const opponentSelectScreen = document.getElementById('opponentSelectScreen');
+        if (opponentSelectScreen) opponentSelectScreen.style.display = 'none';
+        
+        // 隐藏爬塔地图
+        const towerMapContainer = document.getElementById('towerMapContainer');
+        if (towerMapContainer) towerMapContainer.style.display = 'none';
     }
     
     /**
@@ -137,18 +165,18 @@ class GameUI {
         document.getElementById('computerExhaustCount').textContent = info.computerExhaustCount;
 
         // 更新玩家属性
-        document.getElementById('playerStrength').textContent = this.gameState.playerCharacter.strength;
-        document.getElementById('playerAgility').textContent = this.gameState.playerCharacter.agility;
-        document.getElementById('playerSpirit').textContent = this.gameState.playerCharacter.spirit;
-        document.getElementById('playerHealthRegen').textContent = this.gameState.playerCharacter.healthRegenRate.toFixed(1);
-        document.getElementById('playerEnergyRegen').textContent = this.gameState.playerCharacter.energyRegenRate.toFixed(1);
+        document.getElementById('playerStrength').textContent = this.gameState.playerCharacter.strength || 0;
+        document.getElementById('playerAgility').textContent = this.gameState.playerCharacter.agility || 0;
+        document.getElementById('playerSpirit').textContent = this.gameState.playerCharacter.spirit || 0;
+        document.getElementById('playerHealthRegen').textContent = (this.gameState.playerCharacter.healthRegenRate || 0).toFixed(1);
+        document.getElementById('playerEnergyRegen').textContent = (this.gameState.playerCharacter.energyRegenRate || 1).toFixed(1);
 
         // 更新电脑属性
-        document.getElementById('computerStrength').textContent = this.gameState.computerCharacter.strength;
-        document.getElementById('computerAgility').textContent = this.gameState.computerCharacter.agility;
-        document.getElementById('computerSpirit').textContent = this.gameState.computerCharacter.spirit;
-        document.getElementById('computerHealthRegen').textContent = this.gameState.computerCharacter.healthRegenRate.toFixed(1);
-        document.getElementById('computerEnergyRegen').textContent = this.gameState.computerCharacter.energyRegenRate.toFixed(1);
+        document.getElementById('computerStrength').textContent = this.gameState.computerCharacter.strength || 0;
+        document.getElementById('computerAgility').textContent = this.gameState.computerCharacter.agility || 0;
+        document.getElementById('computerSpirit').textContent = this.gameState.computerCharacter.spirit || 0;
+        document.getElementById('computerHealthRegen').textContent = (this.gameState.computerCharacter.healthRegenRate || 0).toFixed(1);
+        document.getElementById('computerEnergyRegen').textContent = (this.gameState.computerCharacter.energyRegenRate || 1).toFixed(1);
 
         // 更新百分比样式（超过100%时高亮显示）
         const playerHealthPercent = document.getElementById('playerHealthPercent');
@@ -168,9 +196,11 @@ class GameUI {
         const gameTime = info.gameTime || 0;
         document.getElementById('turnInfo').textContent = `游戏时间: ${gameTime.toFixed(1)}秒`;
         
-        // 更新倒计时显示
-        document.getElementById('drawCountdown').textContent = `${info.drawCountdown.toFixed(1)}s`;
-        document.getElementById('energyCountdown').textContent = `${info.energyCountdown.toFixed(1)}s`;
+        // 更新倒计时显示 - 添加安全检查
+        const drawCountdown = info.drawCountdown;
+        const energyCountdown = info.energyCountdown;
+        document.getElementById('drawCountdown').textContent = `${(isFinite(drawCountdown) ? drawCountdown : 0).toFixed(1)}s`;
+        document.getElementById('energyCountdown').textContent = `${(isFinite(energyCountdown) ? energyCountdown : 0).toFixed(1)}s`;
         
         // 更新英雄技能显示
         this.updateHeroSkillDisplay(info);
@@ -255,7 +285,7 @@ class GameUI {
             </div>
             <div class="casting-progress-bar">
                 <div class="casting-progress-fill" style="width: ${castingInfo.progressPercentage}%"></div>
-                <div class="casting-time-remaining">${castingInfo.remainingTime.toFixed(1)}s</div>
+                <div class="casting-time-remaining">${(isFinite(castingInfo.remainingTime) ? castingInfo.remainingTime : 0).toFixed(1)}s</div>
             </div>
         `;
         
@@ -326,7 +356,7 @@ class GameUI {
         // 添加调试信息
         console.log(`更新${target}状态效果显示，效果数量: ${effects.length}`);
         if (effects.length > 0) {
-            console.log(`效果详情:`, effects.map(effect => `${effect.type} (${effect.duration.toFixed(1)}s)`));
+            console.log(`效果详情:`, effects.map(effect => `${effect.type} (${(effect.duration || 0).toFixed(1)}s)`));
         }
         
         // 清空容器
@@ -347,9 +377,10 @@ class GameUI {
             try {
                 const effectElement = document.createElement('div');
                 effectElement.className = `effect ${effect.type}`;
+                const duration = effect.duration || 0;
                 effectElement.innerHTML = `
                     <span class="effect-name">${effect.description || effect.type}</span>
-                    <span class="effect-duration">${effect.duration.toFixed(1)}s</span>
+                    <span class="effect-duration">${(isFinite(duration) ? duration : 0).toFixed(1)}s</span>
                 `;
                 
                 // 确保效果元素可见
@@ -713,8 +744,9 @@ class GameUI {
             
             skillNameElement.textContent = skill.name;
             
-            if (skill.currentCooldown > 0) {
-                skillCooldownElement.textContent = `${skill.currentCooldown.toFixed(1)}s`;
+            const cooldown = skill.currentCooldown || 0;
+            if (cooldown > 0) {
+                skillCooldownElement.textContent = `${(isFinite(cooldown) ? cooldown : 0).toFixed(1)}s`;
                 computerSkillDisplay.className = 'hero-skill-display cooldown';
             } else {
                 skillCooldownElement.textContent = '可用';
@@ -727,9 +759,10 @@ class GameUI {
         if (heroSkillBtn && info.playerHeroSkill) {
             const skill = info.playerHeroSkill;
             
-            if (skill.currentCooldown > 0) {
+            const cooldown = skill.currentCooldown || 0;
+            if (cooldown > 0) {
                 // 技能在冷却中，显示倒计时并变灰
-                heroSkillBtn.textContent = `${skill.name} (${skill.currentCooldown.toFixed(1)}s)`;
+                heroSkillBtn.textContent = `${skill.name} (${(isFinite(cooldown) ? cooldown : 0).toFixed(1)}s)`;
                 heroSkillBtn.disabled = true;
                 heroSkillBtn.classList.add('cooldown');
             } else {

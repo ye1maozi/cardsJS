@@ -209,4 +209,9 @@ class MonsterConfigManager {
     static getPersonality(monsterConfig) {
         return monsterConfig.personality || 'neutral';
     }
+}
+
+// 导出到全局对象
+if (typeof window !== 'undefined') {
+    window.MonsterConfigManager = MonsterConfigManager;
 } 

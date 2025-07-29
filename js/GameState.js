@@ -733,8 +733,13 @@ class GameState {
             return 0; // 能量已满
         }
         
-        const timeSinceLastRegen = this.playerCharacter.lastEnergyRegen;
-        const regenInterval = 1.0 / this.playerCharacter.energyRegenRate; // 每恢复1点能量需要的时间
+        const energyRegenRate = this.playerCharacter.energyRegenRate || 1;
+        if (energyRegenRate <= 0) {
+            return 0; // 如果恢复率为0或负数，不显示倒计时
+        }
+        
+        const timeSinceLastRegen = this.playerCharacter.lastEnergyRegen || 0;
+        const regenInterval = 1.0 / energyRegenRate; // 每恢复1点能量需要的时间
         const countdown = regenInterval - timeSinceLastRegen;
         return Math.max(0, countdown);
     }

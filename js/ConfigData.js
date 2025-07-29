@@ -482,11 +482,446 @@ const MONSTER_CONFIG_DATA = [
     }
 ];
 
+// 爬塔系统配置数据
+const TOWER_CONFIG_DATA = {
+    // 地图配置
+    TotalLayers: 8,
+    MinNodesPerLayer: 2,
+    MaxNodesPerLayer: 4,
+    MinConnections: 1,
+    MaxConnections: 3,
+    RestLayerInterval: 3,
+    
+    // 玩家初始属性
+    StartingHealth: 30,
+    StartingEnergy: 3,
+    StartingGold: 0,
+    
+    // 奖励配置
+    CombatBaseReward: 10,
+    CombatLayerBonus: 5,
+    TreasureBaseGold: 25,
+    TreasureLayerBonus: 10,
+    
+    // 治疗配置
+    RestHealPercent: 0.3,
+    
+    // Boss配置
+    BossHealthMultiplier: 1.5,
+    BossEnergyBonus: 1,
+    
+    // 完成奖励
+    TowerCompletionReward: 100,
+    TowerCompletionLayerBonus: 20
+};
+
+// 爬塔节点类型配置数据
+const TOWER_NODE_TYPES_DATA = [
+    {
+        type: "combat",
+        displayName: "战斗",
+        icon: "⚔️",
+        description: "与敌人战斗获得经验和奖励",
+        weight: 60,
+        minLayer: 1,
+        maxLayer: 7,
+        isSpecial: false
+    },
+    {
+        type: "treasure",
+        displayName: "宝箱",
+        icon: "📦",
+        description: "打开宝箱获得珍贵物品",
+        weight: 25,
+        minLayer: 1,
+        maxLayer: 7,
+        isSpecial: false
+    },
+    {
+        type: "rest",
+        displayName: "休息点",
+        icon: "🔥",
+        description: "在这里休息恢复生命值或升级卡牌",
+        weight: 15,
+        minLayer: 1,
+        maxLayer: 7,
+        isSpecial: false
+    },
+    {
+        type: "boss",
+        displayName: "Boss",
+        icon: "👹",
+        description: "挑战强大的Boss",
+        weight: 100,
+        minLayer: 8,
+        maxLayer: 8,
+        isSpecial: true
+    },
+    {
+        type: "start",
+        displayName: "起始点",
+        icon: "🏠",
+        description: "冒险的起点",
+        weight: 100,
+        minLayer: 0,
+        maxLayer: 0,
+        isSpecial: true
+    },
+    {
+        type: "elite",
+        displayName: "精英",
+        icon: "💀",
+        description: "强化敌人获得更好奖励",
+        weight: 20,
+        minLayer: 3,
+        maxLayer: 6,
+        isSpecial: false
+    },
+    {
+        type: "shop",
+        displayName: "商店",
+        icon: "🏪",
+        description: "购买卡牌和物品",
+        weight: 10,
+        minLayer: 2,
+        maxLayer: 6,
+        isSpecial: false
+    },
+    {
+        type: "event",
+        displayName: "事件",
+        icon: "❓",
+        description: "随机事件可能带来机遇或挑战",
+        weight: 15,
+        minLayer: 1,
+        maxLayer: 7,
+        isSpecial: false
+    }
+];
+
+// 爬塔奖励配置数据
+const TOWER_REWARDS_DATA = [
+    {
+        type: "gold",
+        icon: "💰",
+        baseAmount: 25,
+        layerMultiplier: 10,
+        probability: 100,
+        minLayer: 0,
+        maxLayer: 8,
+        description: "获得金币"
+    },
+    {
+        type: "health",
+        icon: "❤️",
+        baseAmount: 5,
+        layerMultiplier: 2,
+        probability: 30,
+        minLayer: 0,
+        maxLayer: 8,
+        description: "恢复生命值"
+    },
+    {
+        type: "energy",
+        icon: "⚡",
+        baseAmount: 1,
+        layerMultiplier: 0,
+        probability: 20,
+        minLayer: 0,
+        maxLayer: 8,
+        description: "增加最大能量"
+    },
+    {
+        type: "card_common",
+        icon: "🃏",
+        baseAmount: 1,
+        layerMultiplier: 0,
+        probability: 40,
+        minLayer: 0,
+        maxLayer: 8,
+        description: "获得普通卡牌"
+    },
+    {
+        type: "card_rare",
+        icon: "🎴",
+        baseAmount: 1,
+        layerMultiplier: 0,
+        probability: 25,
+        minLayer: 2,
+        maxLayer: 8,
+        description: "获得稀有卡牌"
+    },
+    {
+        type: "card_epic",
+        icon: "🎯",
+        baseAmount: 1,
+        layerMultiplier: 0,
+        probability: 10,
+        minLayer: 4,
+        maxLayer: 8,
+        description: "获得史诗卡牌"
+    },
+    {
+        type: "card_legendary",
+        icon: "⭐",
+        baseAmount: 1,
+        layerMultiplier: 0,
+        probability: 5,
+        minLayer: 6,
+        maxLayer: 8,
+        description: "获得传说卡牌"
+    },
+    {
+        type: "relic",
+        icon: "🔮",
+        baseAmount: 1,
+        layerMultiplier: 0,
+        probability: 15,
+        minLayer: 3,
+        maxLayer: 8,
+        description: "获得遗物"
+    },
+    {
+        type: "potion",
+        icon: "🧪",
+        baseAmount: 1,
+        layerMultiplier: 0,
+        probability: 20,
+        minLayer: 1,
+        maxLayer: 8,
+        description: "获得药水"
+    },
+    {
+        type: "upgrade_random",
+        icon: "⬆️",
+        baseAmount: 1,
+        layerMultiplier: 0,
+        probability: 25,
+        minLayer: 1,
+        maxLayer: 8,
+        description: "随机升级一张卡牌"
+    },
+    {
+        type: "remove_card",
+        icon: "🗑️",
+        baseAmount: 1,
+        layerMultiplier: 0,
+        probability: 15,
+        minLayer: 2,
+        maxLayer: 8,
+        description: "移除一张卡牌"
+    }
+];
+
+// Boss配置数据 - 用于爬塔系统的Boss节点
+const BOSS_CONFIG_DATA = [
+    {
+        id: 'goblin',
+        name: '地精战士',
+        class: '战士',
+        difficulty: 1,
+        maxHealth: 25,
+        maxEnergy: 3,
+        initialEnergy: 1,
+        strength: 1,
+        agility: 1,
+        spirit: 0,
+        healthRegenRate: 0,
+        energyRegenRate: 1,
+        description: '一个弱小但狡猾的地精战士，适合新手练习。',
+        icon: '👺',
+        preferredCards: ['打击', '断筋'],
+        aiStrategy: 'aggressive'
+    },
+    {
+        id: 'orc',
+        name: '兽人勇士',
+        class: '战士',
+        difficulty: 2,
+        maxHealth: 35,
+        maxEnergy: 3,
+        initialEnergy: 1,
+        strength: 2,
+        agility: 0,
+        spirit: 0,
+        healthRegenRate: 0.5,
+        energyRegenRate: 1,
+        description: '强壮的兽人勇士，具有强大的攻击力。',
+        icon: '🧌',
+        preferredCards: ['打击', '盾击'],
+        aiStrategy: 'balanced'
+    },
+    {
+        id: 'skeleton_mage',
+        name: '骷髅法师',
+        class: '法师',
+        difficulty: 2,
+        maxHealth: 30,
+        maxEnergy: 4,
+        initialEnergy: 2,
+        strength: 0,
+        agility: 1,
+        spirit: 2,
+        healthRegenRate: 0,
+        energyRegenRate: 1.5,
+        description: '掌握黑暗魔法的亡灵法师，擅长魔法攻击。',
+        icon: '💀',
+        preferredCards: ['火球术', '冰霜新星'],
+        aiStrategy: 'spell_focused'
+    },
+    {
+        id: 'dragon',
+        name: '红龙',
+        class: 'Boss',
+        difficulty: 5,
+        maxHealth: 80,
+        maxEnergy: 5,
+        initialEnergy: 2,
+        strength: 5,
+        agility: 2,
+        spirit: 3,
+        healthRegenRate: 2,
+        energyRegenRate: 2,
+        description: '强大的红龙，终极挑战对手。',
+        icon: '🐲',
+        preferredCards: ['火球术', '盾击', '血祭'],
+        aiStrategy: 'boss_pattern'
+    }
+];
+
+// 商店物品配置数据
+const SHOP_ITEM_DATA = [
+    {
+        id: 'health_potion',
+        name: '生命药水',
+        type: 'potion',
+        price: 50,
+        icon: '🧪',
+        description: '立即恢复15点生命值',
+        effect: {
+            type: 'heal',
+            value: 15
+        }
+    },
+    {
+        id: 'energy_potion',
+        name: '能量药水',
+        type: 'potion',
+        price: 30,
+        icon: '⚡',
+        description: '本场战斗开始时额外获得1点能量',
+        effect: {
+            type: 'energy_bonus',
+            value: 1
+        }
+    },
+    {
+        id: 'card_upgrade',
+        name: '升级卷轴',
+        type: 'upgrade',
+        price: 75,
+        icon: '📜',
+        description: '升级一张卡牌',
+        effect: {
+            type: 'upgrade_card',
+            value: 1
+        }
+    },
+    {
+        id: 'card_remove',
+        name: '净化之火',
+        type: 'service',
+        price: 100,
+        icon: '🔥',
+        description: '从卡组中移除一张卡牌',
+        effect: {
+            type: 'remove_card',
+            value: 1
+        }
+    }
+];
+
+// 随机事件配置数据
+const RANDOM_EVENT_DATA = [
+    {
+        id: 'mysterious_shrine',
+        name: '神秘神龛',
+        description: '你发现了一个古老的神龛，散发着奇异的光芒。',
+        icon: '🛐',
+        choices: [
+            {
+                text: '祈祷（失去10金币，获得祝福）',
+                cost: { gold: 10 },
+                rewards: [{ type: 'buff', value: 'shrine_blessing' }],
+                probability: 100
+            },
+            {
+                text: '离开',
+                cost: {},
+                rewards: [],
+                probability: 100
+            }
+        ]
+    },
+    {
+        id: 'wandering_merchant',
+        name: '流浪商人',
+        description: '一个神秘的商人愿意用特殊的方式交易。',
+        icon: '🎭',
+        choices: [
+            {
+                text: '用生命值换取金币（失去5生命值，获得75金币）',
+                cost: { health: 5 },
+                rewards: [{ type: 'gold', value: 75 }],
+                probability: 100
+            },
+            {
+                text: '用金币换取生命值（失去50金币，获得15生命值）',
+                cost: { gold: 50 },
+                rewards: [{ type: 'health', value: 15 }],
+                probability: 100
+            },
+            {
+                text: '拒绝交易',
+                cost: {},
+                rewards: [],
+                probability: 100
+            }
+        ]
+    },
+    {
+        id: 'ancient_library',
+        name: '古老图书馆',
+        description: '你发现了一座废弃的图书馆，里面可能藏有珍贵的知识。',
+        icon: '📚',
+        choices: [
+            {
+                text: '研读古籍（获得稀有卡牌）',
+                cost: {},
+                rewards: [{ type: 'card_rare', value: 1 }],
+                probability: 70
+            },
+            {
+                text: '小心搜索（获得金币）',
+                cost: {},
+                rewards: [{ type: 'gold', value: 50 }],
+                probability: 100
+            }
+        ]
+    }
+];
+
 // 导出配置数据
 window.ConfigData = {
     CARD_CONFIG_DATA,
     HERO_SKILL_DATA,
     CHARACTER_CLASS_DATA,
     GAME_CONFIG_DATA,
-    MONSTER_CONFIG_DATA
+    MONSTER_CONFIG_DATA,
+    TOWER_CONFIG_DATA,
+    TOWER_NODE_TYPES_DATA,
+    TOWER_REWARDS_DATA,
+    BOSS_CONFIG_DATA,
+    SHOP_ITEM_DATA,
+    RANDOM_EVENT_DATA
 }; 
